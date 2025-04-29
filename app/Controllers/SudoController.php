@@ -10,6 +10,11 @@ use App\Models\EmploymentStatusModel;
 use App\Models\EmployeeModel;
 use App\Models\DayModel;
 use App\Models\FactoryModel;
+use App\Models\BatchModel;
+use App\Models\PeriodeModel;
+use App\Models\PresenceModel;
+use App\Models\MainJobRoleModel;
+use App\Models\JobRoleModel;
 
 class SudoController extends BaseController
 {
@@ -20,6 +25,11 @@ class SudoController extends BaseController
     protected $employeeModel;
     protected $dayModel;
     protected $factoryModel;
+    protected $batchModel;
+    protected $periodeModel;
+    protected $presenceModel;
+    protected $mainJobRoleModel;
+    protected $jobRoleModel;
 
     public function __construct()
     {
@@ -29,6 +39,11 @@ class SudoController extends BaseController
         $this->employeeModel = new EmployeeModel();
         $this->dayModel = new DayModel();
         $this->factoryModel = new FactoryModel();
+        $this->batchModel = new BatchModel();
+        $this->periodeModel = new PeriodeModel();
+        $this->presenceModel = new PresenceModel();
+        $this->mainJobRoleModel = new MainJobRoleModel();
+        $this->jobRoleModel = new JobRoleModel();
         $this->role = session()->get('role');
     }
     public function index()
@@ -105,5 +120,87 @@ class SudoController extends BaseController
 
         // dd ($karyawan, $bagian);    
         return view(session()->get('role') . '/karyawan', $data);
+    }
+
+    public function batch()
+    {
+        $batch = $this->batchModel->findAll();
+        $data = [
+            'role' => $this->role,
+            'title' => 'Batch',
+            'active1' => '',
+            'active2' => '',
+            'active3' => '',
+            'active4' => '',
+            'active5' => 'active',
+            'active6' => '',
+            'batch' => $batch
+        ];
+        return view($this->role . '/batch', $data);
+    }
+
+    public function periode()
+    {
+        $periode = $this->periodeModel->getPeriode();
+        $batch = $this->batchModel->findAll();
+        $data = [
+            'role' => $this->role,
+            'title' => 'Periode',
+            'active1' => '',
+            'active2' => '',
+            'active3' => '',
+            'active4' => '',
+            'active5' => 'active',
+            'active6' => '',
+            'periode' => $periode,
+            'batch' => $batch
+        ];
+        return view($this->role . '/periode', $data);
+    }
+
+    public function absen()
+    {
+        $absen = $this->presenceModel->getDataPresence();
+        // dd ($absen);
+        $users = $this->userModel->findAll();
+        $karyawan = $this->employeeModel->getEmployeeData();
+        $periode = $this->periodeModel->getPeriode();
+
+        $data = [
+            'role' => session()->get('role'),
+            'title' => 'Absen',
+            'active1' => '',
+            'active2' => '',
+            'active3' => '',
+            'active4' => '',
+            'active5' => 'active',
+            'active6' => '',
+            'absen' => $absen,
+            'users' => $users,
+            'karyawan' => $karyawan,
+            'periode' => $periode
+        ];
+        // dd($absen);
+        return view(session()->get('role') . '/absen', $data);
+    }
+
+    public function job()
+    {
+        $jobrole = $this->jobRoleModel->findAll();
+        $mainjobrole = $this->mainJobRoleModel->findAll();
+        $data = [
+            'role' => $this->role,
+            'title' => 'Job Role',
+            'active1' => '',
+            'active2' => '',
+            'active3' => '',
+            'active4' => '',
+            'active5' => '',
+            'active6' => 'active',
+            'mainjobrole' => $mainjobrole
+        ];
+
+        // dd ($jobrole);
+        return view($this->role . '/jobrole', $data);
     }
 }

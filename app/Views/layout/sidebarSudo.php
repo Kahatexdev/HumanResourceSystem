@@ -9,7 +9,7 @@
     <hr class="horizontal dark mt-0">
     <div class="collapse navbar-collapse h-auto w-auto " id="sidenav-collapse-main">
         <ul class="navbar-nav">
-            <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-10">Monitoring</h6>
+            <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-10">SUDO</h6>
             <!-- Dashboard -->
             <li class="nav-item">
                 <a class="nav-link <?= $title == 'Dashboard' ? 'active' : '' ?>" href="<?= base_url($role.'') ?>">

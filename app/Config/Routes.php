@@ -36,4 +36,41 @@ $routes->group('/Sudo', ['filter' => 'Sudo'], function ($routes) {
     $routes->post('karyawanUpdate/(:num)', 'EmployeeController::update/$1');
     $routes->get('karyawanDelete/(:num)', 'EmployeeController::delete/$1');
     $routes->get('exportKaryawan/', 'EmployeeController::exportAll');
+    // batch
+    $routes->get('dataBatch', 'SudoController::batch');
+    $routes->get('batchCreate', 'BatchController::create');
+    $routes->post('batchStore', 'BatchController::store');
+    $routes->get('batchEdit/(:num)', 'BatchController::edit/$1');
+    $routes->post('batchUpdate/(:num)', 'BatchController::update/$1');
+    $routes->get('batchDelete/(:num)', 'BatchController::delete/$1');
+    // periode
+    $routes->get('dataPeriode', 'SudoController::periode');
+    $routes->get('periodeCreate', 'PeriodeController::create');
+    $routes->post('periodeStore', 'PeriodeController::store');
+    $routes->get('periodeEdit/(:num)', 'PeriodeController::edit/$1');
+    $routes->post('periodeUpdate/(:num)', 'PeriodeController::update/$1');
+    $routes->get('periodeDelete/(:num)', 'PeriodeController::delete/$1');
+    // absen
+    $routes->get('dataAbsen', 'SudoController::absen');
+    $routes->get('absenCreate', 'PresenceController::create');
+    $routes->post('absenStore', 'PresenceController::store');
+    $routes->get('absenEdit/(:num)', 'PresenceController::edit/$1');
+    $routes->post('absenUpdate/(:num)', 'PresenceController::update/$1');
+    $routes->get('absenDelete/(:num)', 'PresenceController::delete/$1');
+    $routes->get('absenImport', 'PresenceController::import');
+    $routes->get('downloadTemplateAbsen', 'PresenceController::downloadTemplate');
+    $routes->post('absenStoreImport', 'PresenceController::upload');
+    $routes->get('absenReport', 'PresenceController::absenReport');
+    $routes->get('absenEmpty', 'PresenceController::empty');
+    // jobrole
+    $routes->get('dataJob', 'SudoController::job');
+    $routes->post('mainJobStore', 'JobroleController::mainJobStore');
+    $routes->post('mainJobUpdate/(:num)', 'JobroleController::mainJobUpdate/$1');
+    $routes->get('mainJobDelete/(:num)', 'JobroleController::mainJobDelete/$1');
+    $routes->get('getJobRoles/(:num)', 'JobroleController::getJobRoles/$1');
+    $routes->get('jobroleCreate', 'JobroleController::create');
+    $routes->post('jobRoleStore', 'JobroleController::jobRoleStore');
+    $routes->post('jobRoleUpdate/(:num)', 'JobroleController::jobRoleUpdate/$1');
+    $routes->get('jobRoleDelete/(:num)', 'JobroleController::jobRoleDelete/$1');
+    $routes->get('jobroleEdit/(:num)', 'JobroleController::edit/$1');
 });
