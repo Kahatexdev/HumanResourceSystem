@@ -1,8 +1,6 @@
 // General styles
 
 .table {
-  border-collapse: inherit;
-  
   thead th {
     padding: $table-head-spacer-y $table-head-spacer-x;
     text-transform: $table-head-text-transform;
