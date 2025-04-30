@@ -6,7 +6,7 @@
         <div class="row">
             <div class="col-lg-6 col-md-6 col-12">
                 <div class="card">
-                    <span class="mask bg-primary opacity-10 border-radius-lg"></span>
+                    <span class="mask bg-info opacity-10 border-radius-lg"></span>
                     <div class="card-body p-3 position-relative">
                         <div class="row">
                             <div class="col-8 text-start">
@@ -147,7 +147,7 @@
                             </div>
                             <div>
                                 <div class="progress progress-md">
-                                    <div class="progress-bar bg-primary w-80" role="progressbar" aria-valuenow="60" aria-valuemin="0" aria-valuemax="100"></div>
+                                    <div class="progress-bar bg-info w-80" role="progressbar" aria-valuenow="60" aria-valuemin="0" aria-valuemax="100"></div>
                                 </div>
                             </div>
                         </div>
@@ -160,7 +160,7 @@
                             </div>
                             <div>
                                 <div class="progress progress-md">
-                                    <div class="progress-bar bg-primary w-10" role="progressbar" aria-valuenow="10" aria-valuemin="0" aria-valuemax="100"></div>
+                                    <div class="progress-bar bg-info w-10" role="progressbar" aria-valuenow="10" aria-valuemin="0" aria-valuemax="100"></div>
                                 </div>
                             </div>
                         </div>
@@ -173,7 +173,7 @@
                             </div>
                             <div>
                                 <div class="progress progress-md">
-                                    <div class="progress-bar bg-primary w-5" role="progressbar" aria-valuenow="5" aria-valuemin="0" aria-valuemax="100"></div>
+                                    <div class="progress-bar bg-info w-5" role="progressbar" aria-valuenow="5" aria-valuemin="0" aria-valuemax="100"></div>
                                 </div>
                             </div>
                         </div>
@@ -517,7 +517,7 @@
                     </div>
                     <div class="timeline-block mb-3">
                         <span class="timeline-step">
-                            <i class="ni ni-key-25 text-primary text-gradient"></i>
+                            <i class="ni ni-key-25 text-info text-gradient"></i>
                         </span>
                         <div class="timeline-content">
                             <h6 class="text-dark text-sm font-weight-bold mb-0">Unlock packages for development</h6>
@@ -555,7 +555,7 @@
                         </div>
                     </div>
                     <div class="col-lg-5 ms-auto text-center mt-5 mt-lg-0">
-                        <div class="bg-primary border-radius-lg h-100">
+                        <div class="bg-info border-radius-lg h-100">
                             <img src="../assets/img/shapes/waves-white.svg" class="position-absolute h-100 w-50 top-0 d-lg-block d-none" alt="waves">
                             <div class="position-relative d-flex align-items-center justify-content-center h-100">
                                 <img class="w-100 position-relative z-index-2 pt-4" src="../assets/img/illustrations/rocket-white.png" alt="rocket">
@@ -597,7 +597,7 @@
                     <div class="row">
                         <div class="col-3 py-3 ps-0">
                             <div class="d-flex mb-2">
-                                <div class="icon icon-shape icon-xxs shadow border-radius-sm bg-primary text-center me-2 d-flex align-items-center justify-content-center">
+                                <div class="icon icon-shape icon-xxs shadow border-radius-sm bg-info text-center me-2 d-flex align-items-center justify-content-center">
                                     <svg width="10px" height="10px" viewBox="0 0 40 44" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
                                         <title>document</title>
                                         <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">

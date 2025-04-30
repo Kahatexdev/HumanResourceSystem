@@ -100,7 +100,7 @@
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn bg-gradient-secondary" data-bs-dismiss="modal">Close</button>
-                            <button type="submit" class="btn bg-gradient-primary">Save</button>
+                            <button type="submit" class="btn bg-gradient-info">Save</button>
                         </div>
                     </form>
                 </div>
@@ -131,7 +131,7 @@
                         <!-- Tombol Aksi -->
                         <div class="modal-footer">
                             <button type="button" class="btn bg-gradient-secondary" data-bs-dismiss="modal">Close</button>
-                            <button type="submit" class="btn bg-gradient-primary">Save</button>
+                            <button type="submit" class="btn bg-gradient-info">Save</button>
                         </div>
                     </form>
                 </div>

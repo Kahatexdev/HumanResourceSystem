@@ -48,7 +48,17 @@ class SudoController extends BaseController
     }
     public function index()
     {
-        return view('sudo/index', ['title' => 'Sudo Dashboard']);
+        $data = [
+            'role' => $this->role,
+            'title' => 'Dashboard',
+            'active1' => 'active',
+            'active2' => '',
+            'active3' => '',
+            'active4' => '',
+            'active5' => '',
+            'active6' => ''
+        ];
+        return view($this->role . '/dashboard', $data);
     }
 
     public function user()
@@ -202,5 +212,35 @@ class SudoController extends BaseController
 
         // dd ($jobrole);
         return view($this->role . '/jobrole', $data);
+    }
+
+    public function penilaian()
+    { // Ambil filter dari query string
+        // $filters = [
+        //     'job_section_name' => $this->request->getGet('job_section_name'),
+        //     'main_factory'  => $this->request->getGet('main_factory'),
+        //     'factory_name'        => $this->request->getGet('factory_name'),
+        // ];
+
+       
+        // dd ($karyawan);
+        $namabagian = $this->jobSectionModel->findAll();
+        // $penilaian = $this->penilaianModel->getPenilaian();
+        $periode   = $this->periodeModel->getActivePeriode();
+        $areaUtama = $this->factoryModel->select('*')->groupBy('main_factory')->findAll();
+        $area = $this->factoryModel->select('*')->groupBy('factory_name')->findAll();
+
+        $data = [
+            'role'       => $this->role,
+            'title'      => 'Penilaian Karyawan',
+            'active9'    => 'active',
+            'namabagian' => $namabagian,
+            'periode'    => $periode,
+            'areaUtama'  => $areaUtama,
+            'area'       => $area,
+            // 'penilaian'  => $penilaian,
+        ];
+
+        return view($this->role . '/penilaian', $data);
     }
 }

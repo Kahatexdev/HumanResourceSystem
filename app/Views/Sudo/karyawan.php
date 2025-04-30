@@ -19,7 +19,7 @@
                         <div>
                             <div class="d-flex justify-content-between">
                                 <a href="<?= base_url('Monitoring/exportKaryawan/') ?>"
-                                    class="btn bg-gradient-primary me-2">
+                                    class="btn bg-gradient-info me-2">
                                     <!-- icon download -->
                                     <i class="fas fa-file-excel text-lg opacity-10" aria-hidden="true"></i>
                                     Export Excel
@@ -151,7 +151,7 @@
                             </div>
                             <div class="modal-footer">
                                 <button type="button" class="btn bg-gradient-secondary" data-bs-dismiss="modal">Close</button>
-                                <button type="submit" class="btn bg-gradient-primary">Save</button>
+                                <button type="submit" class="btn bg-gradient-info">Save</button>
                             </div>
                         </form>
                     </div>
@@ -368,7 +368,7 @@
 
                         <div class="modal-footer">
                             <button type="button" class="btn bg-gradient-secondary" data-bs-dismiss="modal">Close</button>
-                            <button type="submit" class="btn bg-gradient-primary">Save changes</button>
+                            <button type="submit" class="btn bg-gradient-info">Save changes</button>
                         </div>
                     </form>
                 </div>

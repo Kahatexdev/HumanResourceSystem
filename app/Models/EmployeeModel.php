@@ -68,4 +68,38 @@ class EmployeeModel extends Model
             ->get()
             ->getResultArray();
     }
+
+    public function getEmployeeDataS(array $filters = []): array
+    {
+        $builder = $this->db->table($this->table)
+            ->select('employees.*,
+                       job_sections.job_section_name,
+                       factories.factory_name,
+                       factories.main_factory,
+                       employment_statuses.employment_status_name,
+                       days.day_name')
+            ->join('job_sections',         'job_sections.id_job_section = employees.id_job_section', 'left')
+            ->join('factories',            'factories.id_factory = employees.id_factory',           'left')
+            ->join('employment_statuses',  'employment_statuses.id_employment_status = employees.id_employment_status', 'left')
+            ->join(
+                'days',
+                "days.id_day = employees.holiday OR days.id_day = employees.additional_holiday",
+                'left'
+            );
+
+        if (! empty($filters['job_section_name'])) {
+            $builder->where('job_sections.job_section_name', $filters['job_section_name']);
+        }
+        if (! empty($filters['main_factory'])) {
+            $builder->where('factories.main_factory',     $filters['main_factory']);
+        }
+        if (! empty($filters['factory_name'])) {
+            $builder->where('factories.factory_name',           $filters['factory_name']);
+        }
+
+        return $builder
+            ->groupBy('employees.id_employee')
+            ->get()
+            ->getResultArray();
+    }
 }

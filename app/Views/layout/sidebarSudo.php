@@ -358,8 +358,8 @@
                     </a>
                 </li> -->
             <!-- penilaian -->
-            <!-- <li class="nav-item">
-                    <a class="nav-link <?= $title == 'Penilaian Mandor' ? 'active' : '' ?>"
+            <li class="nav-item">
+                    <a class="nav-link <?= $title == 'Penilaian Karyawan' ? 'active' : '' ?>"
                         href="<?= base_url($role.'/dataPenilaian') ?>">
                         <div
                             class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
@@ -383,9 +383,9 @@
                                 </g>
                             </svg>
                         </div>
-                        <span class="nav-link-text ms-1">Penilaian Mandor</span>
+                        <span class="nav-link-text ms-1">Penilaian Karyawan</span>
                     </a>
-                </li> -->
+                </li>
             <!-- report penilaian -->
             <li class="nav-item">
                 <a class="nav-link <?= $title == 'Report Penilaian' ? 'active' : '' ?>"
