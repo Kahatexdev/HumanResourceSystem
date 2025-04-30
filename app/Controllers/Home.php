@@ -6,7 +6,7 @@ class Home extends BaseController
 {
     public function index(): string
     {
-        return view('dashboard', ['title' => 'Soft UI Dashboard']);
+        return view('Sudo/dashboard', ['title' => 'Soft UI Dashboard']);
     }
 
     public function auth(): string

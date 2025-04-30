@@ -15,12 +15,37 @@ class JobSectionSeeder extends Seeder
                 'updated_at' => date('Y-m-d H:i:s')
             ],
             [
+                'job_section_name' => 'OPERATOR MEKANIK DOUBLE',
+                'created_at' => date('Y-m-d H:i:s'),
+                'updated_at' => date('Y-m-d H:i:s')
+            ],
+            [
                 'job_section_name' => 'MONTIR',
                 'created_at' => date('Y-m-d H:i:s'),
                 'updated_at' => date('Y-m-d H:i:s')
             ],
             [
+                'job_section_name' => 'MONTIR DAKONG',
+                'created_at' => date('Y-m-d H:i:s'),
+                'updated_at' => date('Y-m-d H:i:s')
+            ],
+            [
+                'job_section_name' => 'MONTIR LONATI SINGLE',
+                'created_at' => date('Y-m-d H:i:s'),
+                'updated_at' => date('Y-m-d H:i:s')
+            ],
+            [
+                'job_section_name' => 'MONTIR LONATI DOUBLE',
+                'created_at' => date('Y-m-d H:i:s'),
+                'updated_at' => date('Y-m-d H:i:s')
+            ],
+            [
                 'job_section_name' => 'ROSSO',
+                'created_at' => date('Y-m-d H:i:s'),
+                'updated_at' => date('Y-m-d H:i:s')
+            ],
+            [
+                'job_section_name' => 'SEWING',
                 'created_at' => date('Y-m-d H:i:s'),
                 'updated_at' => date('Y-m-d H:i:s')
             ]
