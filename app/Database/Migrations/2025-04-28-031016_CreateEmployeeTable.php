@@ -55,6 +55,7 @@ class CreateEmployeeTable extends Migration
                 'type'       => 'INT',
                 'constraint' => 11,
                 'unsigned'   => true,
+                'null'      => true,
             ],
             'date_of_birth' => [
                 'type'       => 'DATE',

@@ -18,6 +18,7 @@ class CreateFactoryTable extends Migration
             'factory_name' => [
                 'type'       => 'VARCHAR',
                 'constraint' => 100,
+                'null'      => true,
             ],
             'main_factory'     => [
                 'type'       => 'VARCHAR',

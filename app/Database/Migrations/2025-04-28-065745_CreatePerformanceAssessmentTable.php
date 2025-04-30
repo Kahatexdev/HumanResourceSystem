@@ -31,7 +31,7 @@ class CreatePerformanceAssessmentTable extends Migration
                 'unsigned'   => true,
             ],
             'nilai'   => [
-                'type'      => 'INT',
+                'type'      => 'FLOAT',
                 'constraint' => 11,
                 'null'      => true,
             ],
