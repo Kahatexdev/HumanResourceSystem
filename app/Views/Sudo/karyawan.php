@@ -1,6 +1,30 @@
 <?php $this->extend('layout/template'); ?>
 <?php $this->section('content'); ?>
 
+<?php if ($msg = session()->getFlashdata('success')): ?>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            Swal.fire({
+                icon: 'success',
+                title: 'Success!',
+                html: <?= json_encode($msg) ?>,
+            });
+        });
+    </script>
+<?php endif; ?>
+
+<?php if ($msg = session()->getFlashdata('error')): ?>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error!',
+                html: <?= json_encode($msg) ?>,
+            });
+        });
+    </script>
+<?php endif; ?>
+
 <div class="container-fluid">
     <div class="row my-2">
         <div class="col-xl-12 col-sm-12 mb-xl-0 mb-2">
@@ -18,18 +42,18 @@
                         </div>
                         <div>
                             <div class="d-flex justify-content-between">
-                                <a href="<?= base_url('Monitoring/exportKaryawan/') ?>"
+                                <a href="<?= base_url($role . '/exportKaryawan') ?>"
                                     class="btn bg-gradient-info me-2">
                                     <!-- icon download -->
                                     <i class="fas fa-file-excel text-lg opacity-10" aria-hidden="true"></i>
                                     Export Excel
                                 </a>
-                                <a href="<?= base_url('Monitoring/downloadTemplateKaryawan') ?>"
+                                <a href="<?= base_url($role . '/downloadTemplateKaryawan') ?>"
                                     class="btn bg-gradient-success me-2">
                                     <i class="fas fa-download text-lg opacity-10" aria-hidden="true"></i>
                                     Template Excel
                                 </a>
-                                <a href="<?= base_url('Monitoring/karyawanCreate') ?>"
+                                <a href=""
                                     class="btn bg-gradient-info add-btn" data-bs-toggle="modal" data-bs-target="#addKaryawan">
                                     <i class="fas fa-user-plus text-lg opacity-10" aria-hidden="true"></i>
                                     Data Karyawan
@@ -166,7 +190,7 @@
                     <h5 class="card-title">
                         Import Data Karyawan
                     </h5>
-                    <form action="<?= base_url('Monitoring/karyawanStoreImport') ?>" method="post"
+                    <form action="<?= base_url($role . '/karyawanStoreImport'); ?>" method="post"
                         enctype="multipart/form-data">
                         <div class="upload-container">
                             <div class="upload-area" id="upload-area">
@@ -398,23 +422,6 @@
     $(document).ready(function() {
         // Initialize DataTable with export options
         $('#karyawanTable').DataTable({});
-
-        // Flash message SweetAlerts
-        <?php if (session()->getFlashdata('success')) : ?>
-            Swal.fire({
-                icon: 'success',
-                title: 'Success!',
-                html: '<?= session()->getFlashdata('success') ?>',
-            });
-        <?php endif; ?>
-
-        <?php if (session()->getFlashdata('error')) : ?>
-            Swal.fire({
-                icon: 'error',
-                title: 'Error!',
-                html: '<?= session()->getFlashdata('error') ?>',
-            });
-        <?php endif; ?>
     });
 </script>
 <script>

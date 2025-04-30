@@ -109,15 +109,37 @@
         <!-- End Navbar -->
         <div class="container-fluid py-4">
             <?= $this->renderSection('content') ?>
+            <div class="modal fade  bd-example-modal-lg" id="LogoutModal" tabindex="-1" role="dialog" aria-labelledby="modalCancel" aria-hidden="true">
+                <div class="modal-dialog  modal-dialog-centered" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="exampleModalLabel">Log Out</h5>
+                            <button type="button" class="btn-close text-dark" data-bs-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">×</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <form action="<?= base_url('logout') ?>" method="get">
+
+                                Apakah anda yakin untuk keluar?
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn bg-gradient-secondary" data-bs-dismiss="modal">Close</button>
+                            <button type="submit" class="btn bg-gradient-danger">Keluar</button>
+                        </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
             <?= $this->include('layout/footer') ?>
 
 
         </div>
     </main>
     <!--   Core JS Files   -->
+    <script src="<?= base_url('assets/js/sweetalert2@11.js') ?>"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <script src="<?= base_url('assets/js/sweetalert2@11.js') ?>"></script>
     <script src="<?= base_url('assets/js/select2.min.js') ?>"></script>
     <script src="<?= base_url('assets/js/core/popper.min.js') ?>"></script>
     <script src="<?= base_url('assets/js/core/bootstrap.min.js') ?>"></script>

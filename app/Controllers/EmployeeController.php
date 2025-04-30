@@ -9,6 +9,13 @@ use App\Models\JobSectionModel;
 use App\Models\EmploymentStatusModel;
 use App\Models\EmployeeModel;
 use App\Models\HistoryEmployeeModel;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Border;
+use PhpOffice\PhpSpreadsheet\IOFactory;
+use App\Models\FactoriesModel;
+use App\Models\DayModel;
 
 class EmployeeController extends BaseController
 {
@@ -18,6 +25,8 @@ class EmployeeController extends BaseController
     protected $employmentStatusModel;
     protected $employeeModel;
     protected $historyEmployeeModel;
+    protected $factoryModel;
+    protected $dayModel;
 
     public function __construct()
     {
@@ -26,6 +35,9 @@ class EmployeeController extends BaseController
         $this->employmentStatusModel = new EmploymentStatusModel();
         $this->employeeModel = new EmployeeModel();
         $this->historyEmployeeModel = new HistoryEmployeeModel();
+        $this->factoryModel = new FactoriesModel();
+        $this->dayModel = new DayModel();
+
         $this->role = session()->get('role');
     }
     public function index() {}
@@ -94,16 +106,16 @@ class EmployeeController extends BaseController
         $sheet->setCellValue('B2', 'John Doe');
         $sheet->setCellValue('C2', 'A');
         $sheet->setCellValue('D2', 'L');
-        $sheet->setCellValue('E2', '2');
-        $sheet->setCellValue('F2', '2');
+        $sheet->setCellValue('E2', 'SENIN');
+        $sheet->setCellValue('F2', 'SELASA');
         $sheet->setCellValue('G2', 'PINK');
         $sheet->setCellValue('H2', 'STAFF');
-        $sheet->setCellValue('I2', '2001/09/12');
-        $sheet->setCellValue('J2', '2024/09/12');
+        $sheet->setCellValue('I2', '1999-10-19');
+        $sheet->setCellValue('J2', '1999-10-19');
         $sheet->setCellValue('K2', 'KNITTER');
         $sheet->setCellValue('L2', 'KK1');
         $sheet->setCellValue('M2', 'KK1A');
-        $sheet->setCellValue('N2', 'Aktif');
+        $sheet->setCellValue('N2', 'active/inactive');
 
         // 
         // Menentukan nama file
@@ -123,176 +135,155 @@ class EmployeeController extends BaseController
     public function upload()
     {
         $file = $this->request->getFile('file');
-        // dd ($file);
-        if ($file && $file->isValid() && !$file->hasMoved()) {
-            $fileType = $file->getClientMimeType();
-            if (!in_array($fileType, ['application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'])) {
-                return redirect()->to(base_url('Monitoring/datakaryawan'))->with('error', 'Invalid file type. Please upload an Excel file.');
+        if (! $file || ! $file->isValid() || $file->hasMoved()) {
+            return redirect()->to(base_url($this->role . '/datakaryawan'))
+                ->with('error', 'File tidak valid atau tidak ada file yang diunggah.');
+        }
+
+        // Cek MIME type
+        $mime = $file->getClientMimeType();
+        if (! in_array($mime, [
+            'application/vnd.ms-excel',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        ])) {
+            return redirect()->to(base_url($this->role . '/datakaryawan'))
+                ->with('error', 'Invalid file type. Please upload an Excel file.');
+        }
+
+        // Load spreadsheet
+        $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($file->getTempName());
+        $sheet       = $spreadsheet->getActiveSheet();
+        $startRow    = 2;
+
+        $batchData     = [];
+        $successCount  = 0;
+        $errorCount    = 0;
+        $errorMessages = [];
+
+        // Loop tiap baris
+        for ($row = $startRow; $row <= $sheet->getHighestRow(); $row++) {
+            $isValid     = true;
+            $errMsg      = "Row {$row}: ";
+            $kodeKartu   = trim((string) $sheet->getCell("A{$row}")->getValue());
+            $nama        = trim((string) $sheet->getCell("B{$row}")->getValue());
+            $shift       = trim((string) $sheet->getCell("C{$row}")->getValue()) ?: '-';
+            $gender      = trim((string) $sheet->getCell("D{$row}")->getValue()) ?: '-';
+            $liburName   = trim((string) $sheet->getCell("E{$row}")->getValue());
+            $addLiburName = trim((string) $sheet->getCell("F{$row}")->getValue());
+            $statusBaju  = trim((string) $sheet->getCell("G{$row}")->getValue());
+            $statusAct   = trim((string) $sheet->getCell("N{$row}")->getValue());
+            $tglLahirStr = trim((string) $sheet->getCell("I{$row}")->getFormattedValue());
+            $tglMasukStr = trim((string) $sheet->getCell("J{$row}")->getFormattedValue());
+            $bagianName  = trim((string) $sheet->getCell("K{$row}")->getValue());
+            $areaUtama   = trim((string) $sheet->getCell("L{$row}")->getValue());
+            $areaName    = trim((string) $sheet->getCell("M{$row}")->getValue());
+
+            // -- Validasi Kode Kartu unik --
+            if ($kodeKartu === '') {
+                $isValid = false;
+                $errMsg .= "Kode Kartu kosong. ";
+            } elseif ($this->employeeModel->where('employee_code', $kodeKartu)->first()) {
+                $isValid = false;
+                $errMsg .= "Kode Kartu '{$kodeKartu}' sudah ada. ";
             }
 
-            $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($file->getTempName());
-            $dataSheet = $spreadsheet->getActiveSheet();
-            $startRow = 2;
-
-            $karyawanModel = new \App\Models\KaryawanModel();
-            $bagianModel = new \App\Models\BagianModel();
-
-            $successCount = 0;
-            $errorCount = 0;
-            $errorMessages = [];
-
-            for ($row = $startRow; $row <= $dataSheet->getHighestRow(); $row++) {
-                // Deklarasi ulang $isValid pada setiap iterasi
-                $isValid = true;
-                $errorMessage = "Row {$row}: ";
-                $kodeKartu = $dataSheet->getCell('A' . $row)->getValue();
-                $namaKaryawan = $dataSheet->getCell('B' . $row)->getValue();
-                $shift = $dataSheet->getCell('C' . $row)->getValue();
-                $jenisKelamin = $dataSheet->getCell('D' . $row)->getValue();
-                $libur = $dataSheet->getCell('E' . $row)->getValue();
-                $liburTambahan = $dataSheet->getCell('F' . $row)->getValue();
-                $warnaBaju = $dataSheet->getCell('G' . $row)->getValue();
-                $statusBaju = $dataSheet->getCell('H' . $row)->getValue();
-                $tanggalLahir = $dataSheet->getCell('I' . $row)->getFormattedValue();
-                $tanggalMasuk = $dataSheet->getCell('J' . $row)->getFormattedValue();
-                $namaBagian = $dataSheet->getCell('K' . $row)->getValue();
-                $areaUtama = $dataSheet->getCell('L' . $row)->getValue();
-                $area = $dataSheet->getCell('M' . $row)->getValue();
-                $statusAktif = $dataSheet->getCell('N' . $row)->getValue();
-                // dd($statusAktif);
-                // dd($namaBagian, $areaUtama, $area);
-                // dd($kodeKartu, $namaKaryawan, $shift, $jenisKelamin, $libur, $liburTambahan, $warnaBaju, $statusBaju, $tanggalLahir, $tanggalMasuk, $namaBagian, $areaUtama, $area, $statusAktif);
-                // Validasi kode kartu
-                if (empty($kodeKartu)) {
-                    $isValid = false;
-                    $errorMessage .= "Kode Kartu harus diisi. ";
-                } else {
-                    $karyawan = $karyawanModel->where('kode_kartu', $kodeKartu)->first();
-                    if ($karyawan) {
-                        $isValid = false;
-                        $errorMessage .= "Kode Kartu sudah ada. ";
-                    }
-                }
-
-                // Validasi nama karyawan
-                // if (empty($namaKaryawan)) {
-                //     $isValid = false;
-                //     $errorMessage .= "Nama Karyawan harus diisi. ";
-                // } else {
-                //     $karyawan = $karyawanModel->where('nama_karyawan', $namaKaryawan)->where('kode_kartu', $kodeKartu)->first();
-                //     if ($karyawan) {
-                //         $isValid = false;
-                //         $errorMessage .= "Nama Karyawan dan Kode Kartu sudah ada. ";
-                //     }
-                // }
-
-                // Validasi shift
-                if (empty($shift)) {
-                    $shift = '-';
-                }
-                // validasi libur
-                if (empty($libur)) {
-                    $libur = '-';
-                }
-                // Validasi tangal lahir
-                if (empty($tanggalLahir)) {
-                    $isValid = false;
-                    $errorMessage .= "Tanggal Lahir harus diisi. ";
-                } else {
-                    $tanggalLahir = date_create_from_format('m/d/Y', $tanggalLahir);
-                    // dd ($tanggalLahir);
-                    if (!$tanggalLahir) {
-                        $isValid = false;
-                        $errorMessage .= "Format Tanggal Lahir salah. ";
-                    }
-                }
-
-                // Validasi tanggal masuk
-                if (empty($tanggalMasuk)) {
-                    $isValid = false;
-                    $errorMessage .= "Tanggal Masuk harus diisi. ";
-                } else {
-                    $tanggalMasuk = date_create_from_format('m/d/Y', $tanggalMasuk);
-                    // dd($tanggalMasuk);
-                    if (!$tanggalMasuk) {
-                        $isValid = false;
-                        $errorMessage .= "Format Tanggal Masuk salah. ";
-                    }
-                }
-
-                // validasi nama bagian ketika area utama dan area cocok dengan table bagian maka data di save
-                if (empty($namaBagian)) {
-                    $isValid = false;
-                    $errorMessage .= "Nama Bagian harus diisi. ";
-                } else {
-                    if ($area == '') {
-                        $area = null;
-                    }
-                    $bagian = $bagianModel->where('nama_bagian', $namaBagian)->where('area_utama', $areaUtama)->where('area', $area)->first();
-                    // var_dump($bagian, $namaBagian, $areaUtama, $area);
-                    // dd($bagian, $namaBagian, $areaUtama, $area);
-                    if (!$bagian) {
-                        $isValid = false;
-                        $errorMessage .= "Nama Bagian tidak ditemukan. ";
-                    }
-                }
-
-                // status aktif
-                if (empty($statusAktif)) {
-                    continue;
-                }
-
-                // dd ($isValid);
-                // kalau ada kartu yang sama maka tidak akan di save
-                if ($isValid) {
-                    $data = [
-                        'kode_kartu' => $kodeKartu,
-                        'nama_karyawan' => $namaKaryawan,
-                        'shift' => $shift,
-                        'jenis_kelamin' => $jenisKelamin,
-                        'libur' => $libur,
-                        'libur_tambahan' => $liburTambahan,
-                        'warna_baju' => $warnaBaju,
-                        'status_baju' => $statusBaju,
-                        'tgl_lahir' => $tanggalLahir->format('Y-m-d'),
-                        'tgl_masuk' => $tanggalMasuk->format('Y-m-d'),
-                        'id_bagian' => $bagian['id_bagian'],
-                        'status_aktif' => $statusAktif,
-                        'created_at' => date('Y-m-d H:i:s'),
-                        'updated_at' => date('Y-m-d H:i:s')
-                    ];
-                    // dd($data);
-
-                    $karyawanModel->insert($data);
-                    // dd ($data);
-                    $successMessage = "Data karyawan berhasil disimpan.";
-                    $successCount++;
-                } else {
-                    $errorMessages[] = $errorMessage;
-                    $errorCount++;
-                }
-                // dd ($data);
+            // -- Validasi tanggal --
+            $tglLahir = $tglLahirStr ? date_create_from_format('Y-m-d', $tglLahirStr) : false;
+            $tglMasuk = $tglMasukStr ? date_create_from_format('Y-m-d', $tglMasukStr) : false;
+            if (! $tglLahir) {
+                $isValid = false;
+                $errMsg .= "Format Tanggal Lahir salah. ";
             }
-            $role = session()->get('role');
+            if (! $tglMasuk) {
+                $isValid = false;
+                $errMsg .= "Format Tanggal Masuk salah. ";
+            }
 
+            // -- Validasi Bagian (job section) --
+            $bagian = $this->jobSectionModel
+                ->where('job_section_name', $bagianName)
+                ->first();
+            if (! $bagian) {
+                $isValid = false;
+                $errMsg .= "Bagian '{$bagianName}' tidak ditemukan. ";
+            }
 
-            // Jika ada data yang gagal disimpan
-            if ($errorCount > 0) {
-                $errorMessages = implode("<br>", $errorMessages);
-                if ($role === 'Monitoring') {
-                    return redirect()->to(base_url('Monitoring/datakaryawan'))->with('error', "{$errorCount} data gagal disimpan. <br>{$errorMessages}");
-                } else {
-                    return redirect()->to(base_url('TrainingSchool/datakaryawan'))->with('error', "{$errorCount} data gagal disimpan. <br>{$errorMessages}");
-                }
+            // -- Validasi Days --
+            $libur = $this->dayModel->where('day_name', $liburName)->first();
+            if (! $libur) {
+                $isValid = false;
+                $errMsg .= "Libur '{$liburName}' tidak ditemukan. ";
+            }
+            $addLibur = $addLiburName
+                ? $this->dayModel->where('day_name', $addLiburName)->first()
+                : null;
+            if ($addLiburName && ! $addLibur) {
+                $isValid = false;
+                $errMsg .= "Libur Tambahan '{$addLiburName}' tidak ditemukan. ";
+            }
+            // -- Validasi Status Baju --
+            $statusBaju = $this->employmentStatusModel
+                ->where('clothes_color', $statusBaju)
+                ->first();
+            if (! $statusBaju) {
+                $isValid = false;
+                $errMsg .= "Status Baju '{$statusBaju}' tidak ditemukan. ";
+            }
+
+            // -- Validasi Factory --
+            $factory = $this->factoryModel->where('factory_name', $areaName)->first();
+            if (! $factory) {
+                $isValid = false;
+                $errMsg .= "Area '{$areaName}' tidak ditemukan. ";
+            }
+
+            // -- Status aktif wajib diisi --
+            if (! $statusAct) {
+                $isValid = false;
+                $errMsg .= "Status Aktif harus diisi. ";
+            }
+
+            if ($isValid) {
+                // Siapkan satu baris data
+                $batchData[] = [
+                    'employee_code'        => $kodeKartu,
+                    'employee_name'        => $nama,
+                    'shift'                => $shift,
+                    'gender'               => $gender,
+                    'holiday'              => $libur['id_day'],
+                    'additional_holiday'   => $addLibur['id_day'] ?? null,
+                    'id_employment_status' => $statusBaju['id_employment_status'],
+                    'date_of_birth'        => $tglLahir->format('Y-m-d'),
+                    'date_of_joining'      => $tglMasuk->format('Y-m-d'),
+                    'id_job_section'       => $bagian['id_job_section'],
+                    'id_factory'           => $factory['id_factory'],
+                    'status'               => $statusAct,
+                    'created_at'           => date('Y-m-d H:i:s'),
+                    'updated_at'           => date('Y-m-d H:i:s'),
+                ];
+                $successCount++;
             } else {
-                if ($role === 'Monitoring') {
-                    return redirect()->to(base_url('Monitoring/datakaryawan'))->with('success', "{$successCount} data berhasil disimpan.");
-                } else {
-                    return redirect()->to(base_url('TrainingSchool/datakaryawan'))->with('error', "{$errorCount} data gagal disimpan. <br>{$errorMessages}");
-                }
+                $errorCount++;
+                $errorMessages[] = $errMsg;
             }
+        }
+
+        // Setelah loop: simpan semua yang valid sekaligus
+        if (! empty($batchData)) {
+            $this->employeeModel->insertBatch($batchData);
+        }
+
+        // Bangun flash message
+        $role = session()->get('role');
+        $redirectUrl = base_url($role . '/datakaryawan');
+
+        if ($errorCount > 0) {
+            $msg = "{$successCount} baris berhasil disimpan, ";
+            $msg .= "{$errorCount} baris gagal:<br>" . implode('<br>', $errorMessages);
+            return redirect()->to($redirectUrl)->with('error', $msg);
         } else {
-            return redirect()->to(base_url('Monitoring/datakaryawan'))->with('error', 'Invalid file.');
+            return redirect()->to($redirectUrl)
+                ->with('success', "{$successCount} baris berhasil disimpan.");
         }
     }
 
@@ -411,7 +402,7 @@ class EmployeeController extends BaseController
     public function exportAll()
     {
         // Ambil data karyawan
-        $dataKaryawan = $this->karyawanModel->exportKaryawanAll();
+        $dataKaryawan = $this->employeeModel->getEmployeeData();
         // Definisikan urutan kode kartu berdasarkan area
         // Tentukan urutan prefix kode kartu secara global
         $sortOrders = [
@@ -463,8 +454,8 @@ class EmployeeController extends BaseController
         // Urutkan data karyawan berdasarkan kode kartu
         usort($dataKaryawan, function ($a, $b) use ($sortOrders) {
             // Ekstrak prefix kode kartu
-            preg_match('/^[A-Z]+/', $a['kode_kartu'], $matchA);
-            preg_match('/^[A-Z]+/', $b['kode_kartu'], $matchB);
+            preg_match('/^[A-Z]+/', $a['employee_code'], $matchA);
+            preg_match('/^[A-Z]+/', $b['employee_code'], $matchB);
 
             $prefixA = $matchA[0] ?? '';
             $prefixB = $matchB[0] ?? '';
@@ -483,8 +474,8 @@ class EmployeeController extends BaseController
             }
 
             // Jika prefix sama, bandingkan berdasarkan angka di kode kartu
-            preg_match('/\d+/', $a['kode_kartu'], $numberA);
-            preg_match('/\d+/', $b['kode_kartu'], $numberB);
+            preg_match('/\d+/', $a['employee_code'], $numberA);
+            preg_match('/\d+/', $b['employee_code'], $numberB);
 
             $numA = (int)($numberA[0] ?? PHP_INT_MAX); // Default jika tidak ada angka
             $numB = (int)($numberB[0] ?? PHP_INT_MAX);
@@ -594,20 +585,20 @@ class EmployeeController extends BaseController
         $no = 1;
         foreach ($dataKaryawan as $key => $id) {
             $sheet->setCellValue('A' . $row, $no++);
-            $sheet->setCellValue('B' . $row, $id['kode_kartu']);
-            $sheet->setCellValue('C' . $row, $id['nama_karyawan']);
+            $sheet->setCellValue('B' . $row, $id['employee_code']);
+            $sheet->setCellValue('C' . $row, $id['employee_name']);
             $sheet->setCellValue('D' . $row, $id['shift']);
-            $sheet->setCellValue('E' . $row, $id['jenis_kelamin']);
-            $sheet->setCellValue('F' . $row, $id['libur']);
-            $sheet->setCellValue('G' . $row, $id['libur_tambahan']);
-            $sheet->setCellValue('H' . $row, $id['warna_baju']);
-            $sheet->setCellValue('I' . $row, $id['status_baju']);
-            $sheet->setCellValue('J' . $row, $id['tgl_lahir']);
-            $sheet->setCellValue('K' . $row, $id['tgl_masuk']);
-            $sheet->setCellValue('L' . $row, $id['nama_bagian']);
-            $sheet->setCellValue('M' . $row, $id['area_utama']);
-            $sheet->setCellValue('N' . $row, $id['area']);
-            $sheet->setCellValue('O' . $row, $id['status_aktif']);
+            $sheet->setCellValue('E' . $row, $id['gender']);
+            $sheet->setCellValue('F' . $row, $id['holiday_name']);
+            $sheet->setCellValue('G' . $row, $id['additional_holiday_name']);
+            $sheet->setCellValue('H' . $row, $id['clothes_color']);
+            $sheet->setCellValue('I' . $row, $id['employment_status_name']);
+            $sheet->setCellValue('J' . $row, $id['date_of_birth']);
+            $sheet->setCellValue('K' . $row, $id['date_of_joining']);
+            $sheet->setCellValue('L' . $row, $id['job_section_name']);
+            $sheet->setCellValue('M' . $row, $id['main_factory']);
+            $sheet->setCellValue('N' . $row, $id['factory_name']);
+            $sheet->setCellValue('O' . $row, $id['status']);
             $row++;
         }
 

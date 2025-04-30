@@ -60,10 +60,17 @@ class EmployeeModel extends Model
 
     public function getEmployeeData(){
         return $this->db->table('employees')
+            ->select('employees.*,
+                       job_sections.*,
+                       factories.*,
+                       employment_statuses.*,
+                       days.day_name AS holiday_name,
+                       days2.day_name AS additional_holiday_name')
             ->join('job_sections', 'job_sections.id_job_section = employees.id_job_section')
             ->join('factories', 'factories.id_factory = employees.id_factory')
             ->join('employment_statuses', 'employment_statuses.id_employment_status = employees.id_employment_status')
-            ->join('days', 'days.id_day = employees.holiday OR employees.additional_holiday')
+            ->join('days', 'days.id_day = employees.holiday')
+            ->join('days AS days2', 'days2.id_day = employees.additional_holiday')
             ->groupBy('employees.id_employee')
             ->get()
             ->getResultArray();
