@@ -88,7 +88,7 @@ class FactorySeeder extends Seeder
                 'updated_at' => date('Y-m-d H:i:s')
             ],
             [
-                'factory_name' => 'KK11M',
+                'factory_name' => 'KK11',
                 'main_factory' => 'KK11',
                 'created_at' => date('Y-m-d H:i:s'),
                 'updated_at' => date('Y-m-d H:i:s')
