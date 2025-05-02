@@ -79,3 +79,13 @@ $routes->group('/Sudo', ['filter' => 'Sudo'], function ($routes) {
     $routes->post('penilaianCreate', 'EmployeeAssessmentController::create');
     $routes->post('penilaianStore', 'EmployeeAssessmentController::store');
 });
+
+
+$routes->group('api', function ($routes) {
+    $routes->get('karyawan', 'ApiController::index');
+    $routes->get('karyawan/(:segment)', 'ApiController::show/$1');
+
+    $routes->get('area_utama/(:segment)', 'ApiController::getKaryawanByAreaUtama/$1');
+    $routes->get('area/(:segment)', 'ApiController::getKaryawanByArea/$1');
+    $routes->get('getdataforbs/(:any)/(:any)', 'ApiController::getDataForBsMc/$1/$2');
+});

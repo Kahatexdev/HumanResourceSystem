@@ -109,4 +109,43 @@ class EmployeeModel extends Model
             ->get()
             ->getResultArray();
     }
+
+    public function getKaryawanByAreaUtama($areaUtama)
+    {
+        return $this->db->table('employees')
+            ->select('employees.id_employee AS id_karyawan, employees.employee_name AS nama_karyawan, employees.employee_code AS kode_kartu, employees.shift, employees.gender AS jenis_kelamin, employees.date_of_birth AS tgl_lahir, employees.date_of_joining AS tanggal_masuk, employees.status AS status_aktif,
+                       job_sections.job_section_name AS nama_bagian,
+                       factories.factory_name AS area, factories.main_factory AS area_utama,
+                       employment_statuses.clothes_color AS warna_baju, employment_statuses.employment_status_name AS status_baju,
+                       days.day_name AS libur,
+                       days2.day_name AS libur_tambahan')
+            ->join('job_sections', 'job_sections.id_job_section = employees.id_job_section')
+            ->join('factories', 'factories.id_factory = employees.id_factory')
+            ->join('employment_statuses', 'employment_statuses.id_employment_status = employees.id_employment_status')
+            ->join('days', 'days.id_day = employees.holiday')
+            ->join('days AS days2', 'days2.id_day = employees.additional_holiday')
+            ->where('factories.main_factory', $areaUtama)
+            ->groupBy('employees.id_employee')
+            ->get()
+            ->getResultArray();
+    }
+    public function getKaryawanByAreaApi($area)
+    {
+        return $this->db->table('employees')
+            ->select('employees.id_employee AS id_karyawan, employees.employee_name AS nama_karyawan, employees.employee_code AS kode_kartu, employees.shift, employees.gender AS jenis_kelamin, employees.date_of_birth AS tgl_lahir, employees.date_of_joining AS tanggal_masuk, employees.status AS status_aktif,
+                       job_sections.job_section_name AS nama_bagian,
+                       factories.factory_name AS area, factories.main_factory AS area_utama,
+                       employment_statuses.clothes_color AS warna_baju, employment_statuses.employment_status_name AS status_baju,
+                       days.day_name AS libur,
+                       days2.day_name AS libur_tambahan')
+            ->join('job_sections', 'job_sections.id_job_section = employees.id_job_section')
+            ->join('factories', 'factories.id_factory = employees.id_factory')
+            ->join('employment_statuses', 'employment_statuses.id_employment_status = employees.id_employment_status')
+            ->join('days', 'days.id_day = employees.holiday')
+            ->join('days AS days2', 'days2.id_day = employees.additional_holiday')
+            ->where('factories.factory_name', $area)
+            ->groupBy('employees.id_employee')
+            ->get()
+            ->getResultArray();
+    }
 }
