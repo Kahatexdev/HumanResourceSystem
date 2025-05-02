@@ -97,7 +97,7 @@
     <?php if (session()->get('role') == 'Mandor') : ?>
         <?= $this->include('layout/sidebarMandor') ?>
     <?php endif; ?>
-    <?php if (session()->get('role') == 'Ts') : ?>
+    <?php if (session()->get('role') == 'TrainingSchool') : ?>
         <?= $this->include('layout/sidebarTs') ?>
     <?php endif; ?>
 

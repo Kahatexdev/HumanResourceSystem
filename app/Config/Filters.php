@@ -35,6 +35,7 @@ class Filters extends BaseFilters
         'pagecache'     => PageCache::class,
         'performance'   => PerformanceMetrics::class,
         'Sudo'          => \App\Filters\SudoFilter::class,
+        'TrainingSchool' => \App\Filters\TrainingSchoolFilter::class,
     ];
 
     /**

@@ -136,7 +136,7 @@ class EmployeeController extends BaseController
     {
         $file = $this->request->getFile('file');
         if (! $file || ! $file->isValid() || $file->hasMoved()) {
-            return redirect()->to(base_url($this->role . '/datakaryawan'))
+            return redirect()->to(base_url($this->role . '/dataKaryawan'))
                 ->with('error', 'File tidak valid atau tidak ada file yang diunggah.');
         }
 
@@ -146,7 +146,7 @@ class EmployeeController extends BaseController
             'application/vnd.ms-excel',
             'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         ])) {
-            return redirect()->to(base_url($this->role . '/datakaryawan'))
+            return redirect()->to(base_url($this->role . '/dataKaryawan'))
                 ->with('error', 'Invalid file type. Please upload an Excel file.');
         }
 
@@ -275,7 +275,7 @@ class EmployeeController extends BaseController
 
         // Bangun flash message
         $role = session()->get('role');
-        $redirectUrl = base_url($role . '/datakaryawan');
+        $redirectUrl = base_url($role . '/dataKaryawan');
 
         if ($errorCount > 0) {
             $msg = "{$successCount} baris berhasil disimpan, ";
@@ -321,9 +321,9 @@ class EmployeeController extends BaseController
         ];
         
         if ($this->employeeModel->insert($data)) {
-            return redirect()->to(base_url($this->role.'/datakaryawan'))->with('success', 'Employee data successfully saved.');
+            return redirect()->to(base_url($this->role. '/dataKaryawan'))->with('success', 'Employee data successfully saved.');
         } else {
-            return redirect()->to(base_url($this->role .'/datakaryawan'))->with('error', 'Failed to save employee data.');
+            return redirect()->to(base_url($this->role . '/dataKaryawan'))->with('error', 'Failed to save employee data.');
         }
         
     }
@@ -331,6 +331,7 @@ class EmployeeController extends BaseController
 
     public function update($id)
     {
+        // dd($id);
         $kodeKartu = $this->request->getPost('kode_kartu');
         $namaKaryawan = $this->request->getPost('nama_karyawan');
         $shift = $this->request->getPost('shift');
@@ -342,6 +343,12 @@ class EmployeeController extends BaseController
         $tanggalMasuk = $this->request->getPost('tgl_masuk');
         $bagian = $this->request->getPost('bagian');
         $area = $this->request->getPost('area');
+        $date_of_change = $this->request->getPost('date_of_change');
+        $reason = $this->request->getPost('reason');
+        $oldBagian = $this->request->getPost('id_job_section_old');
+        $oldFactory = $this->request->getPost('id_factory_old');
+        $newBagian = $this->request->getPost('id_job_section_new');
+        $newFactory = $this->request->getPost('id_factory_new');
         $statusAktif = $this->request->getPost('status_aktif');
 
         $data = [
@@ -357,43 +364,39 @@ class EmployeeController extends BaseController
             'id_job_section' => $bagian,
             'id_factory' => $area,
             'status' => $statusAktif,
-            'created_at' => date('Y-m-d H:i:s'),
-            'updated_at' => date('Y-m-d H:i:s')
         ];
         // dd($data, $this->request->getPost());
-        // $this->employeeModel->update($id, $data);
+        $this->employeeModel->update($id, $data);
 
-
-        // $oldBagian = $this->request->getPost('id_bagian_asal');
-        // $tgl_pindah = $this->request->getPost('tgl_pindah');
-        // $keterangan = $this->request->getPost('keterangan');
-        // $item = [
-        //     'id_karyawan' => $id,
-        //     'id_bagian_asal' => $oldBagian,
-        //     'id_bagian_baru' => $bagian['id_bagian'],
-        //     'tgl_pindah' => $tgl_pindah,
-        //     'keterangan' => $keterangan,
-        //     'created_at' => date('Y-m-d H:i:s'),
-        //     'updated_by' => session()->get('id_user')
-        // ];
-        // // dd ($oldBagian, $tgl_pindah, $keterangan, $item);
-        // if (!empty($oldBagian) && !empty($tgl_pindah) && !empty($keterangan)) {
-        //     $this->historyPindahKaryawanModel->insert($item);
-        // } else {
-        //     return redirect()->to(base_url('TrainingSchool/datakaryawan'))->with('error', 'Data karyawan gagal diubah.');
-        // }
+        $oldBagian = $this->request->getPost('id_job_section_old');
+        $tgl_pindah = $this->request->getPost('date_of_change');
+        $keterangan = $this->request->getPost('reason');
+        $item = [
+            'id_employee' => $id,
+            'id_job_section_old' => $oldBagian,
+            'id_job_section_new' => $newBagian,
+            'id_factory_old' => $oldFactory,
+            'id_factory_new' => $newFactory,
+            'date_of_change' => $tgl_pindah,
+            'reason' => $keterangan,
+            'id_user' => session()->get('id_user')
+        ];
+        // dd ($oldBagian, $tgl_pindah, $keterangan, $item);
+        if (!empty($oldBagian) && !empty($tgl_pindah) && !empty($keterangan)) {
+            $this->historyEmployeeModel->insert($item);
+        }
 
         if ($this->employeeModel->update($id, $data)) {
-            return redirect()->to(base_url($this->role . '/datakaryawan'))->with('success', 'Employee data successfully saved.');
+            return redirect()->to(base_url($this->role . '/dataKaryawan'))->with('success', 'Employee data successfully saved.');
         } else {
-            return redirect()->to(base_url($this->role . '/datakaryawan'))->with('error', 'Failed to save employee data.');
+            return redirect()->to(base_url($this->role . '/dataKaryawan'))->with('error', 'Failed to save employee data.');
         }
     }
 
     public function delete($id)
     {
         if ($this->employeeModel->delete($id)) {
-            return redirect()->to(base_url($this->role . '/datakaryawan'))->with('success', 'Data karyawan berhasil dihapus.');
+            return redirect()->to(base_url($this->role . '/dataKaryawan'))->with('success', 'Data karyawan berhasil dihapus.');
         } else {
             return redirect()->to(base_url($this->role . '/dataKaryawan'))->with('error', 'Data karyawan gagal dihapus.');
         }

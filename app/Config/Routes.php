@@ -27,7 +27,7 @@ $routes->group('/Sudo', ['filter' => 'Sudo'], function ($routes) {
     $routes->post('bagianUpdate/(:num)', 'JobSectionController::update/$1');
     $routes->get('bagianDelete/(:num)', 'JobSectionController::delete/$1');
     // karyawan
-    $routes->get('datakaryawan', 'SudoController::karyawan');
+    $routes->get('dataKaryawan', 'SudoController::karyawan');
     $routes->get('downloadTemplateKaryawan', 'EmployeeController::downloadTemplate');
     $routes->post('karyawanStoreImport', 'EmployeeController::upload');
     $routes->get('karyawanCreate', 'EmployeeController::create');
@@ -80,6 +80,46 @@ $routes->group('/Sudo', ['filter' => 'Sudo'], function ($routes) {
     $routes->post('penilaianStore', 'EmployeeAssessmentController::store');
 });
 
+$routes->group('/TrainingSchool', ['filter' => 'TrainingSchool'], function ($routes) {
+    $routes->get('', 'TrainingSchoolController::index');
+    $routes->get('dataKaryawan', 'TrainingSchoolController::listArea');
+    $routes->get('dataKaryawan/(:any)', 'TrainingSchoolController::detailKaryawanPerArea/$1');
+    $routes->get('downloadTemplateKaryawan', 'EmployeeController::downloadTemplate');
+    $routes->post('karyawanStoreImport', 'EmployeeController::upload');
+    $routes->get('exportKaryawan/(:any)', 'EmployeeController::exportPerArea/$1');
+
+    $routes->get('karyawanCreate', 'EmployeeController::create');
+    $routes->post('karyawanStore', 'EmployeeController::store');
+    $routes->get('karyawanEdit/(:num)', 'EmployeeController::edit/$1');
+    $routes->post('karyawanUpdate/(:num)', 'EmployeeController::update/$1');
+    $routes->get('karyawanDelete/(:num)', 'EmployeeController::delete/$1');
+
+    $routes->get('historyPindahKaryawan', 'TrainingSchoolController::historyPindahKaryawan');
+    $routes->get('reportHistoryPindahKaryawan', 'HistoryPindahKaryawanController::reportExcel');
+
+    // routes/web.php atau routes.php (tergantung pada versi CodeIgniter)
+    $routes->get('contacts', 'ChatController::getContactsWithLastMessage');
+    $routes->get('chat', 'TrainingSchoolController::chat');
+
+    // $routes->get('conversation/(:num)/(:num)', 'ChatController::fetchConversation/$1/$2');
+    // $routes->post('send-message', 'ChatController::sendMessage');
+    $routes->get('conversation/(:num)/(:num)', 'ChatController::fetchConversation/$1/$2');
+    $routes->post('send-message', 'ChatController::sendMessage');
+    $routes->get('getContacts/(:num)', 'ChatController::getContacts/$1');
+    $routes->post('mark-messages-as-read/(:num)', 'ChatController::markMessagesAsRead/$1');
+    $routes->get('count-unread-messages', 'ChatController::countUnreadMessages');
+    $routes->get('check-new-messages', 'ChatController::checkNewMessages');
+    $routes->get('long-poll-new-messages', 'ChatController::longPollNewMessages'); // Untuk long polling
+
+
+    // penilaian
+    $routes->get('reportPenilaian', 'MonitoringController::reportpenilaian');
+    $routes->get('reportPenilaian/(:segment)', 'PenilaianController::penilaianPerArea/$1');
+    $routes->get('reportPenilaian/(:segment)/(:segment)/(:segment)', 'PenilaianController::excelReportPerPeriode/$1/$2/$3');
+    $routes->get('reportBatch', 'MonitoringController::reportBatch');
+    $routes->get('reportBatch/(:segment)', 'PenilaianController::reportAreaperBatch/$1');
+    $routes->get('exelReportBatch/(:num)/(:segment)', 'PenilaianController::exelReportBatch/$1/$2');
+});
 
 $routes->group('api', function ($routes) {
     $routes->get('karyawan', 'ApiController::index');

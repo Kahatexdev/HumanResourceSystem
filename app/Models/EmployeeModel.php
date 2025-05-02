@@ -148,4 +148,65 @@ class EmployeeModel extends Model
             ->get()
             ->getResultArray();
     }
+
+    public function getActiveKaryawanByBagiaAndArea()
+    {
+        return $this->db->table('employees')
+            ->select('employees.*,COUNT(employees.id_employee) AS jumlah_karyawan,
+                       job_sections.*,
+                       factories.*,
+                       employment_statuses.*,
+                       days.day_name AS holiday_name,
+                       days2.day_name AS additional_holiday_name')
+            ->join('job_sections', 'job_sections.id_job_section = employees.id_job_section')
+            ->join('factories', 'factories.id_factory = employees.id_factory')
+            ->join('employment_statuses', 'employment_statuses.id_employment_status = employees.id_employment_status')
+            ->join('days', 'days.id_day = employees.holiday')
+            ->join('days AS days2', 'days2.id_day = employees.additional_holiday')
+            ->where('employees.status', 'active')
+            ->groupBy('factories.factory_name')
+            ->groupBy('job_sections.job_section_name')
+            ->get()
+            ->getResultArray();
+    }
+
+    public function getKaryawanTanpaArea()
+    {
+        return $this->db->table('employees')
+            ->select('employees.*,
+                       job_sections.*,
+                       factories.*,
+                       employment_statuses.*,
+                       days.day_name AS holiday_name,
+                       days2.day_name AS additional_holiday_name')
+            ->join('job_sections', 'job_sections.id_job_section = employees.id_job_section')
+            ->join('factories', 'factories.id_factory = employees.id_factory')
+            ->join('employment_statuses', 'employment_statuses.id_employment_status = employees.id_employment_status')
+            ->join('days', 'days.id_day = employees.holiday')
+            ->join('days AS days2', 'days2.id_day = employees.additional_holiday')
+            ->where('factories.main_factory IS NULL OR factories.main_factory = "-"')
+            ->groupBy('employees.id_employee')
+            ->get()
+            ->getResultArray();
+    }
+
+    public function getKaryawanByArea($area)
+    {
+        return $this->db->table('employees')
+            ->select('employees.*,
+                       job_sections.*,
+                       factories.*,
+                       employment_statuses.*,
+                       days.day_name AS holiday_name,
+                       days2.day_name AS additional_holiday_name')
+            ->join('job_sections', 'job_sections.id_job_section = employees.id_job_section')
+            ->join('factories', 'factories.id_factory = employees.id_factory')
+            ->join('employment_statuses', 'employment_statuses.id_employment_status = employees.id_employment_status')
+            ->join('days', 'days.id_day = employees.holiday')
+            ->join('days AS days2', 'days2.id_day = employees.additional_holiday')
+            ->where('factories.main_factory', $area)
+            ->groupBy('employees.id_employee')
+            ->get()
+            ->getResultArray();
+    }
 }

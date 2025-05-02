@@ -115,7 +115,7 @@
         <!-- <div class="card-header pb-0">
             <div class="d-flex align-items-center">
                 <h6>Employee Evaluation Form</h6>
-                <a href="<?= base_url('monitoring/datakaryawan') ?>" class="btn bg-gradient-secondary btn-sm ms-auto">
+                <a href="<?= base_url('monitoring/dataKaryawan') ?>" class="btn bg-gradient-secondary btn-sm ms-auto">
                     <i class="fas fa-arrow-left me-2"></i> Back
                 </a>
             </div>
