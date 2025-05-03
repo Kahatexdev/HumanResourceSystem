@@ -8,50 +8,161 @@ class JobSectionSeeder extends Seeder
 {
     public function run()
     {
-        $data = [
-            [
-                'job_section_name' => 'OPERATOR',
-                'created_at' => date('Y-m-d H:i:s'),
-                'updated_at' => date('Y-m-d H:i:s')
-            ],
-            [
-                'job_section_name' => 'OPERATOR MEKANIK DOUBLE',
-                'created_at' => date('Y-m-d H:i:s'),
-                'updated_at' => date('Y-m-d H:i:s')
-            ],
-            [
-                'job_section_name' => 'MONTIR',
-                'created_at' => date('Y-m-d H:i:s'),
-                'updated_at' => date('Y-m-d H:i:s')
-            ],
-            [
-                'job_section_name' => 'MONTIR DAKONG',
-                'created_at' => date('Y-m-d H:i:s'),
-                'updated_at' => date('Y-m-d H:i:s')
-            ],
-            [
-                'job_section_name' => 'MONTIR LONATI SINGLE',
-                'created_at' => date('Y-m-d H:i:s'),
-                'updated_at' => date('Y-m-d H:i:s')
-            ],
-            [
-                'job_section_name' => 'MONTIR LONATI DOUBLE',
-                'created_at' => date('Y-m-d H:i:s'),
-                'updated_at' => date('Y-m-d H:i:s')
-            ],
-            [
-                'job_section_name' => 'ROSSO',
-                'created_at' => date('Y-m-d H:i:s'),
-                'updated_at' => date('Y-m-d H:i:s')
-            ],
-            [
-                'job_section_name' => 'SEWING',
-                'created_at' => date('Y-m-d H:i:s'),
-                'updated_at' => date('Y-m-d H:i:s')
-            ]
+        $jobSections = [
+            'OPERATOR',
+            'OPERATOR MEKANIK DOUBLE',
+            'MONTIR',
+            'MONTIR (DAKONG)',
+            'MONTIR (LONATI SINGLE)',
+            'MONTIR (LONATI DOUBLE)',
+            'ROSSO',
+            'SEWING',
+
+            // Tambahan dari gambar dan teks
+            'QC MATERIAL ACCESORIES',
+            'A1',
+            'ABSENSI',
+            'ACCESORIES',
+            'ACC-SAMPLE',
+            'AKSESORIS',
+            'APS',
+            'ASISTEN MANAGEMENT',
+            'ASISTEN MNGM NON SHIFT',
+            'ASISTEN MNGM SHIFT',
+            'ASS MANAJEMENT',
+            'ASS MANAJEMENT SHIFT',
+            'AST. MANAG SCHEDULE',
+            'AST.MANAGEMENT GLOVES',
+            'AST.MANAGEMENT MONTIR',
+            'AST.MANAGEMENT WASHING',
+            'AUDITOR',
+            'BANTUAN',
+            'bantuan potong benang',
+            'BARCODE',
+            'BP MULTIMEDIA',
+            'BP SUSTAINBILITY',
+            'BP SYSTEM',
+            'BP TRAINING SCHOOL',
+            'CUTI HAMIL',
+            'END QC JAHIT',
+            'END QC SETTING',
+            'EXPORT',
+            'FOLLOW UP',
+            'GANTI LIBUR NS',
+            'GANTI LIBUR SHIFT',
+            'GUDANG BENANG',
+            'GUDANG JAHIT',
+            'GUDANG KALENG',
+            'H2',
+            'HAMIL',
+            'HARIAN',
+            'INLINE QC JAHIT',
+            'INLINE QC PACKING',
+            'INLINE QC RAJUT',
+            'INLINE QC ROSSO',
+            'INLINE WLY-5',
+            'IT',
+            'JAHIT',
+            'KEBERSIHAN',
+            'KEPALA MEJA GLOVES',
+            'KEPALA REGU',
+            'LABEL & BS',
+            'LABEL DAN BS',
+            'LEADER CO',
+            'LEADER QAD C&A',
+            'LEADER QAD H&M',
+            'LEADER QAD OKAMOTO',
+            'LEADER QAD OTHER',
+            'LEADER RQS',
+            'LOADING',
+            'LOADING MD',
+            'LOADING PEMASUKAN',
+            'LOADING PENGELUARAN',
+            'LOADING PK',
+            'MANAGEMENT',
+            'MANAGEMENT CO',
+            'MANAJEMENT NS',
+            'MONTIR CO',
+            'MONTIR GURINDA',
+            'MONTIR JAGA',
+            'MONTIR JAHIT',
+            'MONTIR NON SHIFT',
+            'NGEPACK',
+            'NYLON JAHIT',
+            'OBSER AREA',
+            'OPERATOR LOADING MD',
+            'OPERATOR PC',
+            'OPERATOR ROSSO',
+            'OPERATOR SETT',
+            'OPERATOR SONTEX',
+            'OPERATOR WASHING',
+            'PAIRING',
+            'PENARIKAN SETTING',
+            'PENGAMBILAN',
+            'PENGANTI LIBUR',
+            'PENGIRIMAN PACKING',
+            'PERBAIKAN INSPEK',
+            'PERBAIKAN JAHIT',
+            'PERBAIKAN NS',
+            'PERBAIKAN ROSSO',
+            'PERBAIKAN SETT',
+            'PERMINTAAN QAD',
+            'POTONG BENANG',
+            'POTONG BENANG EKS A2',
+            'PPC',
+            'PPC IE',
+            'PRODUCT SAFETY',
+            'PROGRAM GAMBAR',
+            'QAD C&A',
+            'QAD H&M',
+            'QAD OMT',
+            'QAD OTHER',
+            'QAD SAMPLE C&A',
+            'QAD SAMPLE OKAMOTO',
+            'QAD SAMPLE OTHER',
+            'QBS',
+            'QC MATERIAL BAHAN BAKU',
+            'RESEPSIONIS',
+            'RETURN',
+            'RQS',
+            'SAMPLE',
+            'Sample Bahan Baku',
+            'SAMPLE CARTON',
+            'SAMPLE DALAM',
+            'SAMPLE GBN',
+            'SAMPLE JAHIT',
+            'SAMPLE MESIN',
+            'SAMPLE N-TECH',
+            'SAMPLE PROGRAM',
+            'SAMPLE ROSSO',
+            'SAMPLE SETTING',
+            'SCHEDULE JAHIT',
+            'SEDOT',
+            'SETTING',
+            'SHIPPING',
+            'SPAREPART',
+            'STAFF MONTIR',
+            'STOCKLOT',
+            'TIMBANGAN',
+            'TUMBLING',
+            'UMUM KK1',
+            'UMUM KK2',
+            'USER ERP MESIN-PK',
+            'WATERSPIDER',
+            'WTS NON SHIFT',
+            'WTS SHIFT'
         ];
 
-        // Using Query Builder
+        $data = [];
+
+        foreach (array_unique($jobSections) as $section) {
+            $data[] = [
+                'job_section_name' => trim($section),
+                'created_at' => date('Y-m-d H:i:s'),
+                'updated_at' => date('Y-m-d H:i:s')
+            ];
+        }
+
         $this->db->table('job_sections')->insertBatch($data);
     }
 }
