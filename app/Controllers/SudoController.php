@@ -15,6 +15,7 @@ use App\Models\PeriodeModel;
 use App\Models\PresenceModel;
 use App\Models\MainJobRoleModel;
 use App\Models\JobRoleModel;
+use App\Models\JarumModel;
 
 class SudoController extends BaseController
 {
@@ -30,6 +31,7 @@ class SudoController extends BaseController
     protected $presenceModel;
     protected $mainJobRoleModel;
     protected $jobRoleModel;
+    protected $jarumModel;
 
     public function __construct()
     {
@@ -44,6 +46,7 @@ class SudoController extends BaseController
         $this->presenceModel = new PresenceModel();
         $this->mainJobRoleModel = new MainJobRoleModel();
         $this->jobRoleModel = new JobRoleModel();
+        $this->jarumModel = new JarumModel();
         $this->role = session()->get('role');
     }
     public function index()
@@ -242,5 +245,89 @@ class SudoController extends BaseController
         ];
 
         return view($this->role . '/penilaian', $data);
+    }
+
+    public function jarum()
+    {
+        $getBatch = $this->batchModel->findAll();
+        $periode = $this->periodeModel->getPeriode();
+        $getArea = $this->factoryModel->select('*')->groupBy('main_factory')->findAll();
+        $getPeriode = $this->periodeModel->getPeriode();
+        $getCurrentInput = $this->jarumModel->getCurrentInput();
+
+        // dd($getPeriode);
+        $sort = [
+            'KK1A',
+            'KK1B',
+            'KK2A',
+            'KK2B',
+            'KK2C',
+            'KK5',
+            'KK7K',
+            'KK7L',
+            'KK8D',
+            'KK8F',
+            'KK8J',
+            'KK9',
+            'KK10',
+            'KK11',
+        ];
+
+        // Urutkan data menggunakan usort
+        usort($getArea, function ($a, $b) use ($sort) {
+            $pos_a = array_search($a['factory_name'], $sort);
+            $pos_b = array_search($b['factory_name'], $sort);
+
+            // Jika tidak ditemukan, letakkan di akhir
+            $pos_a = ($pos_a === false) ? PHP_INT_MAX : $pos_a;
+            $pos_b = ($pos_b === false) ? PHP_INT_MAX : $pos_b;
+
+            return $pos_a - $pos_b;
+        });
+
+        $data = [
+            'role' => session()->get('role'),
+            'title' => 'Jarum',
+            'active1' => '',
+            'active2' => '',
+            'active3' => '',
+            'active4' => '',
+            'active5' => '',
+            'active6' => '',
+            'active7' => '',
+            'active8' => '',
+            'active9' => 'active',
+            'getBatch' => $getBatch,
+            'periode' => $periode,
+            'getArea' => $getArea,
+            'getPeriode' => $getPeriode,
+            'getCurrentInput' => $getCurrentInput
+        ];
+        // dd ($getBatch);
+        return view(session()->get('role') . '/jarum', $data);
+    }
+
+    public function getMontirByArea()
+    {
+        $montir = [];
+
+        if ($this->request->isAJAX()) {
+            $area = $this->request->getPost('area');
+            // $id_periode = $this->request->getPost('id_periode'); 
+            // $id_periode = 1;
+
+            // Ambil id_bagian berdasarkan area
+            $bagian = $this->employeeModel->getMontirByArea($area);
+            // log_message('info', 'Bagian: ' . json_encode($bagian));
+            // Ambil periode berdasarkan tanggal
+            // $periode = $this->periodeModel->getPeriodeByTanggal($id_periode); // pastikan fungsi ini sudah ada
+
+            foreach ($bagian as $row) {
+                $kary = $this->employeeModel->getMontirByArea($area);
+                $montir = array_merge($montir, $kary);
+            }
+        }
+
+        return $this->response->setJSON($montir);
     }
 }

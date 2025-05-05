@@ -78,6 +78,18 @@ $routes->group('/Sudo', ['filter' => 'Sudo'], function ($routes) {
     $routes->get('getKaryawan', 'EmployeeAssessmentController::getKaryawan');
     $routes->post('penilaianCreate', 'EmployeeAssessmentController::create');
     $routes->post('penilaianStore', 'EmployeeAssessmentController::store');
+
+    // summary jarum
+    $routes->get('dataJarum', 'SudoController::jarum');
+    $routes->get('dataJarum/(:segment)', 'JarumController::tampilPerBatch/$1');
+    $routes->get('summaryJarum', 'JarumController::summaryJarum');
+    $routes->get('downloadTemplateJarum', 'JarumController::downloadTemplate');
+    $routes->get('filterJarum/(:segment)', 'JarumController::filterJarum/$1');
+    $routes->post('filterJarum/(:segment)', 'JarumController::filterJarum/$1');
+    // $routes->post('jarumStoreImport', 'JarumController::upload');
+    $routes->post('jarumStoreInput', 'JarumController::upload');
+    $routes->post('getMontirByArea', 'SudoController::getMontirByArea');
+    $routes->get('reportSummaryJarum/(:segment)/(:num)', 'JarumController::excelSummaryJarum/$1/$2');
 });
 
 $routes->group('/Monitoring', ['filter' => 'Monitoring'], function ($routes) {
@@ -148,6 +160,18 @@ $routes->group('/Monitoring', ['filter' => 'Monitoring'], function ($routes) {
     $routes->get('getKaryawan', 'EmployeeAssessmentController::getKaryawan');
     $routes->post('penilaianCreate', 'EmployeeAssessmentController::create');
     $routes->post('penilaianStore', 'EmployeeAssessmentController::store');
+
+    // summary jarum
+    $routes->get('dataJarum', 'MonitoringController::jarum');
+    $routes->get('dataJarum/(:segment)', 'JarumController::tampilPerBatch/$1');
+    $routes->get('summaryJarum', 'JarumController::summaryJarum');
+    $routes->get('downloadTemplateJarum', 'JarumController::downloadTemplate');
+    $routes->get('filterJarum/(:segment)', 'JarumController::filterJarum/$1');
+    $routes->post('filterJarum/(:segment)', 'JarumController::filterJarum/$1');
+    // $routes->post('jarumStoreImport', 'JarumController::upload');
+    $routes->post('jarumStoreInput', 'JarumController::upload');
+    $routes->post('getMontirByArea', 'MonitoringController::getMontirByArea');
+    $routes->get('reportSummaryJarum/(:segment)/(:num)', 'JarumController::excelSummaryJarum/$1/$2');
 });
 
 $routes->group('/Mandor', ['filter' => 'Mandor'], function ($routes) {
