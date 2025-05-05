@@ -580,7 +580,7 @@ class JarumController extends BaseController
             ? implode('<br>', $errorMessages)
             : 'Tidak ada error.';
 
-        return redirect()->to(base_url('Sudo/dataJarum'))
+        return redirect()->to(base_url($this->role . '/dataJarum'))
             ->with('success', $successMsg . '<br>' . $errorMsg);
     }
 }

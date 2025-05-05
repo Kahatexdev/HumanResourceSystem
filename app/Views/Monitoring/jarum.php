@@ -160,7 +160,27 @@
         <?php endforeach ?>
     </div>
 </div>
-
+<!-- ROW UUPLOAD -->
+<div class="row my-4">
+    <div class="col-xl-12 col-sm-12 mb-xl-0 mb-4">
+        <div class="card">
+            <div class="card-body p-3">
+                <form action="<?= base_url($role . '/uploadJarum') ?>" method="post" enctype="multipart/form-data">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label for="">Upload File</label>
+                            <input type="file" name="file" id="file" class="form-control" required>
+                        </div>
+                        <div class="col-md-6 text-center">
+                            <label for="">Aksi</label>
+                            <button type="submit" class="btn bg-gradient-info mt-3 w-100">Upload</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
 <!-- select2 -->
 <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
