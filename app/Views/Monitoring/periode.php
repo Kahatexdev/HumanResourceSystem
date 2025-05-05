@@ -145,7 +145,7 @@
                                 <select class="form-control" name="status" id="status" required>
                                     <option value="">Pilih Status</option>
                                     <option value="active">Aktif</option>
-                                    <option value="inactive">Tidak Aktif</option>
+                                    <option value="Tidak Aktif">Tidak Aktif</option>
                                 </select>
                             </div>
                         </div>
@@ -205,7 +205,7 @@
                                 <select class="form-control" name="status" id="status" required>
                                     <option value="">Pilih Status</option>
                                     <option value="active">Aktif</option>
-                                    <option value="inactive">Tidak Aktif</option>
+                                    <option value="Tidak Aktif">Tidak Aktif</option>
                                 </select>
                             </div>
                         </div>

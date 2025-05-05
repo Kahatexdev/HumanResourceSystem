@@ -166,8 +166,8 @@
                                         <label for="status_aktif">Status</label>
                                         <select name="status_aktif" id="status_aktif" class="form-control" required>
                                             <option value="">Pilih Status</option>
-                                            <option value="active">Active</option>
-                                            <option value="inactive">Inactive</option>
+                                            <option value="Aktif">Aktif</option>
+                                            <option value="Tidak Aktif">Tidak Aktif</option>
                                         </select>
                                     </div>
 
@@ -385,8 +385,8 @@
                             <label for="edit_status_aktif">Status</label>
                             <select name="status_aktif" id="edit_status_aktif" class="form-control" required>
                                 <option value="">Pilih Status</option>
-                                <option value="active">Active</option>
-                                <option value="inactive">Inactive</option>
+                                <option value="Aktif">Aktif</option>
+                                <option value="Tidak Aktif">Tidak Aktif</option>
                             </select>
                         </div>
 

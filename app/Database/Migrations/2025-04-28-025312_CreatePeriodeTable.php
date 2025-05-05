@@ -36,7 +36,7 @@ class CreatePeriodeTable extends Migration
             ],
             'status' => [
                 'type'       => 'ENUM',
-                'constraint' => ['active', 'inactive'],
+                'constraint' => ['active', 'Tidak Aktif'],
                 'default'    => 'active',
             ],
             'created_at'   => [

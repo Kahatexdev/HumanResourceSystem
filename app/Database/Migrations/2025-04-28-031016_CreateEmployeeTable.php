@@ -67,8 +67,8 @@ class CreateEmployeeTable extends Migration
             ],
             'status' => [
                 'type'       => 'ENUM',
-                'constraint' => ['active', 'inactive'],
-                'default'    => 'active',
+                'constraint' => ['Aktif', 'Tidak Aktif'],
+                'default'    => 'Aktif',
             ],
             'created_at'   => [
                 'type'      => 'DATETIME',

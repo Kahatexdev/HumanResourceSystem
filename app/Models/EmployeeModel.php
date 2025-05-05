@@ -163,7 +163,7 @@ class EmployeeModel extends Model
             ->join('employment_statuses', 'employment_statuses.id_employment_status = employees.id_employment_status')
             ->join('days', 'days.id_day = employees.holiday')
             ->join('days AS days2', 'days2.id_day = employees.additional_holiday')
-            ->where('employees.status', 'active')
+            ->where('employees.status', 'Aktif')
             ->groupBy('factories.factory_name')
             ->groupBy('job_sections.job_section_name')
             ->get()

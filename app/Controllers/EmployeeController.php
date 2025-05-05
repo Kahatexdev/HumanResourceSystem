@@ -115,7 +115,7 @@ class EmployeeController extends BaseController
         $sheet->setCellValue('K2', 'KNITTER');
         $sheet->setCellValue('L2', 'KK1');
         $sheet->setCellValue('M2', 'KK1A');
-        $sheet->setCellValue('N2', 'active/inactive');
+        $sheet->setCellValue('N2', 'Aktif/Tidak Aktif');
 
         // 
         // Menentukan nama file
