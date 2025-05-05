@@ -124,15 +124,8 @@ class MonitoringController extends BaseController
             // $id_periode = 1;
 
             // Ambil id_bagian berdasarkan area
-            $bagian = $this->employeeModel->getMontirByArea($area);
+            $montir = $this->employeeModel->getMontirByArea($area);
             // log_message('info', 'Bagian: ' . json_encode($bagian));
-            // Ambil periode berdasarkan tanggal
-            // $periode = $this->periodeModel->getPeriodeByTanggal($id_periode); // pastikan fungsi ini sudah ada
-
-            foreach ($bagian as $row) {
-                $kary = $this->employeeModel->getMontirByArea($area);
-                $montir = array_merge($montir, $kary);
-            }
         }
 
         return $this->response->setJSON($montir);
