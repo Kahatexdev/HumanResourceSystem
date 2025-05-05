@@ -112,4 +112,12 @@ class JarumModel extends Model
             ->orderBy('tgl_input', 'ASC')
             ->findAll();
     }
+
+    public function getJarumByData($idEmployee, $tglInput, $idFactory)
+    {
+        return $this->where('id_employee', $idEmployee)
+            ->where('tgl_input', $tglInput)
+            ->where('id_factory', $idFactory)
+            ->first();
+    }
 }

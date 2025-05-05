@@ -90,6 +90,7 @@ $routes->group('/Sudo', ['filter' => 'Sudo'], function ($routes) {
     $routes->post('jarumStoreInput', 'JarumController::upload');
     $routes->post('getMontirByArea', 'SudoController::getMontirByArea');
     $routes->get('reportSummaryJarum/(:segment)/(:num)', 'JarumController::excelSummaryJarum/$1/$2');
+    $routes->post('uploadJarum', 'JarumController::uploadJarum');
 });
 
 $routes->group('/Monitoring', ['filter' => 'Monitoring'], function ($routes) {
@@ -172,6 +173,7 @@ $routes->group('/Monitoring', ['filter' => 'Monitoring'], function ($routes) {
     $routes->post('jarumStoreInput', 'JarumController::upload');
     $routes->post('getMontirByArea', 'MonitoringController::getMontirByArea');
     $routes->get('reportSummaryJarum/(:segment)/(:num)', 'JarumController::excelSummaryJarum/$1/$2');
+    $routes->post('uploadJarum', 'JarumController::uploadJarum');
 });
 
 $routes->group('/Mandor', ['filter' => 'Mandor'], function ($routes) {

@@ -445,4 +445,142 @@ class JarumController extends BaseController
 
         return view('jarum/filter-jarum', $data);
     }
+
+    public function uploadJarum()
+    {
+        $file = $this->request->getFile('file');
+
+        // Validasi file
+        if (! $file || ! $file->isValid() || $file->hasMoved()) {
+            return redirect()->to(base_url('Sudo/dataJarum'))
+                ->with('error', 'File tidak valid atau sudah dipindahkan.');
+        }
+
+        // Cek MIME type
+        $fileType = $file->getClientMimeType();
+        if (! in_array($fileType, [
+            'application/vnd.ms-excel',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        ])) {
+            return redirect()->to(base_url('Sudo/dataJarum'))
+                ->with('error', 'File harus berupa Excel (.xlsx)');
+        }
+
+        // Load spreadsheet
+        $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($file->getTempName());
+        $sheet       = $spreadsheet->getActiveSheet();
+        $startRow    = 2;
+
+        $data         = [];
+        $errorCount   = 0;
+        $errorMessages = [];
+
+        // Loop setiap baris
+        for ($row = $startRow; $row <= $sheet->getHighestRow(); $row++) {
+            $kodeKartu = trim($sheet->getCell('A' . $row)->getValue());
+            $namaK      = trim($sheet->getCell('B' . $row)->getValue());
+            $area       = trim($sheet->getCell('D' . $row)->getValue());
+
+            // Tanggal input
+            $rawTgl = $sheet->getCell('F' . $row)->getValue();
+            if (is_numeric($rawTgl)) {
+                $tglInput = \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($rawTgl)
+                    ->format('Y-m-d');
+            } else {
+                $tglInput = date('Y-m-d', strtotime($rawTgl));
+            }
+
+            $usedNeedle = (int) $sheet->getCell('G' . $row)->getValue();
+
+            // created_at
+            $rawCreated = $sheet->getCell('H' . $row)->getValue();
+            if (is_numeric($rawCreated)) {
+                $createdAt = \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($rawCreated)
+                    ->format('Y-m-d H:i:s');
+            } else {
+                $createdAt = date('Y-m-d H:i:s', strtotime($rawCreated));
+            }
+
+            // updated_at
+            $rawUpdated = $sheet->getCell('I' . $row)->getValue();
+            if (is_numeric($rawUpdated)) {
+                $updatedAt = \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($rawUpdated)
+                    ->format('Y-m-d H:i:s');
+            } else {
+                $updatedAt = date('Y-m-d H:i:s', strtotime($rawUpdated));
+            }
+
+            // Validasi dasar
+            if (empty($kodeKartu) || empty($namaK) || empty($tglInput)) {
+                $errorCount++;
+                $errorMessages[] = "Baris {$row}: Data tidak lengkap.";
+                continue;
+            }
+            if ($usedNeedle < 0) {
+                $errorCount++;
+                $errorMessages[] = "Baris {$row}: Used Needle tidak boleh negatif.";
+                continue;
+            }
+
+            // Cari karyawan
+            $emp = $this->employeeModel->where('employee_code', $kodeKartu)->first();
+            if (! $emp) {
+                $errorCount++;
+                $errorMessages[] = "Baris {$row}: Kode Kartu tidak ditemukan.";
+                continue;
+            }
+
+            // Cari pabrik
+            $fac = $this->factoriesModel->where('factory_name', $area)->first();
+            if (! $fac) {
+                $errorCount++;
+                $errorMessages[] = "Baris {$row}: Area tidak ditemukan.";
+                continue;
+            }
+
+            // Simpan data sementara
+            $data[] = [
+                'id_employee' => $emp['id_employee'],
+                'id_factory'  => $fac['id_factory'],
+                'tgl_input'   => $tglInput,
+                'used_needle' => $usedNeedle,
+                'created_at'  => $createdAt,
+                'updated_at'  => $updatedAt,
+            ];
+        }
+
+        // Filter duplikat sebelum insert
+        $toInsert = [];
+        foreach ($data as $d) {
+            $exists = $this->summaryJarum
+                ->where('id_employee', $d['id_employee'])
+                ->where('id_factory', $d['id_factory'])
+                ->where('tgl_input', $d['tgl_input'])
+                ->first();
+
+            if (! $exists) {
+                $toInsert[] = $d;
+            } else {
+                $errorCount++;
+                $errorMessages[] = "Duplikat: Employee {$d['id_employee']} tanggal {$d['tgl_input']}.";
+            }
+        }
+
+        // Insert batch jika ada data
+        if (count($toInsert) > 0) {
+            $this->summaryJarum->insertBatch($toInsert);
+            $successCount = count($toInsert);
+            $successMsg   = "Berhasil upload {$successCount} baris.";
+        } else {
+            $successMsg = 'Tidak ada data valid untuk diupload.';
+        }
+
+        // Komposisi pesan akhir
+        $errorMsg = $errorCount > 0
+            ? implode('<br>', $errorMessages)
+            : 'Tidak ada error.';
+
+        return redirect()->to(base_url('Sudo/dataJarum'))
+            ->with('success', $successMsg . '<br>' . $errorMsg);
+    }
 }
