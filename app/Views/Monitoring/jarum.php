@@ -161,7 +161,7 @@
     </div>
 </div>
 <!-- ROW UUPLOAD -->
-<div class="row my-4">
+<!-- <div class="row my-4">
     <div class="col-xl-12 col-sm-12 mb-xl-0 mb-4">
         <div class="card">
             <div class="card-body p-3">
@@ -180,7 +180,7 @@
             </div>
         </div>
     </div>
-</div>
+</div> -->
 <!-- select2 -->
 <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>

@@ -69,4 +69,50 @@ class RossoModel extends Model
             ->where('factories.main_factory', $area_utama)
             ->get()->getResultArray();
     }
+
+    public function getSummaryRosso($area, $id_batch)
+    {
+        return $this->select('rosso.id_employee, employees.*,  SUM(rosso.production) AS total_produksi, SUM(rosso.rework) AS total_perbaikan, periodes.periode_name, periodes.id_batch, rosso.id_factory, periodes.start_date, periodes.end_date, periodes.holiday, job_sections.job_section_name, factories.factory_name')
+            ->join('periodes', 'rosso.input_date BETWEEN periodes.start_date AND periodes.end_date', 'inner')
+            ->join('employees', 'employees.id_employee = rosso.id_employee', 'inner')
+            ->join('job_sections', 'job_sections.id_job_section = employees.id_job_section', 'inner')
+            ->join('factories', 'factories.id_factory = employees.id_factory', 'inner')
+            ->where('factories.main_factory', $area)
+            ->where('periodes.id_batch', $id_batch)
+            ->groupBy('employees.employee_code, periodes.start_date, periodes.end_date') // Grouping berdasarkan kode_kartu dan periodes
+            ->findAll();
+    }
+
+    public function getFilteredData($area_utama, $startDate, $endDate)
+    {
+        return $this->select('rosso.*, employees.*, job_sections.*, factories.*')
+            ->join('employees', 'employees.id_employee = rosso.id_employee')
+            ->join('job_sections', 'job_sections.id_job_section = employees.id_job_section')
+            ->join('factories', 'factories.id_factory = employees.id_factory')
+            ->where('factories.main_factory', $area_utama)
+            ->where('rosso.input_date >=', $startDate)
+            ->where('rosso.input_date <=', $endDate)
+            ->orderBy('rosso.input_date', 'ASC')
+            ->findAll();
+    }
+
+    public function getRossoData()
+    {
+        return $this->select('sum_rosso.*, karyawan.*, bagian.*, periode.*')
+            ->join('karyawan', 'karyawan.id_karyawan = sum_rosso.id_karyawan')
+            ->join('bagian', 'bagian.id_bagian = karyawan.id_bagian')
+            ->join('periode', 'sum_rosso.tgl_input BETWEEN periode.start_date AND periode.end_date')
+            ->findAll();
+    }
+
+    public function validasiKaryawan($tgl_input, $id_karyawan)
+    {
+        return $this->select('rosso.*, job_sections.*, factories.*, employees.*')
+            ->join('employees', 'employees.id_employee = rosso.id_employee')
+            ->join('job_sections', 'job_sections.id_job_section = employees.id_job_section')
+            ->join('factories', 'factories.id_factory = employees.id_factory')
+            ->where('rosso.input_date', $tgl_input)
+            ->where('rosso.id_employee', $id_karyawan)
+            ->first();
+    }
 }

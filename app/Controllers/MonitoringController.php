@@ -16,6 +16,7 @@ use App\Models\PresenceModel;
 use App\Models\MainJobRoleModel;
 use App\Models\JobRoleModel;
 use App\Models\JarumModel;
+use App\Models\RossoModel;
 
 class MonitoringController extends BaseController
 {
@@ -32,6 +33,7 @@ class MonitoringController extends BaseController
     protected $mainJobRoleModel;
     protected $jobRoleModel;
     protected $jarumModel;
+    protected $rossoModel;
 
     public function __construct()
     {
@@ -47,6 +49,7 @@ class MonitoringController extends BaseController
         $this->mainJobRoleModel = new MainJobRoleModel();
         $this->jobRoleModel = new JobRoleModel();
         $this->jarumModel = new JarumModel();
+        $this->rossoModel = new RossoModel();
         $this->role = session()->get('role');
     }
     public function index()
@@ -129,5 +132,58 @@ class MonitoringController extends BaseController
         }
 
         return $this->response->setJSON($montir);
+    }
+
+    public function rosso()
+    {
+        $tampilperarea = $this->factoryModel->select('*')->groupBy('main_factory')->findAll();
+        $getBatch = $this->batchModel->findAll();
+        $periode = $this->periodeModel->getPeriode();
+        $getCurrentInput = $this->rossoModel->getCurrentInput();
+
+        $sort = [
+            'KK1',
+            'KK2',
+            'KK5',
+            'KK7',
+            'KK8',
+            'KK9',
+            'KK10',
+            'KK11'
+        ];
+        // dd($tampilperarea);
+        // Urutkan data menggunakan usort
+        usort($tampilperarea, function ($a, $b) use ($sort) {
+            $pos_a = array_search($a['main_factory'], $sort);
+            $pos_b = array_search($b['main_factory'], $sort);
+
+            // Jika tidak ditemukan, letakkan di akhir
+            $pos_a = ($pos_a === false) ? PHP_INT_MAX : $pos_a;
+            $pos_b = ($pos_b === false) ? PHP_INT_MAX : $pos_b;
+
+            return $pos_a - $pos_b;
+        });
+
+        $data = [
+            'role' => session()->get('role'),
+            'title' => 'Rosso',
+            'active1' => '',
+            'active2' => '',
+            'active3' => '',
+            'active4' => '',
+            'active5' => '',
+            'active6' => '',
+            'active7' => '',
+            'active8' => '',
+            'active9' => 'active',
+            // 'reportbatch' => $reportbatch,
+            // 'getArea' => $getArea,
+            'getBatch' => $getBatch,
+            'tampilperarea' => $tampilperarea,
+            'periode' => $periode,
+            'getCurrentInput' => $getCurrentInput
+        ];
+        // dd ($getBatch);
+        return view(session()->get('role') . '/rosso', $data);
     }
 }
