@@ -272,7 +272,8 @@
                     </button>
                 </div>
                 <div class="modal-body">
-                    <form action="<?= base_url($role . '/karyawanUpdate' . '/' . $karyawan['id_employee']); ?>" method="post">
+                    <form id="formEditKaryawan"
+                        action="#" method="post">
                         <!-- hidden PK -->
                         <input type="hidden" name="id_employee" id="edit_id_employee">
                         <input type="hidden" name="id_user" id="edit_id_user"
@@ -465,6 +466,8 @@
         const areaOld = btn.data('area-id');
         const status = btn.data('status-aktif');
 
+        const urlBase = "<?= base_url($role . '/karyawanUpdate/') ?>";
+        $('#formEditKaryawan').attr('action', urlBase + idEmp);
         // 2. Tampilkan modal
         $('#ModalEdit').modal('show');
 

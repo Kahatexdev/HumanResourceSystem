@@ -365,8 +365,9 @@ class EmployeeController extends BaseController
             'id_factory' => $area,
             'status' => $statusAktif,
         ];
+        // dd ($id, $data);
         // dd($data, $this->request->getPost());
-        $this->employeeModel->update($id, $data);
+        $update = $this->employeeModel->update($id, $data);
 
         $oldBagian = $this->request->getPost('id_job_section_old');
         $tgl_pindah = $this->request->getPost('date_of_change');
@@ -386,8 +387,8 @@ class EmployeeController extends BaseController
             $this->historyEmployeeModel->insert($item);
         }
 
-        if ($this->employeeModel->update($id, $data)) {
-            return redirect()->to(base_url($this->role . '/dataKaryawan'))->with('success', 'Employee data successfully saved.');
+        if ($update) {
+            return redirect()->to(base_url($this->role . '/dataKaryawan'))->with('success', 'Employee data successfully Updated.');
         } else {
             return redirect()->to(base_url($this->role . '/dataKaryawan'))->with('error', 'Failed to save employee data.');
         }

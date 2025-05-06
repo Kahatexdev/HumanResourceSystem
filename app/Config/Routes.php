@@ -91,6 +91,22 @@ $routes->group('/Sudo', ['filter' => 'Sudo'], function ($routes) {
     $routes->post('getMontirByArea', 'SudoController::getMontirByArea');
     $routes->get('reportSummaryJarum/(:segment)/(:num)', 'JarumController::excelSummaryJarum/$1/$2');
     $routes->post('uploadJarum', 'JarumController::uploadJarum');
+
+    // summary rosso
+    $routes->get('dataRosso', 'SudoController::rosso');
+    $routes->get('dataRosso/(:segment)', 'RossoController::tampilPerBatch/$1');
+    $routes->get('summaryRosso', 'RossoController::summaryRosso');
+    $routes->get('downloadTemplateRosso', 'RossoController::downloadTemplate');
+    $routes->post('rossoStoreImport', 'RossoController::import');
+    $routes->get('rossoCreate', 'RossoController::create');
+    $routes->post('rossoStore', 'RossoController::store');
+    $routes->get('rossoEdit/(:num)', 'RossoController::edit/$1');
+    $routes->post('rossoUpdate/(:num)', 'RossoController::update/$1');
+    $routes->get('rossoDelete/(:num)', 'RossoController::delete/$1');
+    $routes->get('reportSummaryRosso/(:segment)/(:num)', 'RossoController::excelSummaryRosso/$1/$2');
+    $routes->get('rossoDetail/(:num)', 'RossoController::show/$1');
+    $routes->get('filterRosso/(:segment)', 'RossoController::filterRosso/$1');
+    $routes->post('filterRosso/(:segment)', 'RossoController::filterRosso/$1');
 });
 
 $routes->group('/Monitoring', ['filter' => 'Monitoring'], function ($routes) {
