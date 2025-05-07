@@ -1,6 +1,18 @@
 <?php $this->extend('layout/template'); ?>
 <?php $this->section('content'); ?>
 <link href="<?= base_url('assets/css/select2.min.css') ?>" rel="stylesheet" />
+<?php if (session()->getFlashdata('error')): ?>
+    <div class="alert alert-danger">
+        <?= session()->getFlashdata('error') ?>
+    </div>
+<?php endif; ?>
+
+<?php if (session()->getFlashdata('success')): ?>
+    <div class="alert alert-success">
+        <?= session()->getFlashdata('success') ?>
+    </div>
+<?php endif; ?>
+
 <div class="container-fluid py-4">
     <div class="row mt-4">
         <div class="col-xl-12 col-sm-12 mb-xl-0 mb-4 mt-2">
@@ -65,6 +77,11 @@
         </div>
     </div>
 </div>
+
+<form action="<?= base_url($role . '/penilaian/import') ?>" method="post" enctype="multipart/form-data">
+    <input type="file" name="file" accept=".xls,.xlsx" required>
+    <button type="submit">Import Penilaian</button>
+</form>
 <script src="<?= base_url('assets/js/select2.min.js') ?>"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
@@ -116,21 +133,7 @@
 <script>
     $(document).ready(function() {
         // Flash message SweetAlerts
-        <?php if (session()->getFlashdata('success')) : ?>
-            Swal.fire({
-                icon: 'success',
-                title: 'Success!',
-                html: '<?= session()->getFlashdata('success') ?>',
-            });
-        <?php endif; ?>
 
-        <?php if (session()->getFlashdata('error')) : ?>
-            Swal.fire({
-                icon: 'error',
-                title: 'Error!',
-                html: '<?= session()->getFlashdata('error') ?>',
-            });
-        <?php endif; ?>
     });
 </script>
 <?php $this->endSection(); ?>

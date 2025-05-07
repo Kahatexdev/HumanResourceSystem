@@ -14,6 +14,8 @@ use App\Models\PresenceModel;
 use App\Models\EmployeeAssessmentModel;
 use App\Models\PerformanceAssessmentModel;
 use App\Models\FactoriesModel;
+use PhpOffice\PhpSpreadsheet\IOFactory;
+use Config\Database;
 
 class EmployeeAssessmentController extends BaseController
 {
@@ -257,5 +259,140 @@ class EmployeeAssessmentController extends BaseController
         $this->employeeAssessmentModel->insertBatch($toAssessments);
 
         return redirect()->to(base_url($this->role . '/dataPenilaian'))->with('success', 'Data penilaian berhasil disimpan.');
+    }
+
+    public function importPenilaian()
+    {
+        set_time_limit(0);
+        helper('form');
+
+        if (! $this->validate([
+            'file' => 'uploaded[file]|ext_in[file,xlsx,xls]|max_size[file,10240]'
+        ])) {
+            return redirect()->back()->with('error', $this->validator->getError('file'));
+        }
+
+        $upload   = $this->request->getFile('file');
+        $newName  = $upload->getRandomName();
+        $upload->move(WRITEPATH . 'uploads', $newName);
+        $filePath = WRITEPATH . 'uploads/' . $newName;
+
+        $empMap = [];
+        foreach ($this->employeeModel->findAll() as $emp) {
+            $empMap[$emp['employee_code']] = $emp['id_employee'];
+        }
+
+        $jobMap = [];
+        foreach ($this->jobrolemodel->findAll() as $jr) {
+            $jobMap[$jr['id_main_job_role']][$jr['jobdescription']] = $jr['id_job_role'];
+        }
+
+        $factoryMap = [];
+        foreach ($this->factoryModel->findAll() as $f) {
+            $factoryMap[$f['factory_name']] = $f['id_factory'];
+        }
+
+        $spreadsheet = IOFactory::load($filePath);
+        if (
+            ! $spreadsheet->sheetNameExists('performance_assessments') ||
+            ! $spreadsheet->sheetNameExists('assessments')
+        ) {
+            unlink($filePath);
+            return redirect()->back()->with('error', 'Salah satu sheet tidak ditemukan: performance_assessments atau assessments');
+        }
+
+        $db = Database::connect();
+        $db->transStart();
+
+        $errors = [];
+        $sheet1    = $spreadsheet->getSheetByName('performance_assessments');
+        $rows1     = $sheet1->toArray(null, true, true, true);
+        $perfBatch = [];
+
+        foreach ($rows1 as $idx => $row) {
+            if ($idx < 2) continue;
+
+            $kode = $row['B'];
+            if (! isset($empMap[$kode])) {
+                $errors[] = "Baris $idx: Kode pegawai '$kode' tidak ditemukan.";
+                continue;
+            }
+
+            $factoryName = $row['G'];
+            if (! isset($factoryMap[$factoryName])) {
+                $errors[] = "Baris $idx: Nama pabrik '$factoryName' tidak ditemukan.";
+                continue;
+            }
+
+            $perfBatch[] = [
+                'id_performance_assessment' => $row['A'] ?: null,
+                'id_employee'               => $empMap[$kode],
+                'id_periode'                => $row['D'],
+                'id_main_job_role'          => $row['E'],
+                'nilai'                     => $row['F'],
+                'id_factory'                => $factoryMap[$factoryName],
+                'id_user'                   => $row['H'],
+                'created_at'                => $row['I'],
+                'updated_at'                => $row['J'],
+            ];
+        }
+
+        try {
+            if (! empty($perfBatch)) {
+                $this->performanceAssessmentModel->insertBatch($perfBatch);
+            }
+        } catch (\Exception $e) {
+            $errors[] = 'Gagal menyimpan performance_assessments: ' . $e->getMessage();
+        }
+
+        $sheet2      = $spreadsheet->getSheetByName('assessments');
+        $rows2       = $sheet2->toArray(null, true, true, true);
+        $assessBatch = [];
+
+        foreach ($rows2 as $idx => $row) {
+            if ($idx < 2) continue;
+
+            $kode    = $row['B'];
+            $idMain  = $row['E'];
+            $desc    = $row['D'];
+
+            if (! isset($empMap[$kode])) {
+                $errors[] = "Baris $idx: Kode pegawai '$kode' tidak ditemukan.";
+                continue;
+            }
+
+            if (! isset($jobMap[$idMain][$desc])) {
+                $errors[] = "Baris $idx: Job role '$desc' untuk main role ID '$idMain' tidak ditemukan.";
+                continue;
+            }
+
+            $assessBatch[] = [
+                'id_assessment' => $row['A'] ?: null,
+                'id_employee'   => $empMap[$kode],
+                'id_job_role'   => $jobMap[$idMain][$desc],
+                'id_periode'    => $row['F'],
+                'score'         => $row['G'],
+                'id_user'       => $row['H'],
+                'created_at'    => $row['I'],
+                'updated_at'    => $row['J'],
+            ];
+        }
+
+        try {
+            if (! empty($assessBatch)) {
+                $this->employeeAssessmentModel->insertBatch($assessBatch);
+            }
+        } catch (\Exception $e) {
+            $errors[] = 'Gagal menyimpan assessments: ' . $e->getMessage();
+        }
+
+        $db->transComplete();
+        unlink($filePath);
+
+        if (! empty($errors)) {
+            return redirect()->back()->with('error', implode('<br>', $errors));
+        }
+
+        return redirect()->back()->with('success', 'Import penilaian berhasil.');
     }
 }

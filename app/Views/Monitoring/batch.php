@@ -48,9 +48,10 @@
                             </thead>
                             <tbody>
                                 <?php if (!empty($batch)) : ?>
+                                    <?php $no = 1; ?>
                                     <?php foreach ($batch as $batch) : ?>
                                         <tr>
-                                            <td><?= $batch['id_batch'] ?></td>
+                                            <td><?= $no++ ?></td>
                                             <td><?= $batch['batch_name'] ?></td>
                                             <td>
                                                 <a href="#"

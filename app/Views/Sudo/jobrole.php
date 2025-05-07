@@ -39,6 +39,10 @@
             </div>
         </div>
     </div>
+    <form action="<?= base_url($role. '/jobrole/import') ?>" method="post" enctype="multipart/form-data">
+        <input type="file" name="file" accept=".xls,.xlsx" required>
+        <button type="submit">Import Excel</button>
+    </form>
     <div class="row">
         <div class="col-xl-12 col-sm-12 mb-xl-0 mt-2">
             <div class="card">
@@ -57,12 +61,13 @@
                             </thead>
                             <tbody>
                                 <?php if (!empty($mainjobrole)) : ?>
+                                    <?php $no = 1; ?>
                                     <?php foreach ($mainjobrole as $main) : ?>
                                         <tr data-id="<?= $main['id_main_job_role'] ?>">
                                             <td class="details-control text-center" style="cursor:pointer">
                                                 <i class="fas fa-plus-circle"></i>
                                             </td>
-                                            <td><?= $main['id_main_job_role'] ?></td>
+                                            <td><?= $no++ ?></td>
                                             <td><?= $main['main_job_role_name'] ?></td>
                                             <td>
                                                 <a href="#"
