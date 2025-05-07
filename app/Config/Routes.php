@@ -214,17 +214,17 @@ $routes->group('/Monitoring', ['filter' => 'Monitoring'], function ($routes) {
 
     //summary bsmc
     $routes->get('dataBsmc', 'MonitoringController::bsmc');
-    $routes->get('dataBsmc/(:segment)', 'BsMcController::tampilPerBatch/$1');
-    $routes->get('reportSummaryBsmc/(:segment)/(:num)', 'BsMcController::sumBsMesin/$1/$2');
-    // $routes->get('filterBsmc/(:segment)', 'BsMcController::filterBsmc/$1');
-    // $routes->post('filterBsmc/(:segment)', 'BsMcController::filterBsmc/$1');
-    // $routes->get('downloadTemplateBsmc', 'BsMcController::downloadTemplate');
-    // $routes->post('bsmcStoreImport', 'BsMcController::import');
-    // $routes->get('bsmcCreate', 'BsMcController::create');
-    // $routes->get('fetchDataBsMc', 'BsMcController::fetchDataAPI');
-    // $routes->get('bsmcEdit/(:num)', 'BsMcController::edit/$1');
-    // $routes->get('bsmcUpdate/(:num)', 'BsMcController::update/$1');
-    // $routes->get('bsmcDelete/(:num)', 'BsMcController::delete/$1');
+    $routes->get('dataBsmc/(:segment)', 'BsmcController::tampilPerBatch/$1');
+    $routes->get('reportSummaryBsmc/(:segment)/(:num)', 'BsmcController::sumBsMesin/$1/$2');
+    // $routes->get('filterBsmc/(:segment)', 'BsmcController::filterBsmc/$1');
+    // $routes->post('filterBsmc/(:segment)', 'BsmcController::filterBsmc/$1');
+    // $routes->get('downloadTemplateBsmc', 'BsmcController::downloadTemplate');
+    // $routes->post('bsmcStoreImport', 'BsmcController::import');
+    // $routes->get('bsmcCreate', 'BsmcController::create');
+    // $routes->get('fetchDataBsMc', 'BsmcController::fetchDataAPI');
+    // $routes->get('bsmcEdit/(:num)', 'BsmcController::edit/$1');
+    // $routes->get('bsmcUpdate/(:num)', 'BsmcController::update/$1');
+    // $routes->get('bsmcDelete/(:num)', 'BsmcController::delete/$1');
 });
 
 $routes->group('/Mandor', ['filter' => 'Mandor'], function ($routes) {
