@@ -1,17 +1,17 @@
 <?php $this->extend('layout/template'); ?>
 <?php $this->section('content'); ?>
-<div class="container-fluid py-4">
 
+<div class="container-fluid py-4">
     <div class="row">
         <div class="col-xl-12 col-sm-12 mb-xl-0 mb-4 mt-2">
             <div class="card">
                 <div class="card-body">
                     <h4 class="card-title">
-                        Import Summary Rosso
-                        <p>Tanggal Terakhir Input : <?= $getCurrentInput['input_date'] ?? '-' ?></p>
+                        Import Summary BS Mesin
+                        <p>Tanggal Terakhir Input : <?= $getCurrentInput['tgl_input'] ?? 0 ?></p>
                     </h4>
-                    <!-- Form Import Summary BSMC -->
-                    <form action="<?= base_url($role . '/rossoStoreImport') ?>" method="post"
+                    <!-- form import  Summary BSMC -->
+                    <form action="<?= base_url($role . '/importExcelBsmc') ?>" method="post"
                         enctype="multipart/form-data">
                         <div class="upload-container">
                             <div class="upload-area" id="upload-area">
@@ -39,12 +39,12 @@
                             <div class="numbers">
                                 <p class="text-sm mb-0 text-capitalize font-weight-bold">Human Resource System</p>
                                 <h5 class="font-weight-bolder mb-0">
-                                    Summary Rosso Per Area
+                                    Summary Bs Mesin Per Area
                                 </h5>
                             </div>
                         </div>
                         <div class="col-4 text-end">
-                            <a href="<?= base_url($role . '/downloadTemplateRosso') ?>"
+                            <a href="<?= base_url('Monitoring/downloadTemplateBsmc') ?>"
                                 class="btn bg-gradient-success me-2">
                                 <!-- icon download -->
                                 <i class="fas fa-download text-lg opacity-10" aria-hidden="true"></i>
@@ -56,65 +56,16 @@
             </div>
         </div>
     </div>
-    <div class="row my-4">
-        <div class="col-xl-12 col-sm-12 mb-xl-0 mb-4">
-            <div class="card">
-                <div class="card-body p-3">
-                    <div class="row">
-                        <div class="col-8">
-                            <div class="numbers">
-                                <p class="text-sm mb-0 text-capitalize font-weight-bold">Human Resource System</p>
-                                <h5 class="font-weight-bolder mb-0">
-                                    Summary Rosso Per Area
-
-                                </h5>
-                                <a href="<?= base_url($role . '/exportSummaryRosso') ?>" class="btn btn-primary mt-2">Lihat Summary Rosso</a>
-                            </div>
-                        </div>
-                        <div class="col-4 text-end">
-                            <a href="<?= base_url($role . '/downloadTemplateRosso') ?>"
-                                class="btn bg-gradient-success me-2">
-                                <i class="fas fa-download text-lg opacity-10" aria-hidden="true"></i>
-                                Template Excel
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- ROW UUPLOAD -->
-    <div class="row my-4">
-        <div class="col-xl-12 col-sm-12 mb-xl-0 mb-4">
-            <div class="card">
-                <div class="card-body p-3">
-                    <form action="<?= base_url($role . '/uploadJarum') ?>" method="post" enctype="multipart/form-data">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <label for="">Upload File</label>
-                                <input type="file" name="file" id="file" class="form-control" required>
-                            </div>
-                            <div class="col-md-6 text-center">
-                                <label for="">Aksi</label>
-                                <button type="submit" class="btn bg-gradient-info mt-3 w-100">Upload</button>
-                            </div>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
     <div class="row mt-2">
-        <?php foreach ($tampilperarea as $key => $ar) : ?>
+        <?php foreach ($getArea as $key => $ar) : ?>
             <div class="col-xl-3 col-sm-6 mb-xl-0 mb-4 mt-2">
-                <a href="<?= base_url($role . '/dataRosso/' . $ar['main_factory']) ?>">
+                <a href="<?= base_url($role . '/dataBsmc/' . $ar['factory_name']) ?>">
                     <div class="card">
                         <div class="card-body p-3">
                             <div class="row">
                                 <div class="col-8">
                                     <div class="numbers">
-                                        <p class="text-sm mb-0 text-capitalize font-weight-bold"><?= $ar['main_factory'] ?></p>
+                                        <p class="text-sm mb-0 text-capitalize font-weight-bold"><?= $ar['factory_name'] ?></p>
                                         <h5 class="font-weight-bolder mb-0">
                                         </h5>
                                     </div>
@@ -139,7 +90,6 @@
 <script>
     $(document).ready(function() {
         // Initialize DataTable with export options
-        $('#table_report_batch').DataTable({});
 
         // Flash message SweetAlerts
         <?php if (session()->getFlashdata('success')) : ?>

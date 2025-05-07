@@ -109,7 +109,10 @@ $routes->group('/Sudo', ['filter' => 'Sudo'], function ($routes) {
     $routes->get('rossoDetail/(:num)', 'RossoController::show/$1');
     $routes->get('filterRosso/(:segment)', 'RossoController::filterRosso/$1');
     $routes->post('filterRosso/(:segment)', 'RossoController::filterRosso/$1');
-    $routes->get('exportSummaryRosso', 'SummaryRossoController::exportSummaryRosso');
+    $routes->get('exportSummaryRosso', 'RossoController::exportSummaryRosso');
+    //Summary Bsmc
+    $routes->get('dataBsmc', 'MonitoringController::bsmc');
+    $routes->post('importExcelBsmc', 'BsmcController::importExcelBsmc'); // Bekas pindahin sum bsmc dari db skillmapping
 });
 
 $routes->group('/Monitoring', ['filter' => 'Monitoring'], function ($routes) {
@@ -210,6 +213,20 @@ $routes->group('/Monitoring', ['filter' => 'Monitoring'], function ($routes) {
     $routes->get('filterRosso/(:segment)', 'RossoController::filterRosso/$1');
     $routes->post('filterRosso/(:segment)', 'RossoController::filterRosso/$1');
     $routes->get('exportSummaryRosso', 'SummaryRossoController::exportSummaryRosso');
+
+    //summary bsmc
+    $routes->get('dataBsmc', 'MonitoringController::bsmc');
+    $routes->get('dataBsmc/(:segment)', 'BsmcController::tampilPerBatch/$1');
+    $routes->get('reportSummaryBsmc/(:segment)/(:num)', 'BsmcController::sumBsMesin/$1/$2');
+    // $routes->get('filterBsmc/(:segment)', 'BsmcController::filterBsmc/$1');
+    // $routes->post('filterBsmc/(:segment)', 'BsmcController::filterBsmc/$1');
+    // $routes->get('downloadTemplateBsmc', 'BsmcController::downloadTemplate');
+    // $routes->post('bsmcStoreImport', 'BsmcController::import');
+    // $routes->get('bsmcCreate', 'BsmcController::create');
+    // $routes->get('fetchDataBsMc', 'BsmcController::fetchDataAPI');
+    // $routes->get('bsmcEdit/(:num)', 'BsmcController::edit/$1');
+    // $routes->get('bsmcUpdate/(:num)', 'BsmcController::update/$1');
+    // $routes->get('bsmcDelete/(:num)', 'BsmcController::delete/$1');
 });
 
 $routes->group('/Mandor', ['filter' => 'Mandor'], function ($routes) {
