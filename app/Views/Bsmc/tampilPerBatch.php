@@ -15,7 +15,7 @@
                             </div>
                         </div>
                         <div class="col-4 text-end">
-                            <a href="<?= base_url('Monitoring/filterBsmc/' . $factory_name) ?>" class="btn bg-gradient-info">
+                            <a href="<?= base_url($role . '/filterBsmc/' . $factory_name) ?>" class="btn bg-gradient-info">
                                 <i class="ni ni-calendar-grid-58 text-lg opacity-10 me-2" aria-hidden="true"></i>
                                 Filter Report
                             </a>
@@ -28,7 +28,7 @@
     <div class="row">
         <?php foreach ($batch as $b) : ?>
             <div class="col-xl-3 col-sm-3 mb-xl-0 mb-4 mt-2">
-                <a href="<?= base_url('Monitoring/reportSummaryBsmc/' . $factory_name . '/' . $b['id_batch']) ?>">
+                <a href="<?= base_url($role . '/reportSummaryBsmc/' . $factory_name . '/' . $b['id_batch']) ?>">
                     <div class="card">
                         <div class="card-body p-3">
                             <div class="row">

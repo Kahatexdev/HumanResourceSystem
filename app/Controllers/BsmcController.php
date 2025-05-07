@@ -42,6 +42,7 @@ class BsmcController extends BaseController
 
     public function tampilPerBatch($factory_name)
     {
+        dd($factory_name);
         $summaryBsmc = $this->bsmcModel->getDatabyArea($factory_name);
         $batch = $this->batchModel->getBatch();
         // dd($batch);
@@ -450,61 +451,10 @@ class BsmcController extends BaseController
             ];
         }
 
-        // Dump untuk verifikasi (boleh di-comment setelah yakin)
-        // dd($dataToInsert);
-
         if (! empty($dataToInsert)) {
             $this->bsmcModel->insertBatch($dataToInsert);
         }
 
         return redirect()->back()->with('success', 'Import berhasil!');
     }
-
-    // public function importExcelBsmc()
-    // {
-    //     $file = $this->request->getFile('file');
-    //     if ($file && $file->isValid()) {
-    //         $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($file->getTempName());
-    //         $sheet = $spreadsheet->getActiveSheet();
-    //         $rows = $sheet->toArray();
-
-    //         $dataToInsert = [];
-
-    //         foreach ($rows as $index => $row) {
-    //             if ($index === 0) continue; // Skip header
-
-    //             // Ambil id_employee berdasarkan kode_kartu
-    //             $employee = $this->employeeModel
-    //                 ->where('employee_code', $row[0])
-    //                 ->first();
-
-    //             if (!$employee) continue; // Skip jika employee tidak ditemukan
-
-    //             $factory = $this->factoryModel
-    //                 ->where('factory_name', $row[2])
-    //                 ->first();
-
-    //             if (!$factory) continue; // Skip jika factory tidak ditemukan
-
-    //             $dataToInsert[] = [
-    //                 'id_employee' => $employee['id_employee'],
-    //                 'id_factory'  => $factory['id_factory'],
-    //                 'tgl_input'    => date('Y-m-d', strtotime($row[3])),
-    //                 'produksi'     => $row[4],
-    //                 'bs_mc'        => $row[5],
-    //                 'created_at'  => date('Y-m-d H:i:s', strtotime($row[6])),
-    //                 'updated_at'  => date('Y-m-d H:i:s', strtotime($row[7]))
-    //             ];
-    //         }
-    //         dd($dataToInsert);
-    //         // Simpan data ke DB
-    //         if (!empty($dataToInsert)) {
-    //             $this->bsmcModel->insertBatch($dataToInsert);
-    //         }
-
-    //         return redirect()->back()->with('success', 'Import berhasil!');
-    //     }
-
-    //     return redirect()->back()->with('error', 'File tidak valid');
-    // }
 }
