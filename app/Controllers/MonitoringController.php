@@ -119,7 +119,7 @@ class MonitoringController extends BaseController
             'periode' => $periode,
             'getArea' => $getArea,
             'getPeriode' => $getPeriode,
-            'getCurrentInput' => $getCurrentInput
+            'getCurrentInput' => $getCurrentInput ?? []
         ];
         // dd ($getBatch);
         return view(session()->get('role') . '/bsmc', $data);
@@ -178,7 +178,7 @@ class MonitoringController extends BaseController
             'periode' => $periode,
             'getArea' => $getArea,
             'getPeriode' => $getPeriode,
-            'getCurrentInput' => $getCurrentInput
+            'getCurrentInput' => $getCurrentInput ?? []
         ];
         // dd ($getBatch);
         return view(session()->get('role') . '/jarum', $data);

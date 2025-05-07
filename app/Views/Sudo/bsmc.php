@@ -8,7 +8,7 @@
                 <div class="card-body">
                     <h4 class="card-title">
                         Import Summary BS Mesin
-                        <p>Tanggal Terakhir Input : <?= $getCurrentInput['tgl_input'] ?></p>
+                        <p>Tanggal Terakhir Input : <?= $getCurrentInput['tgl_input'] ?? 0 ?></p>
                     </h4>
                     <!-- form import  Summary BSMC -->
                     <form action="<?= base_url($role . '/importExcelBsmc') ?>" method="post"
