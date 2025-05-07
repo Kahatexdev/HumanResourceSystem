@@ -110,7 +110,7 @@ $routes->group('/Sudo', ['filter' => 'Sudo'], function ($routes) {
     $routes->get('exportSummaryRosso', 'RossoController::exportSummaryRosso');
     //Summary Bsmc
     $routes->get('dataBsmc', 'MonitoringController::bsmc');
-    $routes->post('importExcelBsmc', 'BsmcController::importExcelBsmc');
+    $routes->post('importExcelBsmc', 'BsmcController::importExcelBsmc'); // Bekas pindahin sum bsmc dari db skillmapping
 });
 
 $routes->group('/Monitoring', ['filter' => 'Monitoring'], function ($routes) {
@@ -214,10 +214,10 @@ $routes->group('/Monitoring', ['filter' => 'Monitoring'], function ($routes) {
 
     //summary bsmc
     $routes->get('dataBsmc', 'MonitoringController::bsmc');
-    // $routes->get('dataBsmc/(:segment)', 'BsMcController::tampilPerBatch/$1');
+    $routes->get('dataBsmc/(:segment)', 'BsMcController::tampilPerBatch/$1');
+    $routes->get('reportSummaryBsmc/(:segment)/(:num)', 'BsMcController::sumBsMesin/$1/$2');
     // $routes->get('filterBsmc/(:segment)', 'BsMcController::filterBsmc/$1');
     // $routes->post('filterBsmc/(:segment)', 'BsMcController::filterBsmc/$1');
-    // $routes->get('reportSummaryBsmc/(:segment)/(:num)', 'BsMcController::sumBsMesin/$1/$2');
     // $routes->get('downloadTemplateBsmc', 'BsMcController::downloadTemplate');
     // $routes->post('bsmcStoreImport', 'BsMcController::import');
     // $routes->get('bsmcCreate', 'BsMcController::create');

@@ -2,7 +2,7 @@
 <?php $this->section('content'); ?>
 
 <div class="container-fluid py-4">
-    <div class="row">
+    <!-- <div class="row">
         <div class="col-xl-12 col-sm-12 mb-xl-0 mb-4 mt-2">
             <div class="card">
                 <div class="card-body">
@@ -10,7 +10,6 @@
                         Import Summary BS Mesin
                         <p>Tanggal Terakhir Input : <?= $getCurrentInput['tgl_input'] ?></p>
                     </h4>
-                    <!-- form import  Summary BSMC -->
                     <form action="<?= base_url('Monitoring/bsmcStoreImport') ?>" method="post"
                         enctype="multipart/form-data">
                         <div class="upload-container">
@@ -29,8 +28,8 @@
                 </div>
             </div>
         </div>
-    </div>
-    <div class="row my-4">
+    </div> -->
+    <div class="row">
         <div class="col-xl-12 col-sm-12 mb-xl-0 mb-4">
             <div class="card">
                 <div class="card-body p-3">
@@ -43,14 +42,13 @@
                                 </h5>
                             </div>
                         </div>
-                        <div class="col-4 text-end">
+                        <!-- <div class="col-4 text-end">
                             <a href="<?= base_url('Monitoring/downloadTemplateBsmc') ?>"
                                 class="btn bg-gradient-success me-2">
-                                <!-- icon download -->
                                 <i class="fas fa-download text-lg opacity-10" aria-hidden="true"></i>
                                 Template Excel
                             </a>
-                        </div>
+                        </div> -->
                     </div>
                 </div>
             </div>
@@ -75,16 +73,13 @@
                                         <i class="ni ni-money-coins text-lg opacity-10" aria-hidden="true"></i>
                                     </div>
                                 </div>
-
                             </div>
                         </div>
                     </div>
                 </a>
             </div>
         <?php endforeach ?>
-
     </div>
-
 </div>
 <!-- datatable -->
 <script>
