@@ -107,7 +107,10 @@ $routes->group('/Sudo', ['filter' => 'Sudo'], function ($routes) {
     $routes->get('rossoDetail/(:num)', 'RossoController::show/$1');
     $routes->get('filterRosso/(:segment)', 'RossoController::filterRosso/$1');
     $routes->post('filterRosso/(:segment)', 'RossoController::filterRosso/$1');
-    $routes->get('exportSummaryRosso', 'SummaryRossoController::exportSummaryRosso');
+    $routes->get('exportSummaryRosso', 'RossoController::exportSummaryRosso');
+    //Summary Bsmc
+    $routes->get('dataBsmc', 'MonitoringController::bsmc');
+    $routes->post('importExcelBsmc', 'BsmcController::importExcelBsmc');
 });
 
 $routes->group('/Monitoring', ['filter' => 'Monitoring'], function ($routes) {
@@ -208,6 +211,20 @@ $routes->group('/Monitoring', ['filter' => 'Monitoring'], function ($routes) {
     $routes->get('filterRosso/(:segment)', 'RossoController::filterRosso/$1');
     $routes->post('filterRosso/(:segment)', 'RossoController::filterRosso/$1');
     $routes->get('exportSummaryRosso', 'SummaryRossoController::exportSummaryRosso');
+
+    //summary bsmc
+    $routes->get('dataBsmc', 'MonitoringController::bsmc');
+    // $routes->get('dataBsmc/(:segment)', 'BsMcController::tampilPerBatch/$1');
+    // $routes->get('filterBsmc/(:segment)', 'BsMcController::filterBsmc/$1');
+    // $routes->post('filterBsmc/(:segment)', 'BsMcController::filterBsmc/$1');
+    // $routes->get('reportSummaryBsmc/(:segment)/(:num)', 'BsMcController::sumBsMesin/$1/$2');
+    // $routes->get('downloadTemplateBsmc', 'BsMcController::downloadTemplate');
+    // $routes->post('bsmcStoreImport', 'BsMcController::import');
+    // $routes->get('bsmcCreate', 'BsMcController::create');
+    // $routes->get('fetchDataBsMc', 'BsMcController::fetchDataAPI');
+    // $routes->get('bsmcEdit/(:num)', 'BsMcController::edit/$1');
+    // $routes->get('bsmcUpdate/(:num)', 'BsMcController::update/$1');
+    // $routes->get('bsmcDelete/(:num)', 'BsMcController::delete/$1');
 });
 
 $routes->group('/Mandor', ['filter' => 'Mandor'], function ($routes) {

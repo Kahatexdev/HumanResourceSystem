@@ -17,6 +17,7 @@ use App\Models\MainJobRoleModel;
 use App\Models\JobRoleModel;
 use App\Models\JarumModel;
 use App\Models\RossoModel;
+use App\Models\BsmcModel;
 
 class MonitoringController extends BaseController
 {
@@ -34,6 +35,7 @@ class MonitoringController extends BaseController
     protected $jobRoleModel;
     protected $jarumModel;
     protected $rossoModel;
+    protected $bsmcModel;
 
     public function __construct()
     {
@@ -50,13 +52,78 @@ class MonitoringController extends BaseController
         $this->jobRoleModel = new JobRoleModel();
         $this->jarumModel = new JarumModel();
         $this->rossoModel = new RossoModel();
+        $this->bsmcModel = new BsmcModel();
         $this->role = session()->get('role');
     }
+
     public function index()
     {
         //
     }
 
+    public function bsmc()
+    {
+        $getBatch = $this->batchModel->findAll();
+        $periode = $this->periodeModel->getPeriode();
+        $getArea = $this->factoryModel->select('*')->groupBy('factory_name')->findAll();
+        $getPeriode = $this->periodeModel->getPeriode();
+        $getCurrentInput = $this->bsmcModel->getCurrentInput();
+
+        // dd($getArea);
+        $sort = [
+            'KK1A',
+            'KK1B',
+            'KK2A',
+            'KK2B',
+            'KK2C',
+            'KK5',
+            'KK7K',
+            'KK7L',
+            'KK8D',
+            'KK8F',
+            'KK8J',
+            'KK9',
+            'KK10',
+            'KK11',
+        ];
+
+        $getArea = array_filter($getArea, function ($area) use ($sort) {
+            return in_array($area['factory_name'], $sort);
+        });
+
+        // Urutkan data menggunakan usort
+        usort($getArea, function ($a, $b) use ($sort) {
+            $pos_a = array_search($a['factory_name'], $sort);
+            $pos_b = array_search($b['factory_name'], $sort);
+
+            // Jika tidak ditemukan, letakkan di akhir
+            $pos_a = ($pos_a === false) ? PHP_INT_MAX : $pos_a;
+            $pos_b = ($pos_b === false) ? PHP_INT_MAX : $pos_b;
+
+            return $pos_a - $pos_b;
+        });
+
+        $data = [
+            'role' => session()->get('role'),
+            'title' => 'Bsmc',
+            'active1' => '',
+            'active2' => '',
+            'active3' => '',
+            'active4' => '',
+            'active5' => '',
+            'active6' => '',
+            'active7' => '',
+            'active8' => '',
+            'active9' => 'active',
+            'getBatch' => $getBatch,
+            'periode' => $periode,
+            'getArea' => $getArea,
+            'getPeriode' => $getPeriode,
+            'getCurrentInput' => $getCurrentInput
+        ];
+        // dd ($getBatch);
+        return view(session()->get('role') . '/bsmc', $data);
+    }
     public function jarum()
     {
         $getBatch = $this->batchModel->findAll();
@@ -65,7 +132,7 @@ class MonitoringController extends BaseController
         $getPeriode = $this->periodeModel->getPeriode();
         $getCurrentInput = $this->jarumModel->getCurrentInput();
 
-        // dd($getPeriode);
+        // dd($getArea);
         $sort = [
             'KK1A',
             'KK1B',
