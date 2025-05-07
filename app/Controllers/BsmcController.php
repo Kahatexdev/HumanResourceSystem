@@ -42,7 +42,7 @@ class BsmcController extends BaseController
 
     public function tampilPerBatch($factory_name)
     {
-        dd($factory_name);
+        // dd($factory_name);
         $summaryBsmc = $this->bsmcModel->getDatabyArea($factory_name);
         $batch = $this->batchModel->getBatch();
         // dd($batch);
