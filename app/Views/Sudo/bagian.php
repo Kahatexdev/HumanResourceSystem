@@ -51,9 +51,10 @@
                             </thead>
                             <tbody>
                                 <?php if (!empty($bagian)) : ?>
+                                    <?php $no = 1; ?>
                                     <?php foreach ($bagian as $bagian) : ?>
                                         <tr>
-                                            <td><?= $bagian['id_job_section'] ?></td>
+                                            <td><?= $no++ ?></td>
                                             <td><?= $bagian['job_section_name'] ?></td>
                                             <td>
                                                 <a href="#"
