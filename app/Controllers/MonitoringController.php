@@ -189,7 +189,7 @@ class MonitoringController extends BaseController
     {
         $getBatch = $this->batchModel->findAll();
         $periode = $this->periodeModel->getPeriode();
-        $getArea = $this->factoryModel->select('*')->groupBy('main_factory')->findAll();
+        $getArea = $this->factoryModel->select('*')->groupBy('factory_name')->findAll();
         $getPeriode = $this->periodeModel->getPeriode();
         $getCurrentInput = $this->jarumModel->getCurrentInput();
 
