@@ -189,7 +189,7 @@ class MonitoringController extends BaseController
     {
         $getBatch = $this->batchModel->findAll();
         $periode = $this->periodeModel->getPeriode();
-        $getArea = $this->factoryModel->select('*')->groupBy('factory_name')->whereIn('main_factory', ['KK1A', 'KK1B', 'KK2A', 'KK2B', 'KK2C', 'KK5', 'KK7K', 'KK7L', 'KK8D', 'KK8F', 'KK8J', 'KK9', 'KK10', 'KK11'])->findAll();
+        $getArea = $this->factoryModel->select('*')->groupBy('factory_name')->whereIn('factory_name', ['KK1A', 'KK1B', 'KK2A', 'KK2B', 'KK2C', 'KK5', 'KK7K', 'KK7L', 'KK8D', 'KK8F', 'KK8J', 'KK9', 'KK10', 'KK11'])->findAll();
         $getPeriode = $this->periodeModel->getPeriode();
         $getCurrentInput = $this->jarumModel->getCurrentInput();
 
