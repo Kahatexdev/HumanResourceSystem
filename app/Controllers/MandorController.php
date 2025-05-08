@@ -167,7 +167,7 @@ class MandorController extends BaseController
         // $penilaian = $this->penilaianModel->getPenilaian();
         $periode   = $this->periodeModel->getActivePeriode();
         $areaUtama = $this->factoriesModel->select('*')->groupBy('main_factory')->findAll();
-        $area = $this->factoryModel->select('*')->groupBy('factory_name')->whereIn('factory_name', ['KK1A', 'KK1B', 'KK2A', 'KK2B', 'KK2C', 'KK5', 'KK7K', 'KK7L', 'KK8D', 'KK8F', 'KK8J', 'KK9', 'KK10', 'KK11', 'ROSSOKK1', 'ROSSOKK2', 'ROSSOKK5', 'ROSSOKK7', 'ROSSOKK8', 'ROSSOKK11', 'SEWING'])->findAll();
+        $area = $this->factoriesModel->select('*')->groupBy('factory_name')->whereIn('factory_name', ['KK1A', 'KK1B', 'KK2A', 'KK2B', 'KK2C', 'KK5', 'KK7K', 'KK7L', 'KK8D', 'KK8F', 'KK8J', 'KK9', 'KK10', 'KK11', 'ROSSOKK1', 'ROSSOKK2', 'ROSSOKK5', 'ROSSOKK7', 'ROSSOKK8', 'ROSSOKK11', 'SEWING'])->findAll();
 
         $data = [
             'role'       => $this->role,
