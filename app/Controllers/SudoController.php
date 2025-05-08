@@ -228,13 +228,13 @@ class SudoController extends BaseController
         //     'factory_name'        => $this->request->getGet('factory_name'),
         // ];
 
-       
+
         // dd ($karyawan);
-        $namabagian = $this->jobSectionModel->findAll();
+        $namabagian = $this->jobSectionModel->whereIn('job_section_name', ['OPERATOR', 'OPERATOR (8D)', 'OPERATOR (8J)', 'OPERATOR (KK9)', 'OPERATOR MEKANIK DOUBLE', 'MONTIR', 'MONTIR (A1)', 'MONTIR (8J)', 'MONTIR (DAKONG)', 'MONTIR (LONATI SINGLE)', 'MONTIR (LONATI DOUBLE)', 'ROSSO', 'SEWING'])->findAll();
         // $penilaian = $this->penilaianModel->getPenilaian();
         $periode   = $this->periodeModel->getActivePeriode();
         $areaUtama = $this->factoryModel->select('*')->groupBy('main_factory')->findAll();
-        $area = $this->factoryModel->select('*')->groupBy('factory_name')->findAll();
+        $area = $this->factoryModel->select('*')->groupBy('factory_name')->whereIn('factory_name', ['KK1A', 'KK1B', 'KK2A', 'KK2B', 'KK2C', 'KK5', 'KK7K', 'KK7L', 'KK8D', 'KK8F', 'KK8J', 'KK9', 'KK10', 'KK11', 'ROSSOKK1', 'ROSSOKK2', 'ROSSOKK5', 'ROSSOKK7', 'ROSSOKK8', 'ROSSOKK11', 'SEWING'])->findAll();
 
         $data = [
             'role'       => $this->role,
