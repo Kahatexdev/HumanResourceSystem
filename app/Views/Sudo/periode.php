@@ -54,9 +54,10 @@
                             </thead>
                             <tbody>
                                 <?php if (!empty($periode)) : ?>
+                                    <?php $no = 1; ?>
                                     <?php foreach ($periode as $periode) : ?>
                                         <tr>
-                                            <td><?= $periode['id_periode'] ?></td>
+                                            <td><?= $no++ ?></td>
                                             <td><?= $periode['periode_name'] ?></td>
                                             <td><?= $periode['batch_name'] ?></td>
                                             <input type="hidden" id="id_batch" value="<?= $periode['id_batch'] ?>">

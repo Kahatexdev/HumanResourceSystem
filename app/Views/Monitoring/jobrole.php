@@ -57,12 +57,13 @@
                             </thead>
                             <tbody>
                                 <?php if (!empty($mainjobrole)) : ?>
+                                    <?php $no = 1; ?>
                                     <?php foreach ($mainjobrole as $main) : ?>
                                         <tr data-id="<?= $main['id_main_job_role'] ?>">
                                             <td class="details-control text-center" style="cursor:pointer">
                                                 <i class="fas fa-plus-circle"></i>
                                             </td>
-                                            <td><?= $main['id_main_job_role'] ?></td>
+                                            <td><?= $no++ ?></td>
                                             <td><?= $main['main_job_role_name'] ?></td>
                                             <td>
                                                 <a href="#"

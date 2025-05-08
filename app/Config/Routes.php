@@ -74,11 +74,13 @@ $routes->group('/Sudo', ['filter' => 'Sudo'], function ($routes) {
     $routes->post('jobRoleUpdate/(:num)', 'JobroleController::jobRoleUpdate/$1');
     $routes->get('jobRoleDelete/(:num)', 'JobroleController::jobRoleDelete/$1');
     $routes->get('jobroleEdit/(:num)', 'JobroleController::edit/$1');
+    $routes->post('jobrole/import', 'JobroleController::importExcel');
     // penilaian
     $routes->get('dataPenilaian', 'SudoController::penilaian');
     $routes->get('getKaryawan', 'EmployeeAssessmentController::getKaryawan');
     $routes->post('penilaianCreate', 'EmployeeAssessmentController::create');
     $routes->post('penilaianStore', 'EmployeeAssessmentController::store');
+    $routes->post('penilaian/import', 'EmployeeAssessmentController::importPenilaian');
 
     // summary jarum
     $routes->get('dataJarum', 'SudoController::jarum');

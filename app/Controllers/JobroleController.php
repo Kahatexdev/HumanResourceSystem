@@ -9,6 +9,8 @@ use App\Models\JobSectionModel;
 use App\Models\MainJobRoleModel;
 use App\Models\BatchModel;
 use App\Models\PeriodeModel;
+use PhpOffice\PhpSpreadsheet\IOFactory;
+
 
 class JobroleController extends BaseController
 {
@@ -120,5 +122,62 @@ class JobroleController extends BaseController
             session()->setFlashdata('error', 'Data gagal dihapus');
             return redirect()->to(base_url($this->role . '/dataJob'));
         }
+    }
+
+    public function importExcel()
+    {
+        helper('form');
+        // 1) Validasi upload
+        if (! $this->validate([
+            'file' => 'uploaded[file]|ext_in[file,xlsx,xls]|max_size[file,10240]'
+        ])) {
+            return redirect()->back()->with('error', $this->validator->getError('file'));
+        }
+
+        // 2) Pindahkan file ke writable/uploads
+        $upload = $this->request->getFile('file');
+        // dd ($upload);
+        $newName = $upload->getRandomName();
+        $upload->move(WRITEPATH . 'uploads', $newName);
+        $fullPath = WRITEPATH . 'uploads/' . $newName;
+
+        // 3) Load spreadsheet
+        $spreadsheet = IOFactory::load($fullPath);
+
+        // 4) Import sheet "mainjobrole"
+        $sheet1 = $spreadsheet->getSheetByName('mainjobrole');
+        $rows1  = $sheet1->toArray(null, true, true, true);
+
+        foreach ($rows1 as $idx => $row) {
+            if ($idx < 2) continue; // skip header
+            $data = [
+                'id_main_job_role'    => $row['A'],
+                'main_job_role_name'  => $row['B'],
+                'created_at'          => $row['C'],
+                'updated_at'          => $row['D'],
+            ];
+            // replace(): insert baru atau update jika primary key sudah ada
+            $this->mainJobRoleModel->replace($data);
+        }
+
+        // 5) Import sheet "jobroles"
+        $sheet2 = $spreadsheet->getSheetByName('jobroles');
+        $rows2  = $sheet2->toArray(null, true, true, true);
+
+        foreach ($rows2 as $idx => $row) {
+            if ($idx < 2) continue; // skip header
+            $data = [
+                'id_main_job_role'   => $row['A'],
+                'jobdescription'     => $row['B'],
+                'description'        => $row['C'],
+                'created_at'         => $row['D'],
+                'updated_at'         => $row['E'],
+            ];
+            $this->jobRoleModel->insert($data);
+        }
+
+        // 6) Hapus file temp dan redirect
+        unlink($fullPath);
+        return redirect()->back()->with('success', 'Import jobroles berhasil.');
     }
 }
