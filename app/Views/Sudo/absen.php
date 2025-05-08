@@ -42,15 +42,30 @@
                         Import Data Absen
                     </h4>
                     <!-- form import  data absen -->
-                    <form action="<?= base_url('Monitoring/absenStoreImport') ?>" method="post"
+                    <form action="<?= base_url($role . '/importAbsenSkillMap') ?>" method="post"
+                        enctype="multipart/form-data">
+                        <div class="upload-container">
+                            <div class="upload-area" id="upload-area">
+                                <i class="fas fa-cloud-upload-alt fa-2x"></i>
+                                <p>Drag & drop any file here</p>
+                                <span>or <label for="file-upload" class="browse-link">browse file</label> from
+                                    device</span>
+                                <input type="file" id="file-upload" class="file-input" name="file" hidden required>
+                            </div>
+                            <button type="submit" class="upload-button w-100 mt-3">
+                                <i class="fas fa-upload"></i> Upload
+                            </button>
+                        </div>
+                    </form>
+                    <!-- <form action="<?= base_url($role . '/absenStoreImport') ?>" method="post"
                         enctype="multipart/form-data">
                         <div class="row">
                             <div class="col-md-12">
                                 <div class="form-group">
                                     <label for="id_periode">Periode</label>
-                                    <!-- <a href="<?= base_url($role . '/downloadTemplateAbsen') ?>"
+                                    <a href="<?= base_url($role . '/downloadTemplateAbsen') ?>"
                                         class="btn btn-success btn-sm mt-2" target="_blank">Download
-                                        Template</a> -->
+                                        Template</a>
                                     <select class="form-select" name="id_periode" id="id_periode" required>
                                         <option value="">Pilih Periode</option>
                                         <?php foreach ($periode as $p) : ?>
@@ -73,7 +88,7 @@
                                 <i class="fas fa-upload"></i> Upload
                             </button>
                         </div>
-                    </form>
+                    </form> -->
                 </div>
             </div>
         </div>

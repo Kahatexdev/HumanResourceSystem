@@ -1,8 +1,4 @@
-<?php
-
-use PhpOffice\PhpSpreadsheet\Calculation\DateTimeExcel\Month;
-
-$this->extend('Layout/index'); ?>
+<?php $this->extend('layout/template'); ?>
 <?php $this->section('content'); ?>
 <div class="container-fluid py-4">
     <!-- Header -->
@@ -15,7 +11,7 @@ $this->extend('Layout/index'); ?>
                             <div class="numbers">
                                 <p class="text-sm mb-0 text-capitalize font-weight-bold">Human Resource System</p>
                                 <h5 class="font-weight-bolder mb-0">
-                                    Data Penilaian <?= $area_utama ?>
+                                    Data Penilaian <?= $main_factory ?>
                                 </h5>
                             </div>
                         </div>
@@ -34,8 +30,8 @@ $this->extend('Layout/index'); ?>
             ?>
             <?php foreach ($penilaian as $periode) : ?>
                 <!-- Tampilkan nama batch hanya jika berbeda dengan batch sebelumnya -->
-                <?php if ($periode['nama_batch'] !== $currentBatch) : ?>
-                    <?php $currentBatch = $periode['nama_batch']; ?>
+                <?php if ($periode['batch_name'] !== $currentBatch) : ?>
+                    <?php $currentBatch = $periode['batch_name']; ?>
                     <div class="col-xl-12 col-sm-12 mb-xl-0 mb-3 mt-3">
                         <div class="card">
                             <div class="card-body p-3">
@@ -43,7 +39,7 @@ $this->extend('Layout/index'); ?>
                                     <div class="col-8">
                                         <div class="numbers">
                                             <p class="text-sm mb-0 text-capitalize font-weight-bold"></p>
-                                            <h5 class="font-weight-bolder mb-0"><?= $periode['nama_batch'] ?>
+                                            <h5 class="font-weight-bolder mb-0"><?= $periode['batch_name'] ?>
                                             </h5>
                                         </div>
                                     </div>
@@ -60,10 +56,10 @@ $this->extend('Layout/index'); ?>
 
                 <!-- Tampilkan nama periode -->
                 <div class="col-xl-4 col-sm-6 mt-3">
-                    <a href="<?= base_url($role . '/reportPenilaian/' . $periode['area_utama'] . '/' . $periode['nama_batch'] . '/' . $periode['nama_periode']) ?>" class="text-decoration-none">
+                    <a href="<?= base_url($role . '/reportPenilaian/' . $periode['main_factory'] . '/' . $periode['batch_name'] . '/' . $periode['periode_name']) ?>" class="text-decoration-none">
                         <div class="card hover-shadow">
                             <div class="card-body">
-                                <h6 class="text-dark font-weight-bold">Periode <?= $periode['nama_periode'] ?> (<?= date('M', strtotime($periode['end_date'])) ?>)</h6>
+                                <h6 class="text-dark font-weight-bold">Periode <?= $periode['periode_name'] ?> (<?= date('M', strtotime($periode['end_date'])) ?>)</h6>
                                 <p class="text-muted small mb-0"><?= date('d-m-Y', strtotime($periode['start_date'])) ?> s/d <?= date('d-m-Y', strtotime($periode['end_date'])) ?></p>
                                 <div class="d-flex justify-content-between align-items-center mt-2">
                                     <span class="badge bg-gradient-info text-white">Detail</span>
@@ -78,7 +74,7 @@ $this->extend('Layout/index'); ?>
             <?php endforeach; ?>
         <?php else : ?>
             <div class="col-12">
-                <p class="text-center text-muted">Tidak ada data penilaian untuk area <?= $area_utama ?>.</p>
+                <p class="text-center text-muted">Tidak ada data penilaian untuk area <?= $main_factory ?>.</p>
             </div>
         <?php endif; ?>
     </div>
