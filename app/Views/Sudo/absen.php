@@ -320,6 +320,30 @@
         </div>
     </div>
 </div>
+
+//Cek data absen yang tidak masuk
+<!-- <?php if ($skip = session()->getFlashdata('skipDetails')): ?>
+    <h3>Baris yang Tidak Masuk (<?= count($skip) ?>)</h3>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Baris</th>
+                <th>Kode Kartu</th>
+                <th>Nama Karyawan</th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php foreach ($skip as $d): ?>
+                <tr>
+                    <td><?= esc($d['row']) ?></td>
+                    <td><?= esc($d['code']) ?></td>
+                    <td><?= esc($d['name']) ?></td>
+                </tr>
+            <?php endforeach ?>
+        </tbody>
+    </table>
+<?php endif ?> -->
+
 <script type="text/javascript">
     function confirmDelete(id) {
         Swal.fire({

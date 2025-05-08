@@ -7,6 +7,11 @@ use CodeIgniter\HTTP\ResponseInterface;
 use App\Models\PresenceModel;
 use App\Models\EmployeeModel;
 use App\Models\UserModel;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use PhpOffice\PhpSpreadsheet\IOFactory;
+use PhpOffice\PhpSpreadsheet\Style\Border;
+use DateTime;
 
 class PresenceController extends BaseController
 {
@@ -339,48 +344,68 @@ class PresenceController extends BaseController
     public function importAbsenSkillMap()
     {
         $file = $this->request->getFile('file');
-        if (! $file || ! $file->isValid()) {
-            return redirect()->back()->with('error', 'File tidak valid');
+
+        if (! $file->isValid() || $file->getExtension() !== 'xlsx') {
+            return redirect()->back()->with('error', 'File tidak valid atau bukan Excel.');
         }
 
-        $sheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($file->getTempName())
-            ->getActiveSheet();
-        // true,true,true,true → hitung formula, format data, dan kembalikan assoc by col letter
-        $rows = $sheet->toArray(null, true, true, true);
+        $spreadsheet   = IOFactory::load($file->getTempName());
+        $sheet         = $spreadsheet->getActiveSheet();
+        $highestRow    = $sheet->getHighestRow();
 
-        $validEmployees = $this->employeeModel
-            ->table('employees')
-            ->select('id_employee')
-            ->get()
-            ->getResultArray();
-        $validIds = array_column($validEmployees, 'id_employee');
+        $successCount  = 0;
+        $skipCount     = 0;
+        $skipDetails   = [];
 
-        $dataToInsert = [];
-        foreach ($rows as $rowNum => $row) {
-            if ($rowNum === 1) continue;
-            if (! in_array($row['B'], $validIds)) {
-                // skip jika employee tidak terdaftar
+        for ($row = 2; $row <= $highestRow; $row++) {
+            $kodeKartu    = trim($sheet->getCell('A' . $row)->getValue());
+            $namaKaryawan = trim($sheet->getCell('B' . $row)->getValue());
+
+            // Cari id_employee (case-insensitive & trim)
+            $karyawan = $this->employeeModel
+                ->where('TRIM(LOWER(employee_code))', strtolower($kodeKartu))
+                ->where('TRIM(LOWER(employee_name))', strtolower($namaKaryawan))
+                ->first();
+
+            if (! $karyawan) {
+                ++$skipCount;
+                $skipDetails[] = [
+                    'row'  => $row,
+                    'code' => $kodeKartu,
+                    'name' => $namaKaryawan,
+                    'reason' => 'Employee not found',
+                ];
                 continue;
             }
 
-            $dataToInsert[] = [
-                // jangan sertakan id_absen jika ini auto-increment
-                'id_employee' => $row['B'],
-                'id_periode'  => $row['C'],
-                'permit'      => $row['D'],
-                'sick'        => $row['E'],
-                'absent'      => $row['F'],
-                'leave'       => $row['G'],
-                'id_user'     => $row['H'],
-                'created_at'  => date('Y-m-d H:i:s', strtotime($row['I'])),
-                'updated_at'  => date('Y-m-d H:i:s', strtotime($row['J'])),
+            // Siapkan data
+            $data = [
+                'id_employee' => $karyawan['id_employee'],
+                'id_periode'  => $sheet->getCell('C' . $row)->getValue(),
+                'permit'      => $sheet->getCell('D' . $row)->getValue(),
+                'sick'        => $sheet->getCell('E' . $row)->getValue(),
+                'absent'      => $sheet->getCell('F' . $row)->getValue(),
+                'leave'       => $sheet->getCell('G' . $row)->getValue(),
+                'id_user'     => $sheet->getCell('H' . $row)->getValue(),
+                'created_at'  => $sheet->getCell('I' . $row)->getValue(),
+                'updated_at'  => $sheet->getCell('J' . $row)->getValue(),
             ];
-        }
-        // dd($dataToInsert);
-        if (! empty($dataToInsert)) {
-            $this->presenceModel->insertBatch($dataToInsert);
+
+            if ($this->presenceModel->insert($data)) {
+                ++$successCount;
+            } else {
+                ++$skipCount;
+                $skipDetails[] = [
+                    'row'    => $row,
+                    'code'   => $kodeKartu,
+                    'name'   => $namaKaryawan,
+                    'reason' => 'Insert failed: ' . json_encode($this->presenceModel->errors()),
+                ];
+            }
         }
 
-        return redirect()->back()->with('success', 'Import berhasil!');
+        session()->setFlashdata('skipDetails', $skipDetails);
+
+        return redirect()->back()->with('success', "Import selesai. Berhasil: {$successCount}, Dilewati: {$skipCount}");
     }
 }
