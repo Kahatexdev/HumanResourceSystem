@@ -1,6 +1,25 @@
 <?php $this->extend('layout/template'); ?>
 <?php $this->section('content'); ?>
-
+<?php if (session()->getFlashdata('validation_errors')): ?>
+    <div class="alert alert-warning">
+        <ul class="mb-0">
+            <?php foreach (session()->getFlashdata('validation_errors') as $err): ?>
+                <li><?= esc($err) ?></li>
+            <?php endforeach ?>
+        </ul>
+    </div>
+<?php endif; ?>
+<?php if (session()->getFlashdata('success')): ?>
+    <script>
+        Swal.fire({
+            icon: 'success',
+            title: 'Success',
+            text: '<?= session()->getFlashdata('success') ?>',
+            showConfirmButton: false,
+            timer: 1500
+        });
+    </script>
+<?php endif; ?>
 <div class="container-fluid py-4">
     <!-- <div class="row">
         <div class="col-xl-12 col-sm-12 mb-xl-0 mb-4 mt-2">
@@ -8,7 +27,7 @@
                 <div class="card-body">
                     <h4 class="card-title">
                         Import Summary BS Mesin
-                        <p>Tanggal Terakhir Input : <?= $getCurrentInput['tgl_input'] ?></p>
+                        <p>Tanggal Terakhir Input : <?= $getCurrentInput['tgl_input'] ?? '-' ?></p>
                     </h4>
                     <form action="<?= base_url('Monitoring/bsmcStoreImport') ?>" method="post"
                         enctype="multipart/form-data">
@@ -29,32 +48,36 @@
             </div>
         </div>
     </div> -->
-    <div class="row">
-        <div class="col-xl-12 col-sm-12 mb-xl-0 mb-4">
+    <div class="row my-4">
+        <div class="col-12 mb-4">
             <div class="card">
                 <div class="card-body p-3">
-                    <div class="row">
-                        <div class="col-8">
-                            <div class="numbers">
-                                <p class="text-sm mb-0 text-capitalize font-weight-bold">Human Resource System</p>
-                                <h5 class="font-weight-bolder mb-0">
-                                    Summary Bs Mesin Per Area
-                                </h5>
-                            </div>
+                    <div class="row align-items-center">
+                        <div class="col-md-6 mb-3 mb-md-0">
+                            <p class="text-sm mb-0 text-capitalize font-weight-bold">Human Resource System</p>
+                            <h5 class="font-weight-bolder mb-0">Summary Bs Mesin Per Area</h5>
                         </div>
-                        <!-- <div class="col-4 text-end">
-                            <a href="<?= base_url('Monitoring/downloadTemplateBsmc') ?>"
-                                class="btn bg-gradient-success me-2">
-                                <i class="fas fa-download text-lg opacity-10" aria-hidden="true"></i>
-                                Template Excel
-                            </a>
-                        </div> -->
+                        <div class="col-md-6">
+                            <form action="<?= base_url($role . '/fetchDataBsmc') ?>" method="get">
+                                <div class="row g-2">
+                                    <div class="col-12 col-sm-8">
+                                        <!-- <label for="tgl_input" class="form-label">Tanggal Input:</label> -->
+                                        <input type="date" id="tgl_input" name="tgl_input" class="form-control" required>
+                                    </div>
+                                    <div class="col-12 col-sm-4 d-flex align-items-end">
+                                        <button type="submit" class="btn bg-gradient-info w-100">
+                                            <i class="fas fa-server text-lg opacity-10 me-2"></i> Fetch Data
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-    <div class="row mt-2">
+    <div class=" row mt-2">
         <?php foreach ($getArea as $key => $ar) : ?>
             <div class="col-xl-3 col-sm-6 mb-xl-0 mb-4 mt-2">
                 <a href="<?= base_url($role . '/dataBsmc/' . $ar['factory_name']) ?>">

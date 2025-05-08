@@ -14,6 +14,7 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use DateTime;
+use Config\Database;
 
 class BsmcController extends BaseController
 {
@@ -23,6 +24,7 @@ class BsmcController extends BaseController
     protected $factoryModel;
     protected $batchModel;
     protected $periodeModel;
+    protected $db;
 
     public function __construct()
     {
@@ -31,7 +33,7 @@ class BsmcController extends BaseController
         $this->factoryModel = new FactoriesModel();
         $this->batchModel = new BatchModel();
         $this->periodeModel = new PeriodeModel();
-
+        $this->db = Database::connect();
         $this->role = session()->get('role');
     }
 
@@ -456,5 +458,147 @@ class BsmcController extends BaseController
         }
 
         return redirect()->back()->with('success', 'Import berhasil!');
+    }
+
+    public function fetchDataBsmc()
+    {
+        // Ambil tanggal input dari form atau default ke hari ini
+        $tgl = $this->request->getGet('tgl_input') ?? date('Y-m-d');
+
+        $factoryNames = [
+            'KK1A',
+            'KK1B',
+            'KK2A',
+            'KK2B',
+            'KK2C',
+            'KK5',
+            'KK7K',
+            'KK7L',
+            'KK8D',
+            'KK8F',
+            'KK8J',
+            'KK9',
+            'KK10',
+            'KK11'
+        ];
+
+        $results = [];
+        $errors  = [];
+        $batch   = [];
+        $rowCounter = 0;
+        $bsmcModel  = new \App\Models\BsmcModel();
+
+        // 1) Fetch dari API
+        foreach ($factoryNames as $factory) {
+            $url = "http://172.23.44.14/CapacityApps/public/api/prodBsDaily/{$factory}/{$tgl}";
+            try {
+                $response = @file_get_contents($url);
+                if ($response === false) {
+                    $errors[] = "No response from API for factory {$factory}.";
+                    continue;
+                }
+                $data = json_decode($response, true);
+                if (json_last_error() !== JSON_ERROR_NONE) {
+                    $errors[] = "Invalid JSON from API for factory {$factory}: " . json_last_error_msg();
+                    continue;
+                }
+                $results[$factory] = $data;
+            } catch (\Exception $e) {
+                $errors[] = "Exception for factory {$factory}: " . $e->getMessage();
+            }
+        }
+
+        // 2) Siapkan batch, cek valid & eksistensi
+        foreach ($results as $factoryCode => $rows) {
+            foreach ($rows as $row) {
+                $rowCounter++;
+
+                // Lookup employee & factory ID
+                $emp = $this->db->table('employees')
+                    ->select('id_employee')
+                    ->where('employee_name', $row['nama_karyawan'])
+                    ->get()
+                    ->getRowArray();
+
+                $fac = $this->db->table('factories')
+                    ->select('id_factory')
+                    ->where('factory_name', $factoryCode)
+                    ->get()
+                    ->getRowArray();
+
+                $idEmp     = $emp['id_employee']   ?? null;
+                $idFactory = $fac['id_factory']    ?? null;
+
+                // Validasi baris
+                if (empty($idEmp) || empty($idFactory)) {
+                    $missing = empty($idEmp) ? 'employee' : 'factory';
+                    $errors[] = "Row {$rowCounter}: missing {$missing} for '{$row['nama_karyawan']}' / '{$factoryCode}'.";
+                    continue;
+                }
+
+                // 3) Cek apakah sudah ada
+                $exists = $bsmcModel
+                    ->where('id_employee', $idEmp)
+                    ->where('tgl_input',   $tgl)
+                    ->where('id_factory',  $idFactory)
+                    ->first();
+
+                if ($exists) {
+                    $errors[] = "Row {$rowCounter}: data already exists for emp={$idEmp}, factory={$idFactory}, date={$tgl}.";
+                    continue;
+                }
+
+                // Siapkan insert
+                $batch[] = [
+                    'id_employee' => $idEmp,
+                    'tgl_input'   => $tgl,
+                    'produksi'    => $row['qty_produksi'],
+                    'bs_mc'       => $row['qty_gram'],
+                    'id_factory'  => $idFactory,
+                ];
+            }
+        }
+
+        // 4) Insert atau return error jika kosong
+        if (empty($batch)) {
+            return redirect()->back()
+                ->with('error', 'Tidak ada data baru untuk disimpan.')
+                ->with('validation_errors', $errors);
+        }
+
+        $bsmcModel->insertBatch($batch);
+
+        return redirect()->back()
+            ->with('success', 'Data berhasil diambil dan disimpan!')
+            ->with('validation_errors', $errors);
+    }
+
+    public function filterBsmc($area)
+    {
+        $tgl_awal  = $this->request->getPost('tgl_awal');
+        $tgl_akhir = $this->request->getPost('tgl_akhir');
+
+        if (empty($tgl_awal) || empty($tgl_akhir)) {
+            $tgl_awal  = date('Y-m-d');
+            $tgl_akhir = date('Y-m-d');
+        }
+
+        $bs_mc = $this->bsmcModel->getFilteredData($area, $tgl_awal, $tgl_akhir);
+
+        $data = [
+            'role' => session()->get('role'),
+            'title' => 'Bs Mesin',
+            'active1' => '',
+            'active2' => '',
+            'active3' => '',
+            'active4' => '',
+            'active5' => '',
+            'active6' => '',
+            'active7' => 'active',
+            'area' => $area,
+            'bsmc' => $bs_mc
+        ];
+
+        return view('Bsmc/filter-bsmc', $data);
     }
 }

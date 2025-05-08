@@ -56,7 +56,7 @@
             </div>
         </div>
     </div>
-    <div class="row my-4">
+    <!-- <div class="row my-4">
         <div class="col-xl-12 col-sm-12 mb-xl-0 mb-4">
             <div class="card">
                 <div class="card-body p-3">
@@ -82,10 +82,10 @@
                 </div>
             </div>
         </div>
-    </div>
+    </div> -->
 
     <!-- ROW UUPLOAD -->
-    <div class="row my-4">
+    <!-- <div class="row my-4">
         <div class="col-xl-12 col-sm-12 mb-xl-0 mb-4">
             <div class="card">
                 <div class="card-body p-3">
@@ -104,7 +104,7 @@
                 </div>
             </div>
         </div>
-    </div>
+    </div> -->
     <div class="row mt-2">
         <?php foreach ($tampilperarea as $key => $ar) : ?>
             <div class="col-xl-3 col-sm-6 mb-xl-0 mb-4 mt-2">
