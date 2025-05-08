@@ -30,7 +30,7 @@ class BsmcModel extends Model
     protected array $castHandlers = [];
 
     // Dates
-    protected $useTimestamps = false;
+    protected $useTimestamps = true;
     protected $dateFormat    = 'datetime';
     protected $createdField  = 'created_at';
     protected $updatedField  = 'updated_at';
@@ -92,5 +92,18 @@ class BsmcModel extends Model
             ->orderBy('tgl_input', 'DESC')
             ->limit(1)
             ->first();
+    }
+
+    public function getFilteredData($area, $startDate, $endDate)
+    {
+        return $this->select('sum_bsmc.*, employees.*, job_sections.*, factories.*')
+            ->join('employees', 'employees.id_employee = sum_bsmc.id_employee')
+            ->join('job_sections', 'job_sections.id_job_section = employees.id_job_section')
+            ->join('factories', 'factories.id_factory = employees.id_factory')
+            ->where('factories.factory_name', $area)
+            ->where('sum_bsmc.tgl_input >=', $startDate)
+            ->where('sum_bsmc.tgl_input <=', $endDate)
+            ->orderBy('sum_bsmc.tgl_input', 'ASC')
+            ->findAll();
     }
 }
