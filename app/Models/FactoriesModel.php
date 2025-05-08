@@ -48,4 +48,13 @@ class FactoriesModel extends Model
     protected $afterFind      = [];
     protected $beforeDelete   = [];
     protected $afterDelete    = [];
+
+    public function getMainFactoryGroupByMainFactory()
+    {
+        return $this->select('main_factory')
+            ->where('main_factory !=', '-')
+            ->where('factory_name !=', '-')
+            ->groupBy('main_factory')
+            ->findAll();
+    }
 }

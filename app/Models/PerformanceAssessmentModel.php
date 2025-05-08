@@ -115,4 +115,27 @@ class PerformanceAssessmentModel extends Model
 
         return $builder->get()->getResultArray();
     }
+
+    public function getAssessmentsByMainFactory($main_factory)
+    {
+        return $this->db->table('performance_assessments pa')
+            ->select('
+                pa.id_performance_assessment,
+                factories.factory_name,
+                factories.main_factory,
+                batches.id_batch,
+                batches.batch_name,
+                periodes.periode_name,
+                periodes.start_date,
+                periodes.end_date
+            ')
+            ->join('factories', 'factories.id_factory = pa.id_factory')
+            ->join('periodes', 'periodes.id_periode = pa.id_periode')
+            ->join('batches', 'batches.id_batch = periodes.id_batch')
+            ->where('factories.main_factory', $main_factory)
+            ->orderBy('periodes.start_date', 'ASC')
+            ->groupBy('batches.id_batch, pa.id_periode, factories.main_factory')
+            ->get()
+            ->getResultArray();
+    }
 }

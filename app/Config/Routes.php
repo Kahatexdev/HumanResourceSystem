@@ -62,6 +62,7 @@ $routes->group('/Sudo', ['filter' => 'Sudo'], function ($routes) {
     $routes->post('absenStoreImport', 'PresenceController::upload');
     $routes->get('absenReport', 'PresenceController::absenReport');
     $routes->get('absenEmpty', 'PresenceController::empty');
+    $routes->post('importAbsenSkillMap', 'PresenceController::importAbsenSkillMap');
     // jobrole
     $routes->get('dataJob', 'SudoController::job');
     $routes->post('mainJobStore', 'JobroleController::mainJobStore');
@@ -115,7 +116,7 @@ $routes->group('/Sudo', ['filter' => 'Sudo'], function ($routes) {
 
 $routes->group('/Monitoring', ['filter' => 'Monitoring'], function ($routes) {
     // user
-    $routes->get('/', 'SudoController::index');
+    $routes->get('/', 'SudoController::index'); //Nanti ganti ke MonitoringController
     $routes->get('dataUser', 'SudoController::user');
     $routes->get('userCreate', 'UserController::create');
     $routes->post('userStore', 'UserController::store');
@@ -181,6 +182,7 @@ $routes->group('/Monitoring', ['filter' => 'Monitoring'], function ($routes) {
     $routes->get('getKaryawan', 'EmployeeAssessmentController::getKaryawan');
     $routes->post('penilaianCreate', 'EmployeeAssessmentController::create');
     $routes->post('penilaianStore', 'EmployeeAssessmentController::store');
+    $routes->get('reportPenilaian', 'MonitoringController::reportpenilaian');
 
     // summary jarum
     $routes->get('dataJarum', 'MonitoringController::jarum');
@@ -225,6 +227,12 @@ $routes->group('/Monitoring', ['filter' => 'Monitoring'], function ($routes) {
     // $routes->get('bsmcEdit/(:num)', 'BsmcController::edit/$1');
     // $routes->get('bsmcUpdate/(:num)', 'BsmcController::update/$1');
     // $routes->get('bsmcDelete/(:num)', 'BsmcController::delete/$1');
+
+    //penilaian
+    $routes->get('reportBatch', 'MonitoringController::reportBatch');
+    $routes->get('reportBatch/(:segment)', 'PerformanceAssessmentsController::reportAreaperBatch/$1');
+    $routes->get('reportPenilaian/(:segment)', 'PerformanceAssessmentsController::penilaianPerArea/$1');
+    $routes->get('reportPenilaian/(:segment)/(:segment)/(:segment)', 'PerformanceAssessmentsController::excelReportPerPeriode/$1/$2/$3');
 });
 
 $routes->group('/Mandor', ['filter' => 'Mandor'], function ($routes) {
@@ -235,6 +243,9 @@ $routes->group('/Mandor', ['filter' => 'Mandor'], function ($routes) {
     $routes->get('raportPenilaian/(:any)', 'MandorController::raportPenilaian/$1');
     $routes->get('instruksiKerja', 'MandorController::instruksiKerja');
     $routes->get('evaluasiKaryawan/(:any)/(:any)', 'MandorController::getEmployeeEvaluationStatus/$1/$2');
+    $routes->get('getKaryawan', 'EmployeeAssessmentController::getKaryawan');
+    $routes->post('penilaianCreate', 'EmployeeAssessmentController::create');
+    $routes->post('penilaianStore', 'EmployeeAssessmentController::store');
 });
 
 

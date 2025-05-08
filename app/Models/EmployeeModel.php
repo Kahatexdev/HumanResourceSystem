@@ -58,7 +58,8 @@ class EmployeeModel extends Model
     protected $beforeDelete   = [];
     protected $afterDelete    = [];
 
-    public function getEmployeeData(){
+    public function getEmployeeData()
+    {
         return $this->db->table('employees')
             ->select('employees.*,
                        job_sections.*,
@@ -223,5 +224,15 @@ class EmployeeModel extends Model
             ->groupBy('employees.id_employee, factories.id_factory, job_sections.id_job_section')
             ->get()
             ->getResultArray();
+    }
+
+    public function getActiveEmployeeByJobSection()
+    {
+        return $this->select('COUNT(employees.employee_name) AS jumlah_employees, job_sections.job_section_name, factories.main_factory, factories.factory_name')
+            ->join('job_sections', 'employees.id_job_section = job_sections.id_job_section')
+            ->join('factories', 'factories.id_factory = employees.id_factory')
+            ->where('employees.status', 'Aktif')
+            ->groupBy('job_sections.job_section_name')
+            ->findAll();
     }
 }

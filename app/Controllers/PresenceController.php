@@ -334,4 +334,53 @@ class PresenceController extends BaseController
 
         return redirect()->to('/Monitoring/dataAbsen');
     }
+
+    // Bekas pindahin data absen dari db skillmapping
+    public function importAbsenSkillMap()
+    {
+        $file = $this->request->getFile('file');
+        if (! $file || ! $file->isValid()) {
+            return redirect()->back()->with('error', 'File tidak valid');
+        }
+
+        $sheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($file->getTempName())
+            ->getActiveSheet();
+        // true,true,true,true → hitung formula, format data, dan kembalikan assoc by col letter
+        $rows = $sheet->toArray(null, true, true, true);
+
+        $validEmployees = $this->employeeModel
+            ->table('employees')
+            ->select('id_employee')
+            ->get()
+            ->getResultArray();
+        $validIds = array_column($validEmployees, 'id_employee');
+
+        $dataToInsert = [];
+        foreach ($rows as $rowNum => $row) {
+            if ($rowNum === 1) continue;
+            if (! in_array($row['B'], $validIds)) {
+                // skip jika employee tidak terdaftar
+                continue;
+            }
+
+            $dataToInsert[] = [
+                // jangan sertakan id_absen jika ini auto-increment
+                'id_employee' => $row['B'],
+                'id_periode'  => $row['C'],
+                'permit'      => $row['D'],
+                'sick'        => $row['E'],
+                'absent'      => $row['F'],
+                'leave'       => $row['G'],
+                'id_user'     => $row['H'],
+                'created_at'  => date('Y-m-d H:i:s', strtotime($row['I'])),
+                'updated_at'  => date('Y-m-d H:i:s', strtotime($row['J'])),
+            ];
+        }
+        // dd($dataToInsert);
+        if (! empty($dataToInsert)) {
+            $this->presenceModel->insertBatch($dataToInsert);
+        }
+
+        return redirect()->back()->with('success', 'Import berhasil!');
+    }
 }
