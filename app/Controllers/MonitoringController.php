@@ -19,6 +19,8 @@ use App\Models\RossoModel;
 use App\Models\BsmcModel;
 use App\Models\FactoriesModel;
 use App\Models\HistoryEmployeeModel;
+use App\Models\EmployeeAssessmentModel;
+use App\Models\PerformanceAssessmentModel;
 
 class MonitoringController extends BaseController
 {
@@ -38,6 +40,8 @@ class MonitoringController extends BaseController
     protected $rossoModel;
     protected $bsmcModel;
     protected $historyEmployeeModel;
+    protected $eaModel;
+    protected $paModel;
 
     public function __construct()
     {
@@ -56,6 +60,8 @@ class MonitoringController extends BaseController
         $this->rossoModel = new RossoModel();
         $this->bsmcModel = new BsmcModel();
         $this->historyEmployeeModel = new HistoryEmployeeModel();
+        $this->eaModel = new EmployeeAssessmentModel();
+        $this->paModel = new PerformanceAssessmentModel();
         $this->role = session()->get('role');
     }
 
@@ -65,61 +71,63 @@ class MonitoringController extends BaseController
         $PerpindahanBulanIni = $this->historyEmployeeModel->where('MONTH(date_of_change)', date('m'))->countAllResults();
         $dataKaryawan = $this->employeeModel->getActiveEmployeeByJobSection();
 
-        // $periodeAktif = $this->periodeModel->getActivePeriode();
+        $periodeAktif = $this->periodeModel->getActivePeriode();
 
-        // // Default values jika tidak ada periode aktif
-        // $id_periode = null;
-        // $current_periode = 'Tidak Ada Periode Aktif';
-        // $start_date = '-';
-        // $end_date = '-';
-        // $cekPenilaian = null;
+        // Default values jika tidak ada periode aktif
+        $id_periode = null;
+        $current_periode = 'Tidak Ada Periode Aktif';
+        $start_date = '-';
+        $end_date = '-';
+        $cekPenilaian = null;
 
-        // if ($periodeAktif) {
-        //     $id_periode = $periodeAktif['id_periode'];
-        //     $current_periode = $periodeAktif['nama_periode'];
-        //     $start_date = $periodeAktif['start_date'];
-        //     $end_date = $periodeAktif['end_date'];
-        //     $cekPenilaian = $this->penilaianmodel->getMandorEvaluationStatus($id_periode);
-        // }
-        // $RatarataGrade = 0;
-        // $SkillGap = 0;
+        if ($periodeAktif) {
+            $id_periode = $periodeAktif['id_periode'];
+            $current_periode = $periodeAktif['periode_name'];
+            $start_date = $periodeAktif['start_date'];
+            $end_date = $periodeAktif['end_date'];
+            $cekPenilaian = $this->paModel->getMandorEvaluationStatus($id_periode);
+        }
+        $RatarataGrade = 0;
+        $SkillGap = 0;
+        // Hitung total karyawan (jika diperlukan)
+        $totalKaryawan = 0;
+        foreach ($dataKaryawan as $row) {
+            $totalKaryawan += $row['jumlah_employees'];
+        }
+        // dd($cekPenilaian);
 
-        // // Hitung total karyawan (jika diperlukan)
-        // $totalKaryawan = 0;
-        // foreach ($dataKaryawan as $row) {
-        //     $totalKaryawan += $row['jumlah_karyawan'];
-        // }
+        // $RatarataGrade = $this->penilaianmodel->getRataRataGrade(); // Lanjut nanti kalo grade akhir udah ada
+        $RatarataGrade = 0;
 
-        // $RatarataGrade = $this->penilaianmodel->getRataRataGrade();
+        $dataPindah = $this->historyEmployeeModel->getPindahGroupedByDate();
+        // Siapkan data untuk grafik line
+        $labelsKar = [];
+        $valuesKar = [];
+        foreach ($dataPindah as $row) {
+            $labelsKar[] = $row['tgl'];
+            $valuesKar[] = (int)$row['jumlah'];
+        }
 
-        // $dataPindah = $this->historyPindahKaryawanModel->getPindahGroupedByDate();
-        // // Siapkan data untuk grafik line
-        // $labelsKar = [];
-        // $valuesKar = [];
-        // foreach ($dataPindah as $row) {
-        //     $labelsKar[] = $row['tgl'];
-        //     $valuesKar[] = (int)$row['jumlah'];
-        // }
-
-        // return view('Monitoring/index', [
-        //     'role' => session()->get('role'),
-        //     'title' => 'Dashboard',
-        //     'active1' => 'active',
-        //     'active2' => '',
-        //     'active3' => '',
-        //     'TtlKaryawan' => $TtlKaryawan,
-        //     'PerpindahanBulanIni' => $PerpindahanBulanIni,
-        //     'RataRataGrade' => $RatarataGrade['average_grade_letter'],
-        //     'SkillGap' => $SkillGap,
-        //     'karyawanByBagian' => $dataKaryawan,
-        //     'labelsKar' => $labelsKar,
-        //     'valuesKar' => $valuesKar,
-        //     'cekPenilaian' => $cekPenilaian,
-        //     'id_periode' => $id_periode,
-        //     'current_periode' => $current_periode,
-        //     'start_date' => $start_date,
-        //     'end_date' => $end_date
-        // ]);
+        return view('Monitoring/index', [
+            'role' => session()->get('role'),
+            'title' => 'Dashboard',
+            'active1' => 'active',
+            'active2' => '',
+            'active3' => '',
+            'TtlKaryawan' => $TtlKaryawan,
+            'PerpindahanBulanIni' => $PerpindahanBulanIni,
+            'RataRataGrade' => $RatarataGrade,
+            // 'RataRataGrade' => $RatarataGrade['average_grade_letter'],
+            'SkillGap' => $SkillGap,
+            'karyawanByBagian' => $dataKaryawan,
+            'labelsKar' => $labelsKar,
+            'valuesKar' => $valuesKar,
+            'cekPenilaian' => $cekPenilaian,
+            'id_periode' => $id_periode,
+            'current_periode' => $current_periode,
+            'start_date' => $start_date,
+            'end_date' => $end_date
+        ]);
     }
 
     public function bsmc()

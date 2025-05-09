@@ -123,7 +123,7 @@ $routes->group('/Sudo', ['filter' => 'Sudo'], function ($routes) {
 
 $routes->group('/Monitoring', ['filter' => 'Monitoring'], function ($routes) {
     // user
-    $routes->get('/', 'SudoController::index'); //Nanti ganti ke MonitoringController
+    $routes->get('/', 'MonitoringController::index'); //Nanti ganti ke MonitoringController
     $routes->get('dataUser', 'SudoController::user');
     $routes->get('userCreate', 'UserController::create');
     $routes->post('userStore', 'UserController::store');
@@ -190,7 +190,12 @@ $routes->group('/Monitoring', ['filter' => 'Monitoring'], function ($routes) {
     $routes->post('penilaianCreate', 'EmployeeAssessmentController::create');
     $routes->post('penilaianStore', 'EmployeeAssessmentController::store');
     $routes->get('reportPenilaian', 'MonitoringController::reportpenilaian');
+    $routes->get('reportBatch', 'MonitoringController::reportBatch');
+    $routes->get('reportBatch/(:segment)', 'PerformanceAssessmentsController::reportAreaperBatch/$1');
+    $routes->get('reportPenilaian/(:segment)', 'PerformanceAssessmentsController::penilaianPerArea/$1');
+    $routes->get('reportPenilaian/(:segment)/(:segment)/(:segment)', 'PerformanceAssessmentsController::excelReportPerPeriode/$1/$2/$3');
 
+    $routes->get('reportBatch/(:segment)', 'PerformanceAssessmentsController::reportAreaperBatch/$1');
     // summary jarum
     $routes->get('dataJarum', 'MonitoringController::jarum');
     $routes->get('dataJarum/(:segment)', 'JarumController::tampilPerBatch/$1');
@@ -236,11 +241,8 @@ $routes->group('/Monitoring', ['filter' => 'Monitoring'], function ($routes) {
     // $routes->get('bsmcUpdate/(:num)', 'BsmcController::update/$1');
     // $routes->get('bsmcDelete/(:num)', 'BsmcController::delete/$1');
 
-    //penilaian
-    $routes->get('reportBatch', 'MonitoringController::reportBatch');
-    $routes->get('reportBatch/(:segment)', 'PerformanceAssessmentsController::reportAreaperBatch/$1');
-    $routes->get('reportPenilaian/(:segment)', 'PerformanceAssessmentsController::penilaianPerArea/$1');
-    $routes->get('reportPenilaian/(:segment)/(:segment)/(:segment)', 'PerformanceAssessmentsController::excelReportPerPeriode/$1/$2/$3');
+    //Dashboard
+    $routes->get('evaluasiKaryawan/(:any)/(:any)', 'MandorController::getEmployeeEvaluationStatus/$1/$2');
 });
 
 $routes->group('/Mandor', ['filter' => 'Mandor'], function ($routes) {

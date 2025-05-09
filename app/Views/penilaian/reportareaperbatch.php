@@ -1,4 +1,4 @@
-<?php $this->extend('Layout/index'); ?>
+<?php $this->extend('layout/template'); ?>
 <?php $this->section('content'); ?>
 <div class="container-fluid py-4">
     <div class="row my-4">
@@ -28,13 +28,13 @@
     <div class="row">
         <?php foreach ($reportbatch as $ar) : ?>
             <div class="col-xl-3 col-sm-6 mb-xl-0 mb-4 mt-2">
-                <a href="<?= base_url($role . '/exelReportBatch/' . $ar['id_batch'] . '/' . ($ar['area_utama'] === 'all' ? 'all' : $ar['area_utama'])) ?>">
+                <a href="<?= base_url($role . '/exelReportBatch/' . $ar['id_batch'] . '/' . ($ar['main_factory'] ?? 'all' ? 'all' : $ar['main_factory'])) ?>">
                     <div class="card">
                         <div class="card-body p-3">
                             <div class="row">
                                 <div class="col-8">
                                     <div class="numbers">
-                                        <p class="text-sm mb-0 text-capitalize font-weight-bold"><?= $ar['nama_batch'] ?></p>
+                                        <p class="text-sm mb-0 text-capitalize font-weight-bold"><?= $ar['batch_name'] ?></p>
                                         <h5 class="font-weight-bolder mb-0">
                                         </h5>
                                     </div>

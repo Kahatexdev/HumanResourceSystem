@@ -53,6 +53,32 @@ class PerformanceAssessmentModel extends Model
     protected $beforeDelete   = [];
     protected $afterDelete    = [];
 
+    public function getMandorEvaluationStatus($id_periode)
+    {
+        $builder = $this->db->table('users');
+        $builder->select('
+        users.id_user, 
+        users.username, 
+        users.role,
+        users.area,
+        COUNT(DISTINCT employees.id_employee) AS total_karyawan, 
+        COUNT(DISTINCT performance_assessments.id_performance_assessment) AS total_assessment,
+        performance_assessments.id_periode
+    ');
+        // Join tabel bagian, karyawan, dan penilaian
+        $builder->join('factories', 'factories.factory_name = users.area', 'left');
+        $builder->join('employees', 'employees.id_factory = factories.id_factory', 'left');
+        // Menambahkan kondisi id_periode langsung di join penilaian agar record mandor tetap muncul walau belum ada penilaian
+        $builder->join('performance_assessments', "performance_assessments.id_employee = employees.id_employee 
+        AND performance_assessments.id_user = users.id_user 
+        AND performance_assessments.id_periode = '$id_periode'", 'left');
+
+        $builder->where('users.role', 'Mandor');
+        $builder->groupBy('users.id_user');
+
+        return $builder->get()->getResultArray();
+    }
+
     public function raportPenilaian($area)
     {
         return $this->db->table('performance_assessments pa')
@@ -137,5 +163,25 @@ class PerformanceAssessmentModel extends Model
             ->groupBy('batches.id_batch, pa.id_periode, factories.main_factory')
             ->get()
             ->getResultArray();
+    }
+
+    public function getBatchNameByMainFactory($main_factory)
+    {
+        return $this->select('periodes.id_batch, batches.batch_name, factories.main_factory')
+            ->join('periodes', 'periodes.id_periode = performance_assessments.id_periode')
+            ->join('batches', 'batches.id_batch = periodes.id_batch')
+            ->join('factories', 'factories.id_factory = performance_assessments.id_factory')
+            ->where('factories.main_factory', $main_factory)
+            ->groupBy('batches.batch_name')
+            ->findAll();
+    }
+    public function getBatchName()
+    {
+        return $this->select('batches.id_batch, batches.batch_name, factories.main_factory')
+            ->join('periodes', 'periodes.id_periode = performance_assessments.id_periode')
+            ->join('batches', 'batches.id_batch = periodes.id_batch')
+            ->join('factories', 'factories.id_factory = performance_assessments.id_factory')
+            ->groupBy('batches.batch_name')
+            ->findAll();
     }
 }

@@ -66,6 +66,31 @@ class PeriodeModel extends Model
             ->join('batches', 'batches.id_batch = periodes.id_batch')
             ->where('periodes.status', 'active')
             ->orderBy('periodes.created_at', 'DESC')
-            ->findAll();
+            ->first();
+    }
+
+    public function getPeriodeByNamaBatchAndNamaPeriode($batch_name, $periode_name)
+    {
+        $result = $this->select('periodes.id_periode, periodes.periode_name, batches.id_batch, batches.batch_name, periodes.start_date, periodes.end_date, periodes.holiday')
+            ->join('batches', 'batches.id_batch = periodes.id_batch')
+            ->where('batches.batch_name', $batch_name)
+            ->where('periodes.periode_name', $periode_name)
+            ->first();
+
+        // Jika hasil ditemukan, tambahkan format nama bulan
+        if ($result) {
+            $formatter = new \IntlDateFormatter(
+                'id_ID', // Locale untuk Bahasa Indonesia
+                \IntlDateFormatter::LONG,
+                \IntlDateFormatter::NONE,
+                null,
+                \IntlDateFormatter::GREGORIAN,
+                'MMMM' // Format untuk nama bulan penuh
+            );
+
+            $result['nama_bulan'] = $formatter->format(new \DateTime($result['end_date']));
+        }
+
+        return $result;
     }
 }

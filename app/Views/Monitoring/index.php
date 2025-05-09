@@ -149,7 +149,7 @@
                 //     continue;
                 // }
                 // Hitung persentase penilaian dengan benar
-                $progress = round(($mandor['total_penilaian'] / $mandor['total_karyawan']) * 100);
+                $progress = round(($mandor['total_assessment'] / $mandor['total_karyawan']) * 100);
                 $isComplete = $progress >= 100;
                 ?>
                 <div class="col">
@@ -166,7 +166,7 @@
 
                             <div class="d-flex justify-content-between mb-2">
                                 <small class="text-muted">Karyawan: <?= esc($mandor['total_karyawan']); ?></small>
-                                <small class="text-muted">Dinilai: <?= esc($mandor['total_penilaian']); ?></small>
+                                <small class="text-muted">Dinilai: <?= esc($mandor['total_assessment']); ?></small>
                             </div>
                             <div class="progress mb-3" style="height: 20px;">
                                 <div class="progress-bar <?= $isComplete ? 'bg-success' : 'bg-info' ?>"
@@ -233,11 +233,11 @@
     $labels = [];
     $values = [];
     foreach ($karyawanByBagian as $row) {
-        if ($row['nama_bagian'] == '-') {
+        if ($row['job_section_name'] == '-') {
             continue;
         }
-        $labels[] = $row['nama_bagian'];
-        $values[] = (int)$row['jumlah_karyawan'];
+        $labels[] = $row['job_section_name'];
+        $values[] = (int)$row['jumlah_employees'];
     }
     ?>
 
@@ -370,11 +370,11 @@
                             var tr = document.createElement("tr");
                             tr.innerHTML =
                                 "<td>" + (tbody.rows.length + 1) + "</td>" +
-                                "<td>" + emp.kode_kartu + "</td>" +
-                                "<td>" + emp.nama_karyawan + "</td>" +
+                                "<td>" + emp.employee_code + "</td>" +
+                                "<td>" + emp.employee_name + "</td>" +
                                 "<td>" + emp.shift + "</td>" +
-                                "<td>" + emp.nama_bagian + "</td>" +
-                                "<td>" + emp.area + "</td>" +
+                                "<td>" + emp.job_section_name + "</td>" +
+                                "<td>" + emp.factory_name + "</td>" +
                                 "<td><span class='badge bg-danger'>Belum Dinilai</span></td>";
                             tbody.appendChild(tr);
                         });
