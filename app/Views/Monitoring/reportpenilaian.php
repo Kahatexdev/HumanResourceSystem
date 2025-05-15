@@ -14,9 +14,9 @@
                                 </h5>
                             </div>
                         </div>
-                        <div class="col-4 text-end">
+                        <!-- <div class="col-4 text-end">
                             <a href="<?= base_url($role . '/updateGradeAkhirPerPeriode') ?>" class="btn bg-gradient-info btn-sm mb-0 me-1">Fetch Data</a>
-                        </div>
+                        </div> -->
                     </div>
                 </div>
             </div>
