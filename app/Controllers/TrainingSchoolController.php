@@ -84,7 +84,12 @@ class TrainingSchoolController extends BaseController
         $apiUrl = 'http://172.23.44.14/CapacityApps/public/api/getPlanMesin';
         $response = file_get_contents($apiUrl);
         $plan = json_decode($response, true);  // Decode JSON response dari API
-        $tampilperarea = $this->factoriesModel->groupBy('main_factory')->findAll();
+        $tampilperarea = $this->factoriesModel
+            ->where('factory_name !=', '')
+            ->where('factory_name !=', '-')
+            ->groupBy('main_factory')
+            ->findAll();
+
         $sort = [
             'KK1',
             'KK2',
@@ -108,6 +113,7 @@ class TrainingSchoolController extends BaseController
             return $pos_a - $pos_b;
         });
 
+        $all = 'ALL';
         $data = [
             'role' => session()->get('role'),
             'title' => 'Karyawan',
@@ -119,14 +125,15 @@ class TrainingSchoolController extends BaseController
             'active6' => '',
             'active7' => '',
             'tampildata' => $tampilperarea,
-            'listplan' => $plan
+            'listplan' => $plan,
+            'all' => $all
         ];
         // dd($data);
         return view(session()->get('role') . '/karyawan', $data);
     }
     public function detailKaryawanPerArea($area)
     {
-        if ($area === 'EMPTY') {
+        if ($area === 'ALL') {
             $karyawan = $this->employeeModel->getKaryawanTanpaArea();
         } else {
             $karyawan = $this->employeeModel->getKaryawanByArea($area);
