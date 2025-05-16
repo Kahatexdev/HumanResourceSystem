@@ -68,6 +68,14 @@ class PeriodeModel extends Model
             ->orderBy('periodes.created_at', 'DESC')
             ->first();
     }
+    public function getActivePeriodeMandor()
+    {
+        return $this->select('periodes.id_periode, periodes.periode_name, batches.id_batch, batches.batch_name, periodes.start_date, periodes.end_date, periodes.holiday, periodes.status')
+            ->join('batches', 'batches.id_batch = periodes.id_batch')
+            ->where('periodes.status', 'active')
+            ->orderBy('periodes.created_at', 'DESC')
+            ->findAll();
+    }
 
     public function getPeriodeByNamaBatchAndNamaPeriode($batch_name, $periode_name)
     {
