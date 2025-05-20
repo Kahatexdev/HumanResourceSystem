@@ -400,11 +400,11 @@
                   data-id="${r.id_job_role}"
                   data-description="${r.description}"
                   data-jobdescription="${r.jobdescription}">
-            <i class="fas fa-edit"></i>
+            <i class="fas fa-edit" style="font-size: 16px;"></i>
           </button>
           <button class="btn btn-danger btn-sm delete-jobrole"
                   data-id="${r.id_job_role}">
-            <i class="fas fa-trash-alt"></i>
+            <i class="fas fa-trash-alt" style="font-size: 16px;"></i>
           </button>
         </td>
       </tr>`;

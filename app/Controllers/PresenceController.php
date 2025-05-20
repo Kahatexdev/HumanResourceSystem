@@ -24,6 +24,7 @@ class PresenceController extends BaseController
         $this->role = session()->get('role');
         $this->presenceModel = new PresenceModel();
         $this->employeeModel = new EmployeeModel();
+        $this->presenceModel = new PresenceModel();
     }
     public function index() {}
 
@@ -263,8 +264,7 @@ class PresenceController extends BaseController
 
     public function absenReport()
     {
-        $data = $this->absenmodel->getdata();
-
+        $data = $this->presenceModel->getDataPresence();
         // export data ke excel
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
@@ -302,12 +302,12 @@ class PresenceController extends BaseController
 
         foreach ($data as $row) {
             $sheet->setCellValue('A' . $column, $no++);
-            $sheet->setCellValue('B' . $column, $row['nama_karyawan']);
-            $sheet->setCellValue('C' . $column, $row['id_periode']);
-            $sheet->setCellValue('D' . $column, $row['izin']);
-            $sheet->setCellValue('E' . $column, $row['sakit']);
-            $sheet->setCellValue('F' . $column, $row['mangkir']);
-            $sheet->setCellValue('G' . $column, $row['cuti']);
+            $sheet->setCellValue('B' . $column, $row['employee_name']);
+            $sheet->setCellValue('C' . $column, $row['periode_name']);
+            $sheet->setCellValue('D' . $column, $row['permit']);
+            $sheet->setCellValue('E' . $column, $row['sick']);
+            $sheet->setCellValue('F' . $column, $row['absent']);
+            $sheet->setCellValue('G' . $column, $row['leave']);
             $sheet->setCellValue('H' . $column, $row['username']);
             $sheet->setCellValue('I' . $column, $row['created_at']);
             $sheet->setCellValue('J' . $column, $row['updated_at']);
