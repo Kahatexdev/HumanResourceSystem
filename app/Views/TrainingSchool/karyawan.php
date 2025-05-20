@@ -61,10 +61,7 @@
     <div class="row">
         <?php foreach ($tampildata as $key => $ar) : ?>
             <?php
-            if ($ar['main_factory'] == "-" || $ar['main_factory'] == NULL) {
-                $judul = "Area belum di input";
-                $area = "EMPTY";
-            } else {
+            if (!empty($ar['main_factory'])) {
                 $judul = $ar['main_factory'];
                 $area = $ar['main_factory'];
             } ?>
@@ -93,7 +90,30 @@
                 </a>
             </div>
         <?php endforeach ?>
+        <div class="col-xl-3 col-sm-6 mb-xl-0 mb-4 mt-2">
+            <a href="<?= base_url($role . '/dataKaryawan/' . $all) ?>">
+                <div class="card">
+                    <div class="card-body p-3">
+                        <div class="row">
 
+                            <div class="col-8">
+                                <div class="numbers">
+                                    <p class="text-sm mb-0 text-capitalize font-weight-bold">Semua Area</p>
+                                    <h5 class="font-weight-bolder mb-0">
+                                    </h5>
+                                </div>
+                            </div>
+                            <div class="col-4 text-end">
+                                <div class="icon icon-shape bg-gradient-info shadow text-center border-radius-md">
+                                    <i class="ni ni-building text-lg opacity-10" aria-hidden="true"></i>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
     </div>
 
 </div>
