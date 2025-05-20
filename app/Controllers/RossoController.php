@@ -422,8 +422,8 @@ class RossoController extends BaseController
         }
         $tgl_awal = '2025-05-01';
         $tgl_akhir = '2025-05-08';
-        
-        
+
+
         $rosso = $this->summaryRosso->getFilteredData($area_utama, $tgl_awal, $tgl_akhir);
         // dd ($tgl_awal, $tgl_akhir, $rosso);
         $data = [
@@ -563,14 +563,15 @@ class RossoController extends BaseController
                 $lastRow = $ws->getHighestRow();
 
                 for ($r = 2; $r <= $lastRow; $r++) {
-                    $rawDate = $ws->getCell('A'.$r)->getFormattedValue();
-                    $name    = strtolower(trim($ws->getCell('B'.$r)->getValue()));
-                    $code    = strtolower(trim($ws->getCell('C'.$r)->getValue()));
-                    $prod    = $ws->getCell('D'.$r)->getValue();
-                    $rework  = $ws->getCell('E'.$r)->getValue();
+                    $rawDate = $ws->getCell('A' . $r)->getFormattedValue();
+                    $name    = strtolower(trim($ws->getCell('B' . $r)->getValue()));
+                    $code    = strtolower(trim($ws->getCell('C' . $r)->getValue()));
+                    $prod    = $ws->getCell('D' . $r)->getValue();
+                    $rework  = $ws->getCell('E' . $r)->getValue();
 
                     // Normalize & composite key
                     $tglInput = date('Y-m-d', strtotime(str_replace('/', '-', $rawDate)));
+                    // dd($tglInput);
                     $key      = "{$name}|{$code}|{$tglInput}";
 
                     // 4a. Duplikat di Excel (name+code+date)
@@ -642,28 +643,27 @@ class RossoController extends BaseController
             // 6. Flash message
             $msgs = [];
             if ($toInsert) {
-                $msgs[] = "✅ Berhasil import ".count($toInsert)." record.";
+                $msgs[] = "✅ Berhasil import " . count($toInsert) . " record.";
             }
             if ($dupeExcel) {
-                $msgs[] = "⛔ Duplikat di Excel: ".implode(', ', $dupeExcel);
+                $msgs[] = "⛔ Duplikat di Excel: " . implode(', ', $dupeExcel);
             }
             if ($invalidDates) {
-                $msgs[] = "⛔ Tanggal > hari ini: ".implode(', ', $invalidDates);
+                $msgs[] = "⛔ Tanggal > hari ini: " . implode(', ', $invalidDates);
             }
             if ($dupeDb) {
-                $msgs[] = "⛔ Sudah ada di DB: ".implode(', ', $dupeDb);
+                $msgs[] = "⛔ Sudah ada di DB: " . implode(', ', $dupeDb);
             }
             if ($wrongAreas) {
-                $msgs[] = "⚠️ Salah sheet area: ".implode('; ', $wrongAreas);
+                $msgs[] = "⚠️ Salah sheet area: " . implode('; ', $wrongAreas);
             }
 
             $status = empty($dupeExcel) && empty($invalidDates) && empty($dupeDb) && empty($wrongAreas)
                 ? 'success' : 'error';
 
             return redirect()->back()->with($status, implode("<br>", $msgs));
-
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Error saat import: '.$e->getMessage());
+            return redirect()->back()->with('error', 'Error saat import: ' . $e->getMessage());
         }
     }
 

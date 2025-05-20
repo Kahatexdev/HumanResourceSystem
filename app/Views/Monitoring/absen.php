@@ -1,5 +1,6 @@
 <?php $this->extend('layout/template'); ?>
 <?php $this->section('content'); ?>
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 <div class="container-fluid">
     <div class="row my-4">
         <div class="col-xl-12 col-sm-12 mb-xl-0 mb-2">
@@ -305,6 +306,10 @@
         </div>
     </div>
 </div>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<!-- Select2 JS -->
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script type="text/javascript">
     function confirmDelete(id) {
         Swal.fire({
@@ -394,6 +399,16 @@
         $('#ModalEdit').find('input[name="id_user"]').val(user);
         $('#ModalEdit').modal('show');
 
+    });
+</script>
+<script>
+    $(document).ready(function() {
+        $('#addAbsen').on('shown.bs.modal', function() {
+            $('#id_karyawan').select2({
+                dropdownParent: $('#addAbsen'),
+                width: '100%'
+            });
+        });
     });
 </script>
 

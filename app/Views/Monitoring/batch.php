@@ -185,7 +185,7 @@
             var id = $(this).data('id');
             var namaBatch = $(this).data('batch');
             $('#ModalEdit').find('form').attr('action', '<?= base_url($role . '/batchUpdate/') ?>' + id);
-            $('#ModalEdit').find('input[name="batch_name"]').val(namaBatch);
+            $('#ModalEdit').find('input[name="nama_batch"]').val(namaBatch);
             $('#ModalEdit').modal('show'); // Show the modal
         });
     </script>
