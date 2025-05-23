@@ -70,7 +70,7 @@ class MonitoringController extends BaseController
         $TtlKaryawan = $this->employeeModel->where('status', 'Aktif')->countAll();
         $PerpindahanBulanIni = $this->historyEmployeeModel->where('MONTH(date_of_change)', date('m'))->countAllResults();
         $dataKaryawan = $this->employeeModel->getActiveEmployeeByJobSection();
-
+        // dd ($dataKaryawan);
         $periodeAktif = $this->periodeModel->getActivePeriode();
 
         // Default values jika tidak ada periode aktif
@@ -107,7 +107,17 @@ class MonitoringController extends BaseController
             $labelsKar[] = $row['tgl'];
             $valuesKar[] = (int)$row['jumlah'];
         }
-
+        // // Siapkan array untuk FusionCharts
+        // $chartData = [];
+        // foreach ($dataKaryawan as $row) {
+        //     $chartData[] = [
+        //         'label' => $row['job_section_name'],
+        //         'value' => $row['jumlah_employees'],
+        //     ];
+        // }
+        // ekstrak dua array: labels & values
+        $labels = array_column($dataKaryawan, 'job_section_name');
+        $values = array_column($dataKaryawan, 'jumlah_employees');
         return view('Monitoring/index', [
             'role' => session()->get('role'),
             'title' => 'Dashboard',
@@ -126,7 +136,10 @@ class MonitoringController extends BaseController
             'id_periode' => $id_periode,
             'current_periode' => $current_periode,
             'start_date' => $start_date,
-            'end_date' => $end_date
+            'end_date' => $end_date,
+            // 'chartData' => json_encode($chartData)
+            'labels' => $labels,
+            'values' => $values
         ]);
     }
 
