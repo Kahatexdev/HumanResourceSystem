@@ -185,4 +185,28 @@ class PerformanceAssessmentModel extends Model
             ->groupBy('batches.batch_name')
             ->findAll();
     }
+
+    public function getPenilaianByEmployeeAndFactory($idEmployee, $idFactory)
+    {
+        return $this->db->table('performance_assessments pa')
+            ->select("
+            MAX(CASE WHEN MONTH(p.end_date) = 1 THEN CAST(COALESCE(pa.nilai, 0) AS UNSIGNED) END) AS nilai_jan,
+            MAX(CASE WHEN MONTH(p.end_date) = 2 THEN CAST(COALESCE(pa.nilai, 0) AS UNSIGNED) END) AS nilai_feb,
+            MAX(CASE WHEN MONTH(p.end_date) = 3 THEN CAST(COALESCE(pa.nilai, 0) AS UNSIGNED) END) AS nilai_mar,
+            MAX(CASE WHEN MONTH(p.end_date) = 4 THEN CAST(COALESCE(pa.nilai, 0) AS UNSIGNED) END) AS nilai_apr,
+            MAX(CASE WHEN MONTH(p.end_date) = 5 THEN CAST(COALESCE(pa.nilai, 0) AS UNSIGNED) END) AS nilai_mei,
+            MAX(CASE WHEN MONTH(p.end_date) = 6 THEN CAST(COALESCE(pa.nilai, 0) AS UNSIGNED) END) AS nilai_jun,
+            MAX(CASE WHEN MONTH(p.end_date) = 7 THEN CAST(COALESCE(pa.nilai, 0) AS UNSIGNED) END) AS nilai_jul,
+            MAX(CASE WHEN MONTH(p.end_date) = 8 THEN CAST(COALESCE(pa.nilai, 0) AS UNSIGNED) END) AS nilai_agu,
+            MAX(CASE WHEN MONTH(p.end_date) = 9 THEN CAST(COALESCE(pa.nilai, 0) AS UNSIGNED) END) AS nilai_sep,
+            MAX(CASE WHEN MONTH(p.end_date) = 10 THEN CAST(COALESCE(pa.nilai, 0) AS UNSIGNED) END) AS nilai_okt,
+            MAX(CASE WHEN MONTH(p.end_date) = 11 THEN CAST(COALESCE(pa.nilai, 0) AS UNSIGNED) END) AS nilai_nov,
+            MAX(CASE WHEN MONTH(p.end_date) = 12 THEN CAST(COALESCE(pa.nilai, 0) AS UNSIGNED) END) AS nilai_des
+        ")
+            ->join('periodes p', 'p.id_periode = pa.id_periode')
+            ->where('pa.id_employee', $idEmployee)
+            ->where('pa.id_factory', $idFactory)
+            ->get()
+            ->getRowArray();
+    }
 }

@@ -234,4 +234,13 @@ class EmployeeModel extends Model
             ->groupBy('job_sections.job_section_name')
             ->findAll();
     }
+
+    public function getKaryawanByFactoryName($area)
+    {
+        return $this->select('employees.id_employee, employees.employee_name, employees.employee_code, employees.shift, employees.id_factory, factories.factory_name')
+            ->join('factories', 'factories.id_factory = employees.id_factory')
+            ->where('factories.factory_name', $area)
+            ->orderBy('employees.shift', 'ASC')
+            ->findAll();
+    }
 }

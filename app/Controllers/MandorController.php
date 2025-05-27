@@ -16,6 +16,7 @@ use App\Models\PerformanceAssessmentModel;
 use App\Models\FactoriesModel;
 use App\Models\DayModel;
 use App\Models\EmploymentStatusModel;
+use App\Models\HistoryEmployeeModel;
 
 class MandorController extends BaseController
 {
@@ -31,6 +32,7 @@ class MandorController extends BaseController
     protected $factoriesModel;
     protected $days;
     protected $employmentStatusModel;
+    protected $historyEmployeeModel;
     protected $role;
 
     public function __construct()
@@ -47,6 +49,7 @@ class MandorController extends BaseController
         $this->factoriesModel = new FactoriesModel();
         $this->days = new DayModel();
         $this->employmentStatusModel = new EmploymentStatusModel();
+        $this->historyEmployeeModel = new HistoryEmployeeModel();
         $this->role = session()->get('role');
     }
 
@@ -185,14 +188,86 @@ class MandorController extends BaseController
 
     public function raportPenilaian($area)
     {
-        $raport = $this->performanceAssessmentModel->raportPenilaian($area);
-        // dd($raport);
+        $employees = $this->employeeModel->getKaryawanByFactoryName($area); // misal berdasarkan factory_name
+
+        $result = [];
+
+        foreach ($employees as $employee) {
+            $idKaryawan = $employee['id_employee'];
+
+            // Ambil nilai area lama jika ada riwayat
+            $combinedNilai = [
+                'nilai_jan' => null,
+                'nilai_feb' => null,
+                'nilai_mar' => null,
+                'nilai_apr' => null,
+                'nilai_mei' => null,
+                'nilai_jun' => null,
+                'nilai_jul' => null,
+                'nilai_agu' => null,
+                'nilai_sep' => null,
+                'nilai_okt' => null,
+                'nilai_nov' => null,
+                'nilai_des' => null,
+            ];
+
+            // $factoryName = $employee['factory_name'];
+            // $status = 'Sekarang';
+
+            $histories = $this->historyEmployeeModel
+                ->where('id_employee', $idKaryawan)
+                ->findAll();
+
+            if ($histories) {
+                foreach ($histories as $history) {
+                    $nilaiLama = $this->performanceAssessmentModel->getPenilaianByEmployeeAndFactory(
+                        $idKaryawan,
+                        $history['id_factory_old']
+                    );
+
+                    foreach ($combinedNilai as $key => $val) {
+                        if (!empty($nilaiLama[$key])) {
+                            $combinedNilai[$key] = $nilaiLama[$key];
+                        }
+                    }
+
+                    // Ambil nama area lama sebagai referensi area
+                    // $factoryOld = $this->factoriesModel->find($history['id_factory_old']);
+                    // if ($factoryOld) {
+                    //     $factoryName = $factoryOld['factory_name'];
+                    // }
+
+                    // $status = 'Pernah Pindah'; // bisa ubah sesuai kebutuhan
+                }
+            }
+
+            // Ambil nilai area sekarang
+            $nilaiBaru = $this->performanceAssessmentModel->getPenilaianByEmployeeAndFactory(
+                $idKaryawan,
+                $employee['id_factory']
+            );
+
+            foreach ($combinedNilai as $key => $val) {
+                // Jika nilai sekarang tidak null, override
+                if (!empty($nilaiBaru[$key])) {
+                    $combinedNilai[$key] = $nilaiBaru[$key];
+                }
+            }
+
+            $result[] = [
+                'employee_code' => $employee['employee_code'],
+                'employee_name' => $employee['employee_name'],
+                'shift'         => $employee['shift'],
+                'nilai'         => $combinedNilai
+            ];
+        }
+
         $data = [
             'role' => session()->get('role'),
             'title' => 'Raport Penilaian',
             'active1' => 'active',
             'area' => session()->get('area'),
-            'raport' => $raport
+            'result' => $result
         ];
 
         return view(session()->get('role') . '/raportPenilaian', $data);

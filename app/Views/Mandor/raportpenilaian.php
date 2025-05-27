@@ -36,30 +36,30 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <?php if (empty($raport)): ?>
+                        <?php if (empty($result)): ?>
                             <tr>
                                 <td colspan="15" class="text-center">Tidak ada data penilaian</td>
                             </tr>
                         <?php else: ?>
                             <?php $no = 1; ?>
-                            <?php foreach ($raport as $row): ?>
+                            <?php foreach ($result as $index => $row): ?>
                                 <tr>
                                     <td><?= $no++; ?></td>
                                     <td><?= esc($row['employee_code']); ?></td>
                                     <td class="text-left"><?= esc($row['employee_name']); ?></td>
                                     <td class="text-left"><?= esc($row['shift']); ?></td>
-                                    <td><?= esc($row['nilai_jan'] ?? '-'); ?></td>
-                                    <td><?= esc($row['nilai_feb'] ?? '-'); ?></td>
-                                    <td><?= esc($row['nilai_mar'] ?? '-'); ?></td>
-                                    <td><?= esc($row['nilai_apr'] ?? '-'); ?></td>
-                                    <td><?= esc($row['nilai_mei'] ?? '-'); ?></td>
-                                    <td><?= esc($row['nilai_jun'] ?? '-'); ?></td>
-                                    <td><?= esc($row['nilai_jul'] ?? '-'); ?></td>
-                                    <td><?= esc($row['nilai_agu'] ?? '-'); ?></td>
-                                    <td><?= esc($row['nilai_sep'] ?? '-'); ?></td>
-                                    <td><?= esc($row['nilai_okt'] ?? '-'); ?></td>
-                                    <td><?= esc($row['nilai_nov'] ?? '-'); ?></td>
-                                    <td><?= esc($row['nilai_des'] ?? '-'); ?></td>
+                                    <td><?= $row['nilai']['nilai_jan'] ?? 0 ?></td>
+                                    <td><?= $row['nilai']['nilai_feb'] ?? 0 ?></td>
+                                    <td><?= $row['nilai']['nilai_mar'] ?? 0 ?></td>
+                                    <td><?= $row['nilai']['nilai_apr'] ?? 0 ?></td>
+                                    <td><?= $row['nilai']['nilai_mei'] ?? 0 ?></td>
+                                    <td><?= $row['nilai']['nilai_jun'] ?? 0 ?></td>
+                                    <td><?= $row['nilai']['nilai_jul'] ?? 0 ?></td>
+                                    <td><?= $row['nilai']['nilai_agu'] ?? 0 ?></td>
+                                    <td><?= $row['nilai']['nilai_sep'] ?? 0 ?></td>
+                                    <td><?= $row['nilai']['nilai_okt'] ?? 0 ?></td>
+                                    <td><?= $row['nilai']['nilai_nov'] ?? 0 ?></td>
+                                    <td><?= $row['nilai']['nilai_des'] ?? 0 ?></td>
                                 </tr>
                             <?php endforeach; ?>
                         <?php endif; ?>
