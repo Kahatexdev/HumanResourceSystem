@@ -477,9 +477,9 @@ class BsmcController extends BaseController
             'KK8D',
             'KK8F',
             'KK8J',
-            'KK9',
+            'KK9D',
             'KK10',
-            'KK11'
+            'KK11M'
         ];
 
         $results = [];
@@ -507,7 +507,7 @@ class BsmcController extends BaseController
                 $errors[] = "Exception for factory {$factory}: " . $e->getMessage();
             }
         }
-
+        log_message('debug', 'API response: ' . json_encode($results));
         // 2) Siapkan batch, cek valid & eksistensi
         foreach ($results as $factoryCode => $rows) {
             foreach ($rows as $row) {
@@ -515,24 +515,20 @@ class BsmcController extends BaseController
 
                 // Lookup employee & factory ID
                 $emp = $this->db->table('employees')
-                    ->select('id_employee')
+                    ->select('id_employee, id_factory')
                     ->where('employee_name', $row['nama_karyawan'])
                     ->get()
                     ->getRowArray();
 
-                $fac = $this->db->table('factories')
-                    ->select('id_factory')
-                    ->where('factory_name', $factoryCode)
-                    ->get()
-                    ->getRowArray();
-
+                $fac = $emp['id_factory'] ?? null;
+                // log_message('debug', 'fac: ' . json_encode($fac));
                 $idEmp     = $emp['id_employee']   ?? null;
-                $idFactory = $fac['id_factory']    ?? null;
 
                 // Validasi baris
-                if (empty($idEmp) || empty($idFactory)) {
-                    $missing = empty($idEmp) ? 'employee' : 'factory';
-                    $errors[] = "Row {$rowCounter}: missing {$missing} for '{$row['nama_karyawan']}' / '{$factoryCode}'.";
+                if (empty($idEmp)) {
+                    $errors[] = "Row {$rowCounter}: invalid data for '{$row['nama_karyawan']}' / '{$factoryCode}'.";
+                    // $missing = empty($idEmp) ? 'employee' : 'factory';
+                    // $errors[] = "Row {$rowCounter}: missing {$missing} for '{$row['nama_karyawan']}' / '{$factoryCode}'.";
                     continue;
                 }
 
@@ -540,11 +536,11 @@ class BsmcController extends BaseController
                 $exists = $bsmcModel
                     ->where('id_employee', $idEmp)
                     ->where('tgl_input',   $tgl)
-                    ->where('id_factory',  $idFactory)
+                    ->where('id_factory',  $fac)
                     ->first();
 
                 if ($exists) {
-                    $errors[] = "Row {$rowCounter}: data already exists for emp={$idEmp}, factory={$idFactory}, date={$tgl}.";
+                    $errors[] = "Row {$rowCounter}: data already exists for emp={$idEmp}, factory={$fac}, date={$tgl}.";
                     continue;
                 }
 
@@ -554,7 +550,7 @@ class BsmcController extends BaseController
                     'tgl_input'   => $tgl,
                     'produksi'    => $row['qty_produksi'],
                     'bs_mc'       => $row['qty_gram'],
-                    'id_factory'  => $idFactory,
+                    'id_factory'  => $fac,
                 ];
             }
         }

@@ -270,7 +270,7 @@ class MandorController extends BaseController
             'result' => $result
         ];
 
-        return view(session()->get('role') . '/raportPenilaian', $data);
+        return view(session()->get('role') . '/raportpenilaian', $data);
     }
 
     public function instruksiKerja()
