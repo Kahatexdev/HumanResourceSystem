@@ -1,5 +1,8 @@
 <?php $this->extend('layout/template'); ?>
 <?php $this->section('content'); ?>
+<!-- swall alert cdn -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
 <div class="container-fluid">
     <div class="row my-4">
         <div class="col-xl-12 col-sm-12 mb-xl-0 mb-4">
@@ -21,6 +24,15 @@
                                 <i class="fas fa-file-excel text-lg opacity-10" aria-hidden="true"></i>
                                 Export Excel
                             </a>
+                        </div>
+                        <div class="col-12">
+                            <!-- import history karyawan -->
+                            <form action="<?= base_url('TrainingSchool/importHistoryEmployee') ?>" method="post" enctype="multipart/form-data">
+                                <div class="input-group mb-3">
+                                    <input type="file" class="form-control" name="file" accept=".xlsx, .xls, .csv" required>
+                                    <button class="btn bg-gradient-success" type="submit">Import</button>
+                                </div>
+                            </form>
                         </div>
                     </div>
                 </div>
@@ -71,4 +83,25 @@
         $('#example1').DataTable({});
     });
 </script>
+
+<?php if (session()->getFlashdata('success')): ?>
+<script>
+    Swal.fire({
+        icon: 'success',
+        title: 'Berhasil',
+        text: '<?= session()->getFlashdata('success'); ?>',
+        confirmButtonText: 'OK'
+    });
+</script>
+<?php endif; ?>
+<?php if (session()->getFlashdata('error')): ?>
+<script>
+    Swal.fire({
+        icon: 'error',
+        title: 'Gagal',
+        text: '<?= session()->getFlashdata('error'); ?>',
+        confirmButtonText: 'OK'
+    });
+</script>
+<?php endif; ?>
 <?php $this->endSection(); ?>

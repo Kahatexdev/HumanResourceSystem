@@ -274,7 +274,8 @@ $routes->group('/TrainingSchool', ['filter' => 'TrainingSchool'], function ($rou
     $routes->get('karyawanDelete/(:num)', 'EmployeeController::delete/$1');
 
     $routes->get('historyPindahKaryawan', 'TrainingSchoolController::historyPindahKaryawan');
-    $routes->get('reportHistoryPindahKaryawan', 'HistoryPindahKaryawanController::reportExcel');
+    $routes->get('reportHistoryPindahKaryawan', 'HistoryEmployeeController::reportExcel');
+    $routes->post('importHistoryEmployee', 'HistoryEmployeeController::importHistoryEmployee');
 
     // routes/web.php atau routes.php (tergantung pada versi CodeIgniter)
     $routes->get('contacts', 'ChatController::getContactsWithLastMessage');

@@ -186,7 +186,7 @@ class MandorController extends BaseController
     public function raportPenilaian($area)
     {
         $raport = $this->performanceAssessmentModel->raportPenilaian($area);
-        // dd($raport);
+        dd($raport);
         $data = [
             'role' => session()->get('role'),
             'title' => 'Raport Penilaian',
@@ -195,7 +195,7 @@ class MandorController extends BaseController
             'raport' => $raport
         ];
 
-        return view(session()->get('role') . '/raportPenilaian', $data);
+        return view(session()->get('role') . '/raportpenilaian', $data);
     }
 
     public function instruksiKerja()

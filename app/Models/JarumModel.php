@@ -76,9 +76,10 @@ class JarumModel extends Model
             ->join('periodes', 'sum_jarum.tgl_input BETWEEN periodes.start_date AND periodes.end_date', 'inner')
             ->join('employees', 'employees.id_employee = sum_jarum.id_employee', 'inner')
             ->join('job_sections', 'job_sections.id_job_section = employees.id_job_section', 'inner')
-            ->join('factories', 'factories.id_factory = employees.id_factory', 'inner')
+            ->join('factories', 'factories.id_factory = sum_jarum.id_factory')
             ->join('history_employees h', 'h.id_employee = sum_jarum.id_employee', 'left')
             // ->join('history_pindah_karyawan h', 'h.id_employee = sum_jarum.id_employee', 'left')
+            ->Like('job_sections.job_section_name', '%MONTIR%')
             ->where('periodes.id_batch', $id_batch)
             // Group kondisi: id_factory saat ini OR data id_factory lama sebelum tanggal pindah
             ->groupStart()
