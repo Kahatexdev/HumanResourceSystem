@@ -25,9 +25,7 @@
                                 <label for="id_periode">Batch Penilaian</label>
                                 <select class="form-select" id="id_periode" name="id_periode" required>
                                     <option value="">Pilih Batch Penilaian</option>
-                                    <?php foreach ($periode as $b) : ?>
-                                        <option value="<?= $b['id_periode'] ?>">Periode <?= $b['periode_name'] ?> - <?= $b['batch_name'] ?> (<?= $b['start_date'] ?> s/d <?= $b['end_date'] ?>)</option>
-                                    <?php endforeach; ?>
+                                    
                                 </select>
                             </div>
 

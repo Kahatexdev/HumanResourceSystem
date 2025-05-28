@@ -653,13 +653,13 @@ class EmployeeController extends BaseController
         $sort = $sortOrders[$area] ?? []; // Default kosong jika area tidak ditemukan
         // dd($sort);
         // Ambil data karyawan
-        $dataKaryawan = $this->karyawanModel->getKaryawanByArea($area);
+        $dataKaryawan = $this->employeeModel->getKaryawanByArea($area);
         // dd($dataKaryawan);
         // Urutkan data karyawan dengan `usort`
         usort($dataKaryawan, function ($a, $b) use ($sort) {
             // Ekstrak prefix kode kartu
-            preg_match('/^[A-Z]+/', $a['kode_kartu'], $matchA);
-            preg_match('/^[A-Z]+/', $b['kode_kartu'], $matchB);
+            preg_match('/^[A-Z]+/', $a['employee_code'], $matchA);
+            preg_match('/^[A-Z]+/', $b['employee_code'], $matchB);
 
             $prefixA = $matchA[0] ?? '';
             $prefixB = $matchB[0] ?? '';
@@ -678,8 +678,8 @@ class EmployeeController extends BaseController
             }
 
             // Jika prefix sama, bandingkan berdasarkan angka di kode kartu
-            preg_match('/\d+/', $a['kode_kartu'], $numberA);
-            preg_match('/\d+/', $b['kode_kartu'], $numberB);
+            preg_match('/\d+/', $a['employee_code'], $numberA);
+            preg_match('/\d+/', $b['employee_code'], $numberB);
 
             $numA = (int)($numberA[0] ?? PHP_INT_MAX); // Default jika tidak ada angka
             $numB = (int)($numberB[0] ?? PHP_INT_MAX);
@@ -789,20 +789,20 @@ class EmployeeController extends BaseController
         $no = 1;
         foreach ($dataKaryawan as $key => $id) {
             $sheet->setCellValue('A' . $row, $no++);
-            $sheet->setCellValue('B' . $row, $id['kode_kartu']);
-            $sheet->setCellValue('C' . $row, $id['nama_karyawan']);
+            $sheet->setCellValue('B' . $row, $id['employee_code']);
+            $sheet->setCellValue('C' . $row, $id['employee_name']);
             $sheet->setCellValue('D' . $row, $id['shift']);
-            $sheet->setCellValue('E' . $row, $id['jenis_kelamin']);
-            $sheet->setCellValue('F' . $row, $id['libur']);
-            $sheet->setCellValue('G' . $row, $id['libur_tambahan']);
-            $sheet->setCellValue('H' . $row, $id['warna_baju']);
-            $sheet->setCellValue('I' . $row, $id['status_baju']);
-            $sheet->setCellValue('J' . $row, $id['tgl_lahir']);
-            $sheet->setCellValue('K' . $row, $id['tgl_masuk']);
-            $sheet->setCellValue('L' . $row, $id['nama_bagian']);
-            $sheet->setCellValue('M' . $row, $id['area_utama']);
-            $sheet->setCellValue('N' . $row, $id['area']);
-            $sheet->setCellValue('O' . $row, $id['status_aktif']);
+            $sheet->setCellValue('E' . $row, $id['gender']);
+            $sheet->setCellValue('F' . $row, $id['holiday_name']);
+            $sheet->setCellValue('G' . $row, $id['additional_holiday_name']);
+            $sheet->setCellValue('H' . $row, $id['clothes_color']);
+            $sheet->setCellValue('I' . $row, $id['employment_status_name']);
+            $sheet->setCellValue('J' . $row, $id['date_of_birth']);
+            $sheet->setCellValue('K' . $row, $id['date_of_joining']);
+            $sheet->setCellValue('L' . $row, $id['job_section_name']);
+            $sheet->setCellValue('M' . $row, $id['main_factory']);
+            $sheet->setCellValue('N' . $row, $id['factory_name']);
+            $sheet->setCellValue('O' . $row, $id['status']);
             $row++;
         }
 

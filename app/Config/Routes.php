@@ -119,6 +119,9 @@ $routes->group('/Sudo', ['filter' => 'Sudo'], function ($routes) {
     $routes->get('fetchDataBsmc', 'BsmcController::fetchDataBsmc');
     $routes->get('filterBsmc/(:segment)', 'BsmcController::filterBsmc/$1');
     $routes->post('filterBsmc/(:segment)', 'BsmcController::filterBsmc/$1');
+
+    // aspect
+    $routes->get('dataAspect', 'EvaluationAspectController::index');
 });
 
 $routes->group('/Monitoring', ['filter' => 'Monitoring'], function ($routes) {
