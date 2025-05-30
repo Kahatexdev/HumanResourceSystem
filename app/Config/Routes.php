@@ -81,6 +81,14 @@ $routes->group('/Sudo', ['filter' => 'Sudo'], function ($routes) {
     $routes->post('penilaianCreate', 'EmployeeAssessmentController::create');
     $routes->post('penilaianStore', 'EmployeeAssessmentController::store');
     $routes->post('penilaian/import', 'EmployeeAssessmentController::importPenilaian');
+    $routes->get('reportBatch', 'MonitoringController::reportBatch');
+    $routes->get('reportBatch/(:segment)', 'PerformanceAssessmentsController::reportAreaperBatch/$1');
+    $routes->get('reportPenilaian/(:segment)', 'PerformanceAssessmentsController::penilaianPerArea/$1');
+    $routes->get('reportPenilaian/(:segment)/(:segment)/(:segment)', 'PerformanceAssessmentsController::excelReportPerPeriode/$1/$2/$3');
+    $routes->get('reportBatch/(:segment)', 'PerformanceAssessmentsController::reportBatch/$1');
+    $routes->get('exelReportBatch/(:segment)/(:segment)', 'PerformanceAssessmentsController::exelReportBatch/$1/$2');
+    $routes->post('fetchDataFinalAssesment', 'PerformanceAssessmentsController::fetchDataFinalAssesment');
+    $routes->get('fetchAssessmentData', 'NewPAController::fetchAssessmentData');
 
     // summary jarum
     $routes->get('dataJarum', 'SudoController::jarum');
@@ -246,6 +254,9 @@ $routes->group('/Monitoring', ['filter' => 'Monitoring'], function ($routes) {
 
     //Dashboard
     $routes->get('evaluasiKaryawan/(:any)/(:any)', 'MandorController::getEmployeeEvaluationStatus/$1/$2');
+
+    $routes->get('fetchAssessmentData', 'NewPAController::fetchAssessmentData');
+    $routes->post('fetchDataFinalAssesment', 'PerformanceAssessmentsController::fetchDataFinalAssesment');
 });
 
 $routes->group('/Mandor', ['filter' => 'Mandor'], function ($routes) {

@@ -209,4 +209,37 @@ class PerformanceAssessmentModel extends Model
             ->get()
             ->getRowArray();
     }
+
+    public function getReportBatch($idBatch, $mainFactory)
+    {
+        return $this->db->table('performance_assessments pa')
+            ->select('pa.id_performance_assessment,
+                pa.id_employee, 
+                e.employee_code,
+                e.employee_name,
+                e.gender,
+                e.date_of_joining,
+                e.shift,
+                pa.id_periode,
+                p.periode_name,
+                pa.id_main_job_role,
+                m.main_job_role_name,
+                f.factory_name, 
+                b.batch_name,
+                pa.nilai, 
+                pa.created_at, 
+                pa.updated_at,
+                ')
+            ->join('employees e', 'e.id_employee = pa.id_employee')
+            ->join('factories f', 'f.id_factory = pa.id_factory')
+            ->join('periodes p', 'p.id_periode = pa.id_periode')
+            ->join('batches b', 'b.id_batch = p.id_batch')
+            ->join('main_job_roles m', 'm.id_main_job_role = pa.id_main_job_role')
+            ->where('b.id_batch', $idBatch)
+            ->where('f.main_factory', $mainFactory)
+            ->orderBy('e.employee_code', 'ASC')
+            ->get()
+            ->getResultArray();
+    }
+
 }

@@ -89,4 +89,51 @@ class EmployeeAssessmentModel extends Model
             ->get()
             ->getResultArray();
     }
+
+    public function getJobdescData($id_batch, $main_factory)
+    {
+        return $this->db->table('assessments AS a')
+            ->select([
+                'e.employee_code',
+                'e.employee_name',
+                'e.shift',
+                'a.id_periode',
+                'a.id_employee',
+                'a.id_job_role',
+                'jr.jobdescription',
+                'jr.description',
+                'mj.main_job_role_name',
+                'f.factory_name',
+                'pr.periode_name',
+                'b.batch_name'
+            ])
+            ->join('employees AS e', 'e.id_employee = a.id_employee')
+            ->join('job_roles AS jr', 'jr.id_job_role = a.id_job_role')
+            ->join('main_job_roles AS mj', 'mj.id_main_job_role = jr.id_main_job_role')
+            ->join('factories AS f', 'f.id_factory = e.id_factory')
+            ->join('periodes AS pr', 'pr.id_periode = a.id_periode')
+            ->join('batches AS b', 'b.id_batch = pr.id_batch')
+            ->where('f.main_factory', $main_factory)
+            ->where('b.id_batch', $id_batch)
+            ->groupBy('a.id_job_role, a.id_employee, a.id_periode')
+            ->get()
+            ->getResultArray();
+
+    }
+
+    public function getData()
+    {
+        return $this->select('assessments.id_assessment, assessments.id_employee,assessments.id_periode, COUNT(assessments.id_job_role) AS ttlJobdesk, employees.employee_name, employees.employee_code, SUM(assessments.score) AS total_score,main_job_roles.id_main_job_role, main_job_roles.main_job_role_name, job_roles.jobdescription, job_roles.description, periodes.periode_name, batches.batch_name,factories.id_factory, factories.factory_name, users.id_user')
+            ->join('employees', 'employees.id_employee = assessments.id_employee')
+            ->join('job_roles', 'job_roles.id_job_role = assessments.id_job_role')
+            ->join('main_job_roles', 'main_job_roles.id_main_job_role = job_roles.id_main_job_role')
+            ->join('periodes', 'periodes.id_periode = assessments.id_periode')
+            ->join('batches', 'batches.id_batch = periodes.id_batch')
+            ->join('factories', 'factories.id_factory = employees.id_factory')
+            ->join('users', 'users.id_user = assessments.id_user')
+            ->where('assessments.score != 0')
+            ->groupBy('assessments.id_employee, assessments.id_periode')
+            ->orderBy('employees.employee_code', 'ASC')
+            ->findAll();
+    }
 }

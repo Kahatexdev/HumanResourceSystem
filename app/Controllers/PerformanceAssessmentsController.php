@@ -8,10 +8,18 @@ use App\Models\PerformanceAssessmentModel;
 use App\Models\EmployeeAssessmentModel;
 use App\Models\BatchModel;
 use App\Models\PeriodeModel;
+use App\Models\PresenceModel;
+use App\Models\NewPAModel;
+use App\Models\BsmcModel;
+use App\Models\JarumModel;
+use App\Models\RossoModel;
+use App\Models\EvaluationAspectModel;
+use App\Models\FinalAssssmentModel;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
+
 
 class PerformanceAssessmentsController extends BaseController
 {
@@ -20,6 +28,13 @@ class PerformanceAssessmentsController extends BaseController
     protected $eaModel;
     protected $periodeModel;
     protected $batchModel;
+    protected $presenceModel;
+    protected $newPAModel;
+    protected $bsmcModel;
+    protected $jarumModel;
+    protected $evaluationAspectModel;
+    protected $rossoModel;
+    protected $finalAssssmentModel;
 
     public function __construct()
     {
@@ -27,6 +42,13 @@ class PerformanceAssessmentsController extends BaseController
         $this->eaModel = new EmployeeAssessmentModel();
         $this->periodeModel = new PeriodeModel();
         $this->batchModel = new BatchModel();
+        $this->presenceModel = new PresenceModel();
+        $this->newPAModel = new NewPAModel();
+        $this->bsmcModel = new BsmcModel();
+        $this->jarumModel = new JarumModel();
+        $this->rossoModel = new RossoModel();
+        $this->evaluationAspectModel = new EvaluationAspectModel();
+        $this->finalAssssmentModel = new FinalAssssmentModel();
         $this->role = session()->get('role');
     }
 
@@ -820,9 +842,478 @@ class PerformanceAssessmentsController extends BaseController
             'active7' => '',
             'active8' => '',
             'active9' => 'active',
-            'reportbatch' => $batch
+            'reportbatch' => $batch,
+            'main_factory' => $main_factory
         ];
 
         return view('penilaian/reportareaperbatch', $data);
+    }
+
+
+    public function exelReportBatch($id_batch,$main_factory)
+    {
+        $reportbatch = $this->paModel->getReportBatch($id_batch,$main_factory);
+        // get batch name
+        $batch = $this->batchModel->select('batch_name')
+            ->where('id_batch', $id_batch)
+            ->first();
+        $batch_name = $batch['batch_name'] ?? '';
+        if (empty($reportbatch)) {
+            session()->setFlashdata('error', 'Tidak ada data penilaian untuk periode ini.');
+            return redirect()->back();
+        }
+        
+        // dd($reportbatch);
+        // Buat Spreadsheet baru
+        $spreadsheet = new Spreadsheet();
+        $spreadsheet->getProperties()
+            ->setCreator('BPSYSTEM by RPLTEAM')
+            ->setTitle('Report Penilaian');
+
+        // Buat sheet pertama untuk report penilaian
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('REPORT PENILAIAN');
+
+        // Header Utama
+        $sheet->mergeCells('A1:H1')->setCellValue('A1', 'REPORT PENILAIAN ' . strtoupper($main_factory) . ' - ' . strtoupper($batch_name));
+
+        // header data
+        $sheet->mergeCells('A3:A4')->setCellValue('A3', 'NO');
+        $sheet->mergeCells('B3:B4')->setCellValue('B3', 'KODE KARTU');
+        $sheet->mergeCells('C3:C4')->setCellValue('C3', 'NAMA KARYAWAN');
+        $sheet->mergeCells('D3:D4')->setCellValue('D3', 'SHIFT');
+        $sheet->mergeCells('E3:E4')->setCellValue('E3', 'L/P');
+        $sheet->mergeCells('F3:F4')->setCellValue('F3', 'TGL. MASUK KERJA');
+        $sheet->mergeCells('G3:G4')->setCellValue('G3', 'BAGIAN');
+        
+        $sheet->mergeCells('H3:J3')->setCellValue('H3', 'Bulan');
+        // header bulan per batch
+        $bulan = $this->batchModel->getBulanPerBatch($id_batch);
+        // buat header bulan
+        $currentCol = 8; // Mulai dari kolom H
+        foreach ($bulan as $b) {
+            $b['bulan'] = date('F', mktime(0, 0, 0, $b['bulan'], 1)); // Mengubah angka bulan menjadi nama bulan
+            $sheet->setCellValue(Coordinate::stringFromColumnIndex($currentCol) . '4', $b['bulan']);
+            $currentCol++;
+        }   
+
+        $filename = 'Report_Batch_' . $main_factory . '_' . date('m-d-Y') . '.xlsx';
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment;filename="' . $filename . '"');
+        header('Cache-Control: max-age=0');
+
+        $writer = new Xlsx($spreadsheet);
+        $writer->save('php://output');
+        exit();
+        
+    }
+
+    public function fetchDataFinalAssesment()
+    {
+        $id_batch       = $this->request->getPost('id_batch');
+        // dd ($id_batch);
+        $main_factory   = $this->request->getPost('main_factory');
+        // $aspects        = $this->evaluationAspectModel->select('department')->groupBy('department')->findAll();
+        // $aspects = array_column($aspects, 'department');
+        $aspects = ['ROSSO', 'MONTIR', 'OPERATOR', 'SEWING'];
+
+        $jobdesc       = $this->jobdesc($id_batch, $main_factory);              // sudah pakai aspek di dalamnya
+        $absen         = $this->scorePresence($id_batch, $main_factory);
+        $productivity  = $this->productivity($id_batch, $main_factory);
+        $rossoScores   = $this->getProductivityRosso($id_batch, $main_factory);
+        $needleBonuses = $this->usedNeedle($id_batch, $main_factory);
+        // 4. Gabungkan data
+        $final = [];
+
+        foreach ($absen as $key => $p) {
+            // pastikan kunci ada di semua set
+            $j   = $jobdesc[$key]       ?? ['score_jobdesc' => 0, 'scoreJobdesc6s' => 0, 'id_main_job_role' => null, 'id_periode' => null, 'main_job_role_name' => null];
+            $pr  = $productivity[$key]  ?? ['score_productivity' => 0];
+            $rs  = $rossoScores[$key]   ?? ['score_rosso' => 0];
+            $nb  = $needleBonuses[$key] ?? ['group' => 0];
+
+            // hanya ambil yang punya id_main_job_role (valid)
+            if (empty($j['id_main_job_role'])) {
+                continue;
+            }
+
+            $final[$key] = [
+                'id_employee'        => $p['id_employee'],
+                'id_main_job_role'   => $j['id_main_job_role'],
+                'id_periode'         => $j['id_periode'],
+                // 'main_job_role_name' => $j['main_job_role_name'],
+                'score_presence'      => $p['score_absensi']      ?? 0,
+                'score_performance_job'      => $j['score_jobdesc'],
+                'score_performance_6s'     => $j['scoreJobdesc6s'],
+                'score_productivity'      => ($pr['score_productivity'] ?? 0) + ($rs['score_rosso'] ?? 0) + ($nb['group'] ?? 0),
+            ];
+        }
+        // dd ($final);
+        // Setelah foreach selesai
+        if (!empty($final)) {
+            $finalInsert = [];
+            $duplicateData = []; // <- Tambahan untuk nyimpan yang duplikat
+            $uniquePeriode = array_unique(array_column($final, 'id_periode'));
+
+            $existingData = $this->finalAssssmentModel
+                ->select(['id_employee', 'id_main_job_role', 'id_periode'])
+                ->whereIn('id_periode', $uniquePeriode)
+                ->whereIn('id_employee', array_column($final, 'id_employee'))
+                ->findAll();
+
+            $existingKeys = [];
+            foreach ($existingData as $row) {
+                $key = (string)$row['id_employee'] . '_' . (string)$row['id_main_job_role'] . '_' . (string)$row['id_periode'];
+                $existingKeys[$key] = true;
+            }
+
+            foreach ($final as $row) {
+                $key = (string)$row['id_employee'] . '_' . (string)$row['id_main_job_role'] . '_' . (string)$row['id_periode'];
+
+                if (!isset($existingKeys[$key])) {
+                    $finalInsert[] = $row;
+                } else {
+                    $duplicateData[] = $key; // <- Simpan duplikat
+                }
+            }
+
+            if (!empty($finalInsert)) {
+                $db = \Config\Database::connect();
+                $db->transStart();
+                $this->finalAssssmentModel->insertBatch($finalInsert);
+                $db->transComplete();
+
+                if ($db->transStatus() === false) {
+                    session()->setFlashdata('error', 'Gagal menyimpan data final assessment.');
+                } else {
+                    $successMsg = 'Data final assessment berhasil disimpan. Jumlah: ' . count($finalInsert);
+                    if (!empty($duplicateData)) {
+                        $successMsg .= '. Duplikat yang dilewati: ' . count($duplicateData);
+                        // Jika ingin detailnya:
+                        $successMsg .= '. Duplikat: ' . implode(', ', $duplicateData);
+                    }
+                    session()->setFlashdata('success', $successMsg);
+                }
+            } else {
+                session()->setFlashdata('error', 'Semua data sudah ada, tidak ada data baru yang disimpan. Total duplikat: ' . count($duplicateData));
+            }
+
+            return redirect()->to(base_url($this->role . '/reportBatch/' . $main_factory));
+        }
+        session()->setFlashdata('error', 'Tidak ada data final assessment yang bisa disimpan.');
+        return redirect()->to(base_url($this->role . '/reportBatch/' . $main_factory)); 
+    }
+
+    private function scorePresence($id_batch, $main_factory)
+    {
+        // Ambil data absensi dan total hari kerja per periode
+        $absen          = $this->presenceModel->getPresenceData($id_batch, $main_factory);
+        // dd ($absen);
+        $ttlHariKerja   = $this->presenceModel->getTotalHariKerjaPerPeriode($id_batch, $main_factory);
+
+        // 1) Bangun map total hari kerja berdasarkan id_periode
+        $mapHariKerja = [];
+        foreach ($ttlHariKerja as $row) {
+            // misal $row = ['id_periode' => 4, 'periode_name' => 'Tengah', 'total_hari_kerja' => 31]
+            $mapHariKerja[$row['id_periode']] = $row['total_hari_kerja'];
+        }
+
+        // 2) Iterasi setiap karyawan untuk hitung poin & nilai absensi
+        $presence = [];
+        foreach ($absen as $a) {
+            $key            = $a['employee_code']
+                . '-' . $a['employee_name']
+                . '-' . $a['id_periode'];
+
+            // ambil jumlah insiden
+            $sakit          = $a['sick']   ?? 0;
+            $izin           = $a['permit'] ?? 0;
+            $mangkir        = $a['absent'] ?? 0;
+            $cuti           = $a['leave']  ?? 0;
+
+            // 2.a) Total poin absensi
+            $totalPoin      = ($sakit * 1)
+                + ($izin  * 2)
+                + ($mangkir * 3)
+                + ($cuti    * 0);
+
+            // 2.b) Total hari kerja dari map
+            $totalHariKerja = $mapHariKerja[$a['id_periode']] ?? 0;
+
+            // 2.c) Hari hadir efektif
+            $hariHadir          = $totalHariKerja - $totalPoin;
+
+            // 2.d) Persentase hadir (raw)
+            //    pastikan totalHariKerja > 0 untuk menghindari division by zero
+            if ($totalHariKerja > 0) {
+                $pctHadir       = ($hariHadir / $totalHariKerja) * 100;
+            } else {
+                $pctHadir       = 0;
+            }
+
+            // 2.e) Terapkan bobot absensi (30%)
+            $scoreAbsensiRaw    = $pctHadir;
+            $scoreAbsensi       = $pctHadir * 0.30;
+
+            // Simpan hasilnya
+            $presence[$key] = [
+                'id_employee'        => $a['id_employee'],
+                'employee_code'      => $a['employee_code'],
+                'employee_name'      => $a['employee_name'],
+                'id_periode'         => $a['id_periode'],
+                'score_absensi'        => round($scoreAbsensi, 2),
+            ];
+        }
+        return $presence;
+        // Contoh dump hasil
+        // dd($presence);
+    }
+
+    // private function jobdesc($id_batch, $main_factory)
+    // {
+    //     // definisikan tiga aspek penilaian
+    //     $aspects = ['ROSSO', 'MONTIR', 'OPERATOR', 'SEWING'];
+    //     // $aspects = $this->evaluationAspectModel->select('department')->groupBy('department')->findAll();
+    //     // $aspects = array_column($aspects, 'department');
+
+    //     // dd ($aspects);
+    //     // Ambil data jobdesc per periode
+    //     $jobdescData = $this->newPAModel->getJobdescData($id_batch, $main_factory, $aspects);
+    //     // dd ($jobdescData);
+    //     // hitung nilai jobdesk akhir
+    //     $jobdesc = [];
+    //     foreach ($jobdescData as $jd) {
+    //         $key = $jd['employee_code'] . '-' . $jd['employee_name'] . '-' . $jd['id_periode'];
+
+    //         // Ambil nilai jobdesc
+    //         $nilaiJobdesc = $jd['performance_score'] ?? 0;
+
+    //         // jika $aspects['aspect'] = $jd['main_job_role_name'] terapkan bobot sesuai persentage
+    //         // Misal jika $aspects['aspect'] = 'OPERATOR' dan $jd['main_job_role_name'] = 'OPERATOR', maka ambil persentase dari $aspects
+    //         $scoreJobdesc = 0;
+    //         $scoreJobdesc6s = 0;
+    //         if (stripos($jd['main_job_role_name'], 'ROSSO') !== false) {
+    //             // Ambil bobot aspek ini (0 jika gak ketemu)
+    //             $scoreJobdesc6s = $nilaiJobdesc * 0.15;
+    //             // Terapkan bobot jobdesc (15%)
+    //             $scoreJobdesc = $nilaiJobdesc * 0.15;
+    //         } elseif (stripos($jd['main_job_role_name'], 'MONTIR') !== false) {
+    //             $scoreJobdesc6s = $nilaiJobdesc * 0.15;
+    //             // Terapkan bobot jobdesc (50%)
+    //             $scoreJobdesc = $nilaiJobdesc * 0.50;
+    //         } elseif (stripos($jd['main_job_role_name'], 'OPERATOR') !== false) {
+    //             // Ambil bobot aspek ini (0 jika gak ketemu)
+    //             $scoreJobdesc6s = $nilaiJobdesc * 0.15;
+    //             // Terapkan bobot jobdesc (15%)
+    //             $scoreJobdesc = $nilaiJobdesc * 0.15;
+    //         } elseif (stripos($jd['main_job_role_name'], 'SEWING') !== false) {
+    //             // Ambil bobot aspek ini (0 jika gak ketemu)
+    //             $scoreJobdesc6s = $nilaiJobdesc * 0.25;
+    //             // Terapkan bobot jobdesc (50%)
+    //             $scoreJobdesc = $nilaiJobdesc * 0.45;
+    //         } else {
+    //             // Jika tidak ada department yang sesuai, set score ke 0
+    //             $scoreJobdesc = 0;
+    //         }
+
+    //         // Simpan hasilnya
+    //         $jobdesc[$key] = [
+    //             'employee_code' => $jd['employee_code'],
+    //             'employee_name' => $jd['employee_name'],
+    //             'id_periode'    => $jd['id_periode'],
+    //             'scoreJobdesc6s'   => round($scoreJobdesc6s ?? 0, 2), // Tambahkan scoreJobdesc6s jika ada
+    //             'score_jobdesc' => round($scoreJobdesc, 2),
+    //             'main_job_role_name' => $jd['main_job_role_name'],
+    //         ];
+    //     }
+    //     return $jobdesc;
+    //     // Contoh dump hasil
+    //     // dd($jobdesc);
+    // }
+
+
+    private function jobdesc($id_batch, $main_factory)
+    {
+        // 1. Mapping bobot per aspek (jobdesc & jobdesc6s)
+        $aspectWeights = [
+            'ROSSO'    => ['jobdesc' => 0.15, 'jobdesc6s' => 0.15],
+            'MONTIR'   => ['jobdesc' => 0.50, 'jobdesc6s' => 0.15],
+            'OPERATOR' => ['jobdesc' => 0.15, 'jobdesc6s' => 0.15],
+            'SEWING'   => ['jobdesc' => 0.45, 'jobdesc6s' => 0.25],
+        ];
+
+        // 2. Ambil data jobdesc sesuai aspek-aspek di atas
+        $jobdescData = $this->newPAModel->getJobdescData(
+            $id_batch,
+            $main_factory,
+            array_keys($aspectWeights)  // ['ROSSO','MONTIR','OPERATOR','SEWING']
+        );
+
+        $jobdesc = [];
+
+        foreach ($jobdescData as $jd) {
+            $key = $jd['employee_code'] . '-' . $jd['employee_name'] . '-' . $jd['id_periode'];
+            $nilai        = $jd['performance_score'] ?? 0;
+            $roleRaw      = $jd['main_job_role_name'] ?? '';
+            $roleUpper    = strtoupper($roleRaw);
+
+            // default jika tidak ada yang match
+            $scoreJobdesc   = 0;
+            $scoreJobdesc6s = 0;
+
+            // 3. Loop tiap aspek, cek LIKE '%ASPECT%'
+            foreach ($aspectWeights as $aspect => $w) {
+                if (strpos($roleUpper, $aspect) !== false) {
+                    $scoreJobdesc   = $nilai * $w['jobdesc'];
+                    $scoreJobdesc6s = $nilai * $w['jobdesc6s'];
+                    break;
+                }
+            }
+
+            // 4. Simpan hasil dengan pembulatan 2 desimal
+            $jobdesc[$key] = [
+                'employee_code'      => $jd['employee_code'],
+                'employee_name'      => $jd['employee_name'],
+                'id_periode'         => $jd['id_periode'],
+                'id_main_job_role' => $jd['id_main_job_role'] ?? '', // Tambahkan id_main_job_role jika ada
+                'main_job_role_name' => $roleRaw,
+                'score_jobdesc'      => round($scoreJobdesc, 2),
+                'scoreJobdesc6s'     => round($scoreJobdesc6s, 2),
+            ];
+        }
+
+        // dd ($jobdesc);
+        return $jobdesc;
+    }
+
+    private function productivity($id_batch, $main_factory)
+    {
+        // Ambil data produktivitas per periode
+        $productivityData = $this->bsmcModel->getProductivityData($id_batch, $main_factory);
+        // dd ($productivityData);
+        // hitung nilai produktivitas akhir
+        $productivity = [];
+        foreach ($productivityData as $pd) {
+            $key = $pd['employee_code'] . '-' . $pd['employee_name'] . '-' . $pd['id_periode'];
+
+            $prodTotal = $pd['total_produksi'] ?? 0;
+            $bsTotal = $pd['total_bs'] ?? 0;
+
+            $productivityRaw = 0;
+            if ($prodTotal > 0) {
+                // Hitung produktivitas raw
+                $productivityRaw = ($prodTotal - $bsTotal) / $prodTotal * 100;
+            } else {
+                // Jika total produksi 0, set produktivitas raw ke 0
+                $productivityRaw = 0;
+            }
+
+            // Terapkan bobot produktivitas (40%)
+            $scoreProductivity = $productivityRaw * 0.40;
+
+            // Simpan hasilnya
+            $productivity[$key] = [
+                'employee_code' => $pd['employee_code'],
+                'employee_name' => $pd['employee_name'],
+                'id_periode'    => $pd['id_periode'],
+                'score_productivity' => round($scoreProductivity, 2),
+            ];
+        }
+        return $productivity;
+        // Contoh dump hasil
+        // dd($productivity);
+    }
+
+    private function getProductivityRosso($id_batch, $main_factory)
+    {
+        // Ambil data rosso per periode
+        $rossoData = $this->rossoModel->getRossoDataForFinal($id_batch, $main_factory);
+        // dd ($rossoData);
+        // Hitung nilai rosso akhir
+        $rosso = [];
+        foreach ($rossoData as $r) {
+            $key = $r['employee_code'] . '-' . $r['employee_name'] . '-' . $r['id_periode'];
+
+            // Ambil nilai rosso
+            $produksi = $r['total_produksi'] ?? 0;
+            $perbaikan = $r['total_perbaikan'] ?? 0;
+            $nilaiRosso = 0;
+            if ($produksi > 0) {
+                // Hitung nilai rosso raw
+                $nilaiRosso = ($produksi - $perbaikan) / $produksi * 100;
+            } else {
+                // Jika total produksi 0, set nilai rosso raw ke 0
+                $nilaiRosso = 0;
+            }
+            // Terapkan bobot rosso (40%)
+            $scoreRosso = $nilaiRosso * 0.40;
+
+            // Simpan hasilnya
+            $rosso[$key] = [
+                'employee_code' => $r['employee_code'],
+                'employee_name' => $r['employee_name'],
+                'id_periode'    => $r['id_periode'],
+                'score_rosso'  => round($scoreRosso, 2),
+            ];
+        }
+        // dd ($rosso);
+        return $rosso;
+    }
+
+    private function usedNeedle($id_batch, $main_factory)
+    {
+        // 1. Ambil data used needle per periode
+        $usedNeedleData = $this->jarumModel
+            ->getUsedNeedleData($id_batch, $main_factory);
+
+        // 2. Hitung jumlah karyawan
+        $count = count($usedNeedleData);
+        if ($count === 0) {
+            return [];
+        }
+
+        // 3. Urutkan descending berdasarkan total_jarum
+        usort($usedNeedleData, function ($a, $b) {
+            return ($b['total_jarum'] ?? 0) <=> ($a['total_jarum'] ?? 0);
+        });
+
+        // 4. Tentukan ukuran grup (kita pakai ceil agar semua masuk grup)
+        $groupSize = (int) ceil($count / 5);
+
+        $usedNeedle = [];
+        foreach ($usedNeedleData as $idx => $un) {
+            $key = $un['employee_code'] . '-' . $un['employee_name'] . '-' . $un['id_periode'];
+
+            // Nilai mentah
+            $raw = $un['total_jarum'] ?? 0;
+
+            // Tentukan grup (0..4) berdasarkan posisi urut
+            $groupIndex = (int) floor($idx / $groupSize);
+            if ($groupIndex > 4) {
+                $groupIndex = 4;
+            }
+
+            // Bobot percent: 5% untuk grup 0, 4% grup1, ..., 1% grup4
+            $percent = 5 - $groupIndex;
+
+            // Hitung skor
+            // $score = $raw * ($percent / 100);
+            
+
+            $usedNeedle[$key] = [
+                'id_employee'        => $un['id_employee'],
+                'id_periode'         => $un['id_periode'],
+                'employee_code'      => $un['employee_code'],
+                'employee_name'      => $un['employee_name'],
+                'total_jarum'        => $raw,
+                'rank'               => $idx + 1,
+                'group'              => $groupIndex + 1,      // 1..5
+                'jarumBonus'            => $percent
+            ];
+        }
+
+        // Contoh dump hasil
+        // dd($usedNeedle);
+        return $usedNeedle;
     }
 }

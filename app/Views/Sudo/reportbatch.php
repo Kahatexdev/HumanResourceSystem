@@ -5,7 +5,7 @@
         <div class="col-xl-12 col-sm-12 mb-xl-0 mb-4">
             <div class="card">
                 <div class="card-body p-3">
-                    <div class="row align-items-center">
+                    <div class="row">
                         <div class="col-8">
                             <div class="numbers">
                                 <p class="text-sm mb-0 text-capitalize font-weight-bold">Skill Mapping</p>
@@ -15,40 +15,27 @@
                             </div>
                         </div>
                         <div class="col-4 text-end">
-                            <!-- button fetch data -->
-                            <form action="<?= base_url($role . '/fetchDataFinalAssesment') ?>" method="POST" id="formFetchData">
-                                <div class="form-group mb-0 d-flex justify-content-end align-items-end gap-2">
-                                    <div>
-                                        <input type="hidden" name="main_factory" value="<?= $main_factory ?>">
-                                        <select class="form-select form-select-sm" id="id_batch" name="id_batch" required>
-                                            <option value="">Pilih Batch Penilaian</option>
-                                            <?php foreach ($reportbatch as $batch) : ?>
-                                                <option value="<?= $batch['id_batch'] ?>"><?= $batch['batch_name'] ?></option>
-                                            <?php endforeach; ?>
-                                        </select>
-                                    </div>
-                                    <div class="align-self-end">
-                                        <button type="submit" class="btn bg-gradient-info btn-sm mb-1">Fetch Data</button>
-                                    </div>
-                                </div>
-                            </form>
+                            <div class="icon icon-shape bg-gradient-info shadow text-center border-radius-md">
+                                <i class="ni ni-chart-bar-32 text-lg opacity-10" aria-hidden="true"></i>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
+
         </div>
     </div>
-
     <div class="row">
-        <?php foreach ($reportbatch as $ar) : ?>
+
+        <?php foreach ($tampilperarea as $key => $ar) : ?>
             <div class="col-xl-3 col-sm-6 mb-xl-0 mb-4 mt-2">
-                <a href="<?= base_url($role . '/exelReportBatch/' . $ar['id_batch'] . '/' . $ar['main_factory']) ?>">
-                    <div class="card">
+                <a href="<?= base_url($role . '/reportBatch/' . ($ar['main_factory'] === 'all' ? 'all' : $ar['main_factory'])) ?>">
+                    <div class="card <?= ($ar['main_factory'] === 'all') ? '' : '' ?>">
                         <div class="card-body p-3">
                             <div class="row">
                                 <div class="col-8">
                                     <div class="numbers">
-                                        <p class="text-sm mb-0 text-capitalize font-weight-bold"><?= $ar['batch_name'] ?></p>
+                                        <p class="text-sm mb-0 text-capitalize font-weight-bold"><?= $ar['main_factory'] ?></p>
                                         <h5 class="font-weight-bolder mb-0">
                                         </h5>
                                     </div>

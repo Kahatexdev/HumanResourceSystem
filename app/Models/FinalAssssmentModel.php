@@ -4,16 +4,23 @@ namespace App\Models;
 
 use CodeIgniter\Model;
 
-class BatchModel extends Model
+class FinalAssssmentModel extends Model
 {
-    protected $table            = 'batches';
-    protected $primaryKey       = 'id_batch';
+    protected $table            = 'final_assessment';
+    protected $primaryKey       = 'id';
     protected $useAutoIncrement = true;
     protected $returnType       = 'array';
     protected $useSoftDeletes   = false;
     protected $protectFields    = true;
     protected $allowedFields    = [
-        'batch_name',
+        'id_employee',
+        'id_main_job_role',
+        'id_periode',
+        'score_presence',
+        'score_performance_job',
+        'score_performance_6s',
+        'score_productivity',
+        'id_user',
         'created_at',
         'updated_at'
     ];
@@ -47,20 +54,4 @@ class BatchModel extends Model
     protected $afterFind      = [];
     protected $beforeDelete   = [];
     protected $afterDelete    = [];
-
-    public function getBatch()
-    {
-        return $this->db->table('batches')
-            ->get()->getResultArray();
-    }
-
-    public function getBulanPerBatch($idBatch)
-    {
-        return $this->db->table('batches')
-            ->select('MONTH(periodes.end_date) as bulan')
-            ->join('periodes', 'periodes.id_batch = batches.id_batch')
-            ->where('periodes.id_batch', $idBatch)
-            ->groupBy('MONTH(periodes.end_date)')
-            ->get()->getResultArray();
-    }
 }
