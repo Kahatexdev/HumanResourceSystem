@@ -15,6 +15,18 @@
                                 </h5>
                             </div>
                         </div>
+                        <div class="col-4 text-end">
+                            <!-- button export -->
+                            <div class="d-flex justify-content-end align-items-end gap-2">
+                                <form action="<?= base_url($role . '/exportFinalAssessment') ?>" method="POST" id="formExport">
+                                    <input type="hidden" name="id_batch" value="<?= $id_batch ?>">
+                                    <input type="hidden" name="main_factory" value="<?= $main_factory ?>">
+                                    <button type="submit" class="btn bg-gradient-success mb-1">
+                                        <i class="fas fa-file-excel me-1"></i>
+                                        Export Data</button>
+                                </form>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

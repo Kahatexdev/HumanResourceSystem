@@ -57,7 +57,7 @@ class FinalAssssmentModel extends Model
 
     public function getFinalAssessmentByBatch($id_batch, $main_factory)
     {
-        return $this->select('final_assessment.*, employees.employee_name, employees.employee_code, factories.main_factory, batches.batch_name, periodes.periode_name')
+        return $this->select('final_assessment.*, employees.*, factories.main_factory, batches.batch_name, periodes.periode_name, periodes.end_date, main_job_roles.main_job_role_name')
             ->join('employees', 'employees.id_employee = final_assessment.id_employee')
             ->join('factories', 'factories.id_factory = employees.id_factory')
             ->join('main_job_roles', 'main_job_roles.id_main_job_role = final_assessment.id_main_job_role')

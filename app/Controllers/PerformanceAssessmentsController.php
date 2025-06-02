@@ -19,6 +19,8 @@ use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
+use PhpOffice\PhpSpreadsheet\Style\Border;
+use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
 
 
 class PerformanceAssessmentsController extends BaseController
@@ -1578,5 +1580,476 @@ class PerformanceAssessmentsController extends BaseController
         ];
 
         return view('penilaian/finalAssesment', $data);
+    }
+
+    // public function exportFinalAssessment()
+    // {
+    //     $id_batch     = $this->request->getPost('id_batch');
+    //     $main_factory = $this->request->getPost('main_factory');
+    //     $nameBatch  = $this->batchModel->select('batch_name')
+    //         ->where('id_batch', $id_batch)
+    //         ->first()['batch_name'] ?? '';
+    //     // Ambil data final assessment
+    //     $reportbatch = $this->finalAssssmentModel->getFinalAssessmentByBatch($id_batch, $main_factory);
+    //     // dd ($reportbatch);
+    //     if (empty($reportbatch)) {
+    //         session()->setFlashdata('error', 'Tidak ada data final assessment untuk periode ini.');
+    //         return redirect()->back();
+    //     }
+
+    //     $dataForExport = [];
+    //     foreach ($reportbatch as $rb) {
+    //         $key = $rb['employee_code'] . '-' . $rb['employee_name'];
+    //         // Hitung nilai akhir
+    //         $dataForExport[$key] = [
+    //             'employee_code'      => $rb['employee_code'],
+    //             'employee_name'      => $rb['employee_name'],
+    //             'nilai_akhir'           => round(
+    //                 $rb['score_presence'] +
+    //                 $rb['score_performance_job'] +
+    //                 $rb['score_performance_6s'] +
+    //                 $rb['score_productivity'], 2
+    //             ),
+    //         ];
+
+    //         $key2 = $rb['employee_code'] . '-' . $rb['employee_name'] . '-' . $rb['id_periode'];
+    //         // Tambahkan detail per periode
+    //         $dataForExport[$key]['detail'][$rb['id_periode']] = [
+    //             'periode_name'          => $rb['periode_name'],
+    //             'score_presence'        => round($rb['score_presence'], 2),
+    //             'score_performance_job' => round($rb['score_performance_job'], 2),
+    //             'score_performance_6s'  => round($rb['score_performance_6s'], 2),
+    //             'score_productivity'    => round($rb['score_productivity'], 2),
+    //         ];
+    //     }
+
+    //     // Buat spreadsheet baru
+    //     $spreadsheet = new Spreadsheet();
+    //     $sheet = $spreadsheet->getActiveSheet();
+    //     $sheet->setTitle('Report ' . $main_factory . ' - ' . $nameBatch);
+
+    //     // Set header kolom
+    //     $sheet->mergeCells('A1:L1'); // Merge header
+    //     $sheet->setCellValue('A1', 'REPORT PENILAIAN '. strtoupper($main_factory) . ' - ' . strtoupper($nameBatch));
+    //     $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(16);
+    //     $sheet->getStyle('A1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+    //     $sheet->getStyle('A1')->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
+
+
+    //     $sheet->mergeCells('A3:A4');
+    //     $sheet->setCellValue('A3', 'NO');
+    //     $sheet->mergeCells('B3:B4');
+    //     $sheet->setCellValue('B3', 'KODE KARTU');
+    //     $sheet->mergeCells('C3:C4');
+    //     $sheet->setCellValue('C3', 'NAMA KARYAWAN');
+    //     $sheet->mergeCells('D3:D4');
+    //     $sheet->setCellValue('D3', 'SHIFT');
+    //     $sheet->mergeCells('E3:E4');
+    //     $sheet->setCellValue('E3', 'L/P');
+    //     $sheet->mergeCells('F3:F4');
+    //     $sheet->setCellValue('F3', 'TGL. MASUK KERJA');
+    //     $sheet->mergeCells('G3:G4');
+    //     $sheet->setCellValue('G3', 'BAGIAN');
+    //     $sheet->mergeCells('H3:J3');
+    //     $sheet->setCellValue('H3', 'BULAN');
+    //     $sheet->mergeCells('K3:K4');
+    //     $sheet->setCellValue('K3', 'NILAI AKHIR');
+    //     $sheet->getStyle('A3:K4')->getFont()->setBold(true);
+    //     $sheet->getStyle('A3:K4')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+    //     $sheet->getStyle('A3:K4')->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
+    //     // wrap text untuk header
+    //     $sheet->getStyle('A3:K4')->getAlignment()->setWrapText(true);
+    //     // Set border untuk header
+    //     $sheet->getStyle('A3:K4')->applyFromArray([
+    //         'borders' => [
+    //             'allBorders' => [
+    //                 'borderStyle' => Border::BORDER_THIN,
+    //                 'color' => ['argb' => 'FF000000'],
+    //             ],
+    //         ],
+    //     ]);
+    //     // Set lebar kolom
+    //     $sheet->getColumnDimension('A')->setWidth(5);
+    //     $sheet->getColumnDimension('B')->setWidth(15);
+    //     $sheet->getColumnDimension('C')->setWidth(25);
+    //     $sheet->getColumnDimension('D')->setWidth(10);
+    //     $sheet->getColumnDimension('E')->setWidth(5);
+    //     $sheet->getColumnDimension('F')->setWidth(15);
+    //     $sheet->getColumnDimension('G')->setWidth(15);
+    //     $sheet->getColumnDimension('H')->setWidth(15);
+    //     $sheet->getColumnDimension('I')->setWidth(15);
+    //     $sheet->getColumnDimension('J')->setWidth(15);
+    //     $sheet->getColumnDimension('K')->setWidth(15);
+    //     // Set format tanggal untuk kolom F
+    //     $sheet->getStyle('F5:F1000')->getNumberFormat()->setFormatCode(NumberFormat::FORMAT_DATE_DDMMYYYY);
+    //     // Set format angka untuk kolom K
+    //     $sheet->getStyle('K5:K1000')->getNumberFormat()->setFormatCode(NumberFormat::FORMAT_NUMBER_00);
+
+
+    //     // Set header bulan
+    //     // Ambil daftar periode unik dari reportbatch
+    //     $periodeNames = [];
+    //     foreach ($reportbatch as $rb) {
+    //         if (!isset($rb['periode_name'])) continue;
+    //         $periodeNames[$rb['periode_name']] = true;
+    //     }
+    //     $periodeNames = array_keys($periodeNames);
+
+    //     $currentCol = 8; // Mulai dari kolom H
+    //     foreach ($periodeNames as $periodeName) {
+    //         $sheet->setCellValue(Coordinate::stringFromColumnIndex($currentCol) . '4', $periodeName);
+    //         $currentCol++;
+    //     }
+
+    //     // Set data karyawan
+    //     foreach ($reportbatch as $row => $rb) {
+    //         // Set data karyawan di baris ke-5 dan seterusnya
+    //         $rowIndex = 5 + $row;
+    //         $sheet->setCellValue("A{$rowIndex}", $row + 1); // Nomor urut
+    //         $sheet->setCellValue("B{$rowIndex}", $rb['employee_code']);
+    //         $sheet->setCellValue("C{$rowIndex}", $rb['employee_name']);
+    //         $sheet->setCellValue("D{$rowIndex}", $rb['shift'] ?? ''); // Shift
+    //         $sheet->setCellValue("E{$rowIndex}", $rb['gender'] ?? ''); // L/P
+
+
+
+    //         // // Isi nilai akhir per periode
+    //         // for ($col = 8; $col < 8 + count($reportbatch); $col++) {
+    //         //     $periodeIndex = $col - 8; // Indeks periode
+    //         //     $periodeName = $reportbatch[$periodeIndex]['periode_name'] ?? '';
+    //         //     $nilaiAkhir = $rb['nilai_akhir'] ?? 0; // Ambil nilai akhir
+    //         //     $sheet->setCellValue(Coordinate::stringFromColumnIndex($col) . $rowIndex, $nilaiAkhir);
+    //         // }
+
+    //         // export excel and exit
+
+
+    //     }
+    //     $writer = new Xlsx($spreadsheet);
+    //     $fileName = 'Report_' . $nameBatch . '_' . $main_factory . '_' . date('Y_m_d') . '.xlsx';
+    //     header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    //     header('Content-Disposition: attachment; filename="' . $fileName . '"');
+    //     header('Cache-Control: max-age=0');
+    //     $writer->save('php://output');
+    //     exit; // Pastikan keluar setelah menyimpan
+    // }
+
+    public function exportFinalAssessment()
+    {
+        $id_batch     = $this->request->getPost('id_batch');
+        $main_factory = $this->request->getPost('main_factory');
+        $nameBatch    = $this->batchModel
+            ->select('batch_name')
+            ->where('id_batch', $id_batch)
+            ->first()['batch_name'] ?? '';
+
+        // Ambil data final assessment (query harus sudah include 'end_date', 'shift', 'gender', 'main_job_role_name', dll.)
+        $reportbatch = $this->finalAssssmentModel
+            ->getFinalAssessmentByBatch($id_batch, $main_factory);
+
+        if (empty($reportbatch)) {
+            session()->setFlashdata('error', 'Tidak ada data final assessment untuk periode ini.');
+            return redirect()->back();
+        }
+
+        /**
+         * 1. Kumpulkan bulan unik (berdasarkan end_date)
+         */
+        $bulanUnik = [];
+        foreach ($reportbatch as $rb) {
+            if (empty($rb['end_date'])) continue;
+            $monthNum = intval(date('m', strtotime($rb['end_date'])));
+            $bulanUnik[$monthNum] = true;
+        }
+        $bulanUnik = array_keys($bulanUnik);
+        sort($bulanUnik, SORT_NUMERIC); // Urutkan ascending
+
+        /**
+         * 2. Mapping bulan → kolom Excel (H=8, I=9, dst.)
+         */
+        $mapBulan2Col  = [];
+        $currentColIdx = 8; // 8 → kolom “H”
+        foreach ($bulanUnik as $bln) {
+            $mapBulan2Col[$bln] = $currentColIdx;
+            $currentColIdx++;
+        }
+
+        /**
+         * 3. Build array grouping per karyawan
+         */
+        $dataForExport = [];
+        foreach ($reportbatch as $rb) {
+            // Kunci composite: "kode-nama"
+            $key = $rb['employee_code'] . '-' . $rb['employee_name'];
+
+            // Hitung nilai akhir baris ini
+            $nilaiAkhir = round(
+                (float) ($rb['score_presence']        ?? 0)
+                    + (float) ($rb['score_performance_job'] ?? 0)
+                    + (float) ($rb['score_performance_6s']  ?? 0)
+                    + (float) ($rb['score_productivity']    ?? 0),
+                2
+            );
+
+            // Inisialisasi data karyawan jika belum ada
+            if (!isset($dataForExport[$key])) {
+                $dataForExport[$key] = [
+                    'employee_code'        => $rb['employee_code'],
+                    'employee_name'        => $rb['employee_name'],
+                    'shift'                => $rb['shift']               ?? '',
+                    'gender'               => $rb['gender']              ?? '',
+                    'date_of_joining'      => $rb['date_of_joining']     ?? '',
+                    'main_job_role_name'   => $rb['main_job_role_name']  ?? '',
+                    'detail'               => [],
+                ];
+            }
+
+            // Simpan nilai per‐bulan (berdasarkan end_date)
+            $blnInt = intval(date('m', strtotime($rb['end_date'])));
+            $dataForExport[$key]['detail'][$blnInt] = [
+                'nilai_akhir' => $nilaiAkhir,
+            ];
+        }
+
+        /**
+         * 3.5. SORT DATA FOR EXPORT BERDASARKAN KODE_KARTU
+         */
+        $sortOrders = [
+            'KKMA',
+            'KKMB',
+            'KKMC',
+            'KKMNS',
+            'KKSA',
+            'KKSB',
+            'KKSC',
+            'KKJHA',
+            'KKJHB',
+            'KKJHC',
+            'KK2MA',
+            'KK2MB',
+            'KK2MC',
+            'KK2MNS',
+            'KK2SA',
+            'KK2SB',
+            'KK2SC',
+            'KK5A',
+            'KK5B',
+            'KK5C',
+            'KK5NS',
+            'KK7A',
+            'KK7B',
+            'KK7C',
+            'KK7NS',
+            'KK8MA',
+            'KK8MB',
+            'KK8MC',
+            'KK8MNS',
+            'KK8SA',
+            'KK8SB',
+            'KK8SC',
+            'KK9A',
+            'KK9B',
+            'KK9C',
+            'KK9NS',
+            'KK10A',
+            'KK10B',
+            'KK10C',
+            'KK10NS',
+            'KK11A',
+            'KK11B',
+            'KK11C',
+            'KK11NS'
+        ];
+        // Buat map: kode_kartu → index urutan
+        $indexMap = array_flip($sortOrders);
+
+        // Ambil semua key composite ("kode-nama") dari dataForExport
+        $orderedKeys = array_keys($dataForExport);
+
+        // Urutkan orderedKeys berdasarkan posisi employee_code dalam indexMap
+        usort($orderedKeys, function ($aKey, $bKey) use ($dataForExport, $indexMap) {
+            $codeA = $dataForExport[$aKey]['employee_code'];
+            $codeB = $dataForExport[$bKey]['employee_code'];
+
+            // Extract prefix (letters only) from employee code
+            preg_match('/^[A-Z]+/', $codeA, $matchA);
+            preg_match('/^[A-Z]+/', $codeB, $matchB);
+            $prefixA = $matchA[0] ?? '';
+            $prefixB = $matchB[0] ?? '';
+
+            $idxA  = $indexMap[$prefixA] ?? PHP_INT_MAX;
+            $idxB  = $indexMap[$prefixB] ?? PHP_INT_MAX;
+
+            // Jika posisi sama (atau sama-sama tidak ada), fallback pakai urutan alfabet
+            if ($idxA === $idxB) {
+                return strcmp($codeA, $codeB);
+            }
+            return $idxA <=> $idxB;
+        });
+
+
+        /**
+         * 4. Mulai bikin Spreadsheet
+         */
+        $spreadsheet = new Spreadsheet();
+        $sheet       = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Report ' . $main_factory . ' - ' . $nameBatch);
+
+        // === HEADER UTAMA (Baris 1) ===
+        $sheet->mergeCells('A1:' . Coordinate::stringFromColumnIndex($currentColIdx - 1) . '1');
+        $sheet->setCellValue('A1', 'REPORT PENILAIAN ' . strtoupper($main_factory) . ' - ' . strtoupper($nameBatch));
+        $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(16);
+        $sheet->getStyle('A1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('A1')->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
+
+        // === HEADER KOLOM (Baris 3–4) ===
+        $sheet->mergeCells('A3:A4');
+        $sheet->setCellValue('A3', 'NO');
+        $sheet->mergeCells('B3:B4');
+        $sheet->setCellValue('B3', 'KODE KARTU');
+        $sheet->mergeCells('C3:C4');
+        $sheet->setCellValue('C3', 'NAMA KARYAWAN');
+        $sheet->mergeCells('D3:D4');
+        $sheet->setCellValue('D3', 'SHIFT');
+        $sheet->mergeCells('E3:E4');
+        $sheet->setCellValue('E3', 'L/P');
+        $sheet->mergeCells('F3:F4');
+        $sheet->setCellValue('F3', 'TGL. MASUK KERJA');
+        $sheet->mergeCells('G3:G4');
+        $sheet->setCellValue('G3', 'BAGIAN');
+
+        // Merge “BULAN” di baris 3 (kolom H sampai kolom terakhir sebelum 'NILAI AKHIR'):
+        $startBulanCol = Coordinate::stringFromColumnIndex(8);
+        $endBulanCol   = Coordinate::stringFromColumnIndex($currentColIdx - 1);
+        $sheet->mergeCells("{$startBulanCol}3:{$endBulanCol}3");
+        $sheet->setCellValue('H3', 'BULAN');
+
+        // Tulis tiap‐tiap bulan di baris 4 (H4, I4, dst.)
+        foreach ($mapBulan2Col as $blnInt => $colIdx) {
+            $colLetter = Coordinate::stringFromColumnIndex($colIdx);
+            $sheet->setCellValue("{$colLetter}4", strtoupper(date('M Y', mktime(0, 0, 0, $blnInt, 1))));
+        }
+
+        // Kolom terakhir: NILAI AKHIR (merge K3:K4)
+        $sheet->mergeCells("K3:K4");
+        $sheet->setCellValue("K3", 'NILAI AKHIR');
+
+        // Style untuk header 3–4
+        $sheet->getStyle("A3:K4")->getFont()->setBold(true);
+        $sheet->getStyle("A3:K4")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle("A3:K4")->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
+        $sheet->getStyle("A3:K4")->getAlignment()->setWrapText(true);
+        $sheet->getStyle("A3:K4")->applyFromArray([
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => Border::BORDER_THIN,
+                    'color'       => ['argb' => 'FF000000'],
+                ],
+            ],
+        ]);
+
+        // === LEBAR KOLOM ===
+        $sheet->getColumnDimension('A')->setWidth(5);
+        $sheet->getColumnDimension('B')->setWidth(15);
+        $sheet->getColumnDimension('C')->setWidth(25);
+        $sheet->getColumnDimension('D')->setWidth(10);
+        $sheet->getColumnDimension('E')->setWidth(5);
+        $sheet->getColumnDimension('F')->setWidth(15);
+        $sheet->getColumnDimension('G')->setWidth(15);
+        // Atur lebar kolom bulan (H, I, dst.)
+        foreach ($mapBulan2Col as $colIdx) {
+            $sheet->getColumnDimension(Coordinate::stringFromColumnIndex($colIdx))->setWidth(15);
+        }
+
+        // Format untuk “TGL. MASUK KERJA” (F5:F<lastRow>)
+        $lastRow = 5 + count($orderedKeys) - 1;
+        $sheet->getStyle("F5:F{$lastRow}")
+            ->getNumberFormat()
+            ->setFormatCode(NumberFormat::FORMAT_DATE_DDMMYYYY);
+
+        // Format untuk kolom “NILAI AKHIR” (K5:K<lastRow>)
+        $sheet->getStyle("K5:K{$lastRow}")
+            ->getNumberFormat()
+            ->setFormatCode(NumberFormat::FORMAT_NUMBER_00);
+
+        // === ISI DATA ===
+        $rowIndex = 5;
+        foreach ($orderedKeys as $compositeKey) {
+            $empData = $dataForExport[$compositeKey];
+
+            // Kolom A: NO
+            $sheet->setCellValue("A{$rowIndex}", $rowIndex - 4);
+
+            // Kolom B: KODE KARTU
+            $sheet->setCellValue("B{$rowIndex}", $empData['employee_code']);
+
+            // Kolom C: NAMA KARYAWAN
+            $sheet->setCellValue("C{$rowIndex}", $empData['employee_name']);
+
+            // Kolom D: SHIFT
+            $sheet->setCellValue("D{$rowIndex}", $empData['shift']);
+
+            // Kolom E: L/P
+            $sheet->setCellValue("E{$rowIndex}", $empData['gender']);
+
+            // Kolom F: TGL. MASUK KERJA (jika ada)
+            if (!empty($empData['date_of_joining'])) {
+                $excelDate = \PhpOffice\PhpSpreadsheet\Shared\Date::stringToExcel($empData['date_of_joining']);
+                $sheet->setCellValue("F{$rowIndex}", $excelDate);
+            }
+
+            // Kolom G: BAGIAN (main_job_role_name)
+            $sheet->setCellValue("G{$rowIndex}", $empData['main_job_role_name']);
+
+            // Kolom H dst.: nilai_akhir per bulan
+            foreach ($mapBulan2Col as $blnInt => $colIdx) {
+                $colLetter = Coordinate::stringFromColumnIndex($colIdx);
+                if (isset($empData['detail'][$blnInt])) {
+                    $sheet->setCellValue("{$colLetter}{$rowIndex}", $empData['detail'][$blnInt]['nilai_akhir']);
+                    $sheet->getStyle("{$colLetter}{$rowIndex}")
+                        ->getNumberFormat()
+                        ->setFormatCode(NumberFormat::FORMAT_NUMBER_00);
+                } else {
+                    // Kosongkan jika tidak ada data
+                    $sheet->setCellValue("{$colLetter}{$rowIndex}", '');
+                }
+            }
+
+            // Kolom terakhir (K): TOTAL/RATA‐RATA NILAI AKHIR
+            $totalNilai = 0;
+            $countBulan  = count($empData['detail']);
+            foreach ($empData['detail'] as $detail) {
+                $totalNilai += $detail['nilai_akhir'] ?? 0;
+            }
+            $nilaiAkhirFinal = $countBulan > 0 ? round($totalNilai / $countBulan, 2) : 0;
+            $sheet->setCellValue("K{$rowIndex}", $nilaiAkhirFinal);
+            $sheet->getStyle("K{$rowIndex}")
+                ->getNumberFormat()
+                ->setFormatCode(NumberFormat::FORMAT_NUMBER_00);
+
+            // Tambahkan border & alignment per baris
+            $sheet->getStyle("A{$rowIndex}:K{$rowIndex}")->applyFromArray([
+                'borders' => [
+                    'allBorders' => [
+                        'borderStyle' => Border::BORDER_THIN,
+                        'color'       => ['argb' => 'FF000000'],
+                    ],
+                ],
+            ]);
+            $sheet->getStyle("A{$rowIndex}:K{$rowIndex}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle("A{$rowIndex}:K{$rowIndex}")->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
+
+            $rowIndex++;
+        }
+
+        // === SIMPAN & OUTPUT EXCEL ===
+        $writer   = new Xlsx($spreadsheet);
+        $fileName = 'Report_' . $nameBatch . '_' . $main_factory . '_' . date('Y_m_d') . '.xlsx';
+
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment; filename="' . $fileName . '"');
+        header('Cache-Control: max-age=0');
+        $writer->save('php://output');
+        exit;
     }
 }
