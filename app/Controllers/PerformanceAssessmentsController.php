@@ -908,101 +908,101 @@ class PerformanceAssessmentsController extends BaseController
         
     }
 
-    public function fetchDataFinalAssesment()
-    {
-        $id_batch       = $this->request->getPost('id_batch');
-        // dd ($id_batch);
-        $main_factory   = $this->request->getPost('main_factory');
-        // $aspects        = $this->evaluationAspectModel->select('department')->groupBy('department')->findAll();
-        // $aspects = array_column($aspects, 'department');
-        $aspects = ['ROSSO', 'MONTIR', 'OPERATOR', 'SEWING'];
+    // public function fetchDataFinalAssesment()
+    // {
+    //     $id_batch       = $this->request->getPost('id_batch');
+    //     // dd ($id_batch);
+    //     $main_factory   = $this->request->getPost('main_factory');
+    //     // $aspects        = $this->evaluationAspectModel->select('department')->groupBy('department')->findAll();
+    //     // $aspects = array_column($aspects, 'department');
+    //     $aspects = ['ROSSO', 'MONTIR', 'OPERATOR', 'SEWING'];
 
-        $jobdesc       = $this->jobdesc($id_batch, $main_factory);              // sudah pakai aspek di dalamnya
-        $absen         = $this->scorePresence($id_batch, $main_factory);
-        $productivity  = $this->productivity($id_batch, $main_factory);
-        $rossoScores   = $this->getProductivityRosso($id_batch, $main_factory);
-        $needleBonuses = $this->usedNeedle($id_batch, $main_factory);
-        // 4. Gabungkan data
-        $final = [];
+    //     $jobdesc       = $this->jobdesc($id_batch, $main_factory);              // sudah pakai aspek di dalamnya
+    //     $absen         = $this->scorePresence($id_batch, $main_factory);
+    //     $productivity  = $this->productivity($id_batch, $main_factory);
+    //     $rossoScores   = $this->getProductivityRosso($id_batch, $main_factory);
+    //     $needleBonuses = $this->usedNeedle($id_batch, $main_factory);
+    //     // 4. Gabungkan data
+    //     $final = [];
 
-        foreach ($absen as $key => $p) {
-            // pastikan kunci ada di semua set
-            $j   = $jobdesc[$key]       ?? ['score_jobdesc' => 0, 'scoreJobdesc6s' => 0, 'id_main_job_role' => null, 'id_periode' => null, 'main_job_role_name' => null];
-            $pr  = $productivity[$key]  ?? ['score_productivity' => 0];
-            $rs  = $rossoScores[$key]   ?? ['score_rosso' => 0];
-            $nb  = $needleBonuses[$key] ?? ['group' => 0];
+    //     foreach ($absen as $key => $p) {
+    //         // pastikan kunci ada di semua set
+    //         $j   = $jobdesc[$key]       ?? ['score_jobdesc' => 0, 'scoreJobdesc6s' => 0, 'id_main_job_role' => null, 'id_periode' => null, 'main_job_role_name' => null];
+    //         $pr  = $productivity[$key]  ?? ['score_productivity' => 0];
+    //         $rs  = $rossoScores[$key]   ?? ['score_rosso' => 0];
+    //         $nb  = $needleBonuses[$key] ?? ['group' => 0];
 
-            // hanya ambil yang punya id_main_job_role (valid)
-            if (empty($j['id_main_job_role'])) {
-                continue;
-            }
+    //         // hanya ambil yang punya id_main_job_role (valid)
+    //         if (empty($j['id_main_job_role'])) {
+    //             continue;
+    //         }
 
-            $final[$key] = [
-                'id_employee'        => $p['id_employee'],
-                'id_main_job_role'   => $j['id_main_job_role'],
-                'id_periode'         => $j['id_periode'],
-                // 'main_job_role_name' => $j['main_job_role_name'],
-                'score_presence'      => $p['score_absensi']      ?? 0,
-                'score_performance_job'      => $j['score_jobdesc'],
-                'score_performance_6s'     => $j['scoreJobdesc6s'],
-                'score_productivity'      => ($pr['score_productivity'] ?? 0) + ($rs['score_rosso'] ?? 0) + ($nb['group'] ?? 0),
-            ];
-        }
-        // dd ($final);
-        // Setelah foreach selesai
-        if (!empty($final)) {
-            $finalInsert = [];
-            $duplicateData = []; // <- Tambahan untuk nyimpan yang duplikat
-            $uniquePeriode = array_unique(array_column($final, 'id_periode'));
+    //         $final[$key] = [
+    //             'id_employee'        => $p['id_employee'],
+    //             'id_main_job_role'   => $j['id_main_job_role'],
+    //             'id_periode'         => $j['id_periode'],
+    //             // 'main_job_role_name' => $j['main_job_role_name'],
+    //             'score_presence'      => $p['score_absensi']      ?? 0,
+    //             'score_performance_job'      => $j['score_jobdesc'],
+    //             'score_performance_6s'     => $j['scoreJobdesc6s'],
+    //             'score_productivity'      => ($pr['score_productivity'] ?? 0) + ($rs['score_rosso'] ?? 0) + ($nb['group'] ?? 0),
+    //         ];
+    //     }
+    //     // dd ($final);
+    //     // Setelah foreach selesai
+    //     if (!empty($final)) {
+    //         $finalInsert = [];
+    //         $duplicateData = []; // <- Tambahan untuk nyimpan yang duplikat
+    //         $uniquePeriode = array_unique(array_column($final, 'id_periode'));
 
-            $existingData = $this->finalAssssmentModel
-                ->select(['id_employee', 'id_main_job_role', 'id_periode'])
-                ->whereIn('id_periode', $uniquePeriode)
-                ->whereIn('id_employee', array_column($final, 'id_employee'))
-                ->findAll();
+    //         $existingData = $this->finalAssssmentModel
+    //             ->select(['id_employee', 'id_main_job_role', 'id_periode'])
+    //             ->whereIn('id_periode', $uniquePeriode)
+    //             ->whereIn('id_employee', array_column($final, 'id_employee'))
+    //             ->findAll();
 
-            $existingKeys = [];
-            foreach ($existingData as $row) {
-                $key = (string)$row['id_employee'] . '_' . (string)$row['id_main_job_role'] . '_' . (string)$row['id_periode'];
-                $existingKeys[$key] = true;
-            }
+    //         $existingKeys = [];
+    //         foreach ($existingData as $row) {
+    //             $key = (string)$row['id_employee'] . '_' . (string)$row['id_main_job_role'] . '_' . (string)$row['id_periode'];
+    //             $existingKeys[$key] = true;
+    //         }
 
-            foreach ($final as $row) {
-                $key = (string)$row['id_employee'] . '_' . (string)$row['id_main_job_role'] . '_' . (string)$row['id_periode'];
+    //         foreach ($final as $row) {
+    //             $key = (string)$row['id_employee'] . '_' . (string)$row['id_main_job_role'] . '_' . (string)$row['id_periode'];
 
-                if (!isset($existingKeys[$key])) {
-                    $finalInsert[] = $row;
-                } else {
-                    $duplicateData[] = $key; // <- Simpan duplikat
-                }
-            }
+    //             if (!isset($existingKeys[$key])) {
+    //                 $finalInsert[] = $row;
+    //             } else {
+    //                 $duplicateData[] = $key; // <- Simpan duplikat
+    //             }
+    //         }
 
-            if (!empty($finalInsert)) {
-                $db = \Config\Database::connect();
-                $db->transStart();
-                $this->finalAssssmentModel->insertBatch($finalInsert);
-                $db->transComplete();
+    //         if (!empty($finalInsert)) {
+    //             $db = \Config\Database::connect();
+    //             $db->transStart();
+    //             $this->finalAssssmentModel->insertBatch($finalInsert);
+    //             $db->transComplete();
 
-                if ($db->transStatus() === false) {
-                    session()->setFlashdata('error', 'Gagal menyimpan data final assessment.');
-                } else {
-                    $successMsg = 'Data final assessment berhasil disimpan. Jumlah: ' . count($finalInsert);
-                    if (!empty($duplicateData)) {
-                        $successMsg .= '. Duplikat yang dilewati: ' . count($duplicateData);
-                        // Jika ingin detailnya:
-                        $successMsg .= '. Duplikat: ' . implode(', ', $duplicateData);
-                    }
-                    session()->setFlashdata('success', $successMsg);
-                }
-            } else {
-                session()->setFlashdata('error', 'Semua data sudah ada, tidak ada data baru yang disimpan. Total duplikat: ' . count($duplicateData));
-            }
+    //             if ($db->transStatus() === false) {
+    //                 session()->setFlashdata('error', 'Gagal menyimpan data final assessment.');
+    //             } else {
+    //                 $successMsg = 'Data final assessment berhasil disimpan. Jumlah: ' . count($finalInsert);
+    //                 if (!empty($duplicateData)) {
+    //                     $successMsg .= '. Duplikat yang dilewati: ' . count($duplicateData);
+    //                     // Jika ingin detailnya:
+    //                     $successMsg .= '. Duplikat: ' . implode(', ', $duplicateData);
+    //                 }
+    //                 session()->setFlashdata('success', $successMsg);
+    //             }
+    //         } else {
+    //             session()->setFlashdata('error', 'Semua data sudah ada, tidak ada data baru yang disimpan. Total duplikat: ' . count($duplicateData));
+    //         }
 
-            return redirect()->to(base_url($this->role . '/reportBatch/' . $main_factory));
-        }
-        session()->setFlashdata('error', 'Tidak ada data final assessment yang bisa disimpan.');
-        return redirect()->to(base_url($this->role . '/reportBatch/' . $main_factory)); 
-    }
+    //         return redirect()->to(base_url($this->role . '/reportBatch/' . $main_factory));
+    //     }
+    //     session()->setFlashdata('error', 'Tidak ada data final assessment yang bisa disimpan.');
+    //     return redirect()->to(base_url($this->role . '/reportBatch/' . $main_factory)); 
+    // }
 
     private function scorePresence($id_batch, $main_factory)
     {
@@ -1068,68 +1068,6 @@ class PerformanceAssessmentsController extends BaseController
         // Contoh dump hasil
         // dd($presence);
     }
-
-    // private function jobdesc($id_batch, $main_factory)
-    // {
-    //     // definisikan tiga aspek penilaian
-    //     $aspects = ['ROSSO', 'MONTIR', 'OPERATOR', 'SEWING'];
-    //     // $aspects = $this->evaluationAspectModel->select('department')->groupBy('department')->findAll();
-    //     // $aspects = array_column($aspects, 'department');
-
-    //     // dd ($aspects);
-    //     // Ambil data jobdesc per periode
-    //     $jobdescData = $this->newPAModel->getJobdescData($id_batch, $main_factory, $aspects);
-    //     // dd ($jobdescData);
-    //     // hitung nilai jobdesk akhir
-    //     $jobdesc = [];
-    //     foreach ($jobdescData as $jd) {
-    //         $key = $jd['employee_code'] . '-' . $jd['employee_name'] . '-' . $jd['id_periode'];
-
-    //         // Ambil nilai jobdesc
-    //         $nilaiJobdesc = $jd['performance_score'] ?? 0;
-
-    //         // jika $aspects['aspect'] = $jd['main_job_role_name'] terapkan bobot sesuai persentage
-    //         // Misal jika $aspects['aspect'] = 'OPERATOR' dan $jd['main_job_role_name'] = 'OPERATOR', maka ambil persentase dari $aspects
-    //         $scoreJobdesc = 0;
-    //         $scoreJobdesc6s = 0;
-    //         if (stripos($jd['main_job_role_name'], 'ROSSO') !== false) {
-    //             // Ambil bobot aspek ini (0 jika gak ketemu)
-    //             $scoreJobdesc6s = $nilaiJobdesc * 0.15;
-    //             // Terapkan bobot jobdesc (15%)
-    //             $scoreJobdesc = $nilaiJobdesc * 0.15;
-    //         } elseif (stripos($jd['main_job_role_name'], 'MONTIR') !== false) {
-    //             $scoreJobdesc6s = $nilaiJobdesc * 0.15;
-    //             // Terapkan bobot jobdesc (50%)
-    //             $scoreJobdesc = $nilaiJobdesc * 0.50;
-    //         } elseif (stripos($jd['main_job_role_name'], 'OPERATOR') !== false) {
-    //             // Ambil bobot aspek ini (0 jika gak ketemu)
-    //             $scoreJobdesc6s = $nilaiJobdesc * 0.15;
-    //             // Terapkan bobot jobdesc (15%)
-    //             $scoreJobdesc = $nilaiJobdesc * 0.15;
-    //         } elseif (stripos($jd['main_job_role_name'], 'SEWING') !== false) {
-    //             // Ambil bobot aspek ini (0 jika gak ketemu)
-    //             $scoreJobdesc6s = $nilaiJobdesc * 0.25;
-    //             // Terapkan bobot jobdesc (50%)
-    //             $scoreJobdesc = $nilaiJobdesc * 0.45;
-    //         } else {
-    //             // Jika tidak ada department yang sesuai, set score ke 0
-    //             $scoreJobdesc = 0;
-    //         }
-
-    //         // Simpan hasilnya
-    //         $jobdesc[$key] = [
-    //             'employee_code' => $jd['employee_code'],
-    //             'employee_name' => $jd['employee_name'],
-    //             'id_periode'    => $jd['id_periode'],
-    //             'scoreJobdesc6s'   => round($scoreJobdesc6s ?? 0, 2), // Tambahkan scoreJobdesc6s jika ada
-    //             'score_jobdesc' => round($scoreJobdesc, 2),
-    //             'main_job_role_name' => $jd['main_job_role_name'],
-    //         ];
-    //     }
-    //     return $jobdesc;
-    //     // Contoh dump hasil
-    //     // dd($jobdesc);
-    // }
 
 
     private function jobdesc($id_batch, $main_factory)
@@ -1316,6 +1254,181 @@ class PerformanceAssessmentsController extends BaseController
         // dd($usedNeedle);
         return $usedNeedle;
     }
+
+    public function fetchDataFinalAssesment()
+    {
+        $id_batch     = $this->request->getPost('id_batch');
+        $main_factory = $this->request->getPost('main_factory');
+        $aspects      = ['ROSSO', 'MONTIR', 'OPERATOR', 'SEWING'];
+
+        // Ambil data mentah dari model/API
+        $jobdescRaw       = $this->jobdesc($id_batch, $main_factory);
+        $absenRaw         = $this->scorePresence($id_batch, $main_factory);
+        $productivityRaw  = $this->productivity($id_batch, $main_factory);
+        $rossoScoresRaw   = $this->getProductivityRosso($id_batch, $main_factory);
+        $needleBonusesRaw = $this->usedNeedle($id_batch, $main_factory);
+
+        $final = [];
+        $incompleteData = [];
+
+        foreach ($absenRaw as $key => $p) {
+            // Jika tidak ada jobrole, skip
+            if (! array_key_exists($key, $jobdescRaw) || empty($jobdescRaw[$key]['id_main_job_role'])) {
+                continue;
+            }
+            // Ambil data mentah untuk pengecekan missing
+            $j_raw  = $jobdescRaw[$key];
+            $pr_raw = $productivityRaw[$key]  ?? [];
+            $rs_raw = $rossoScoresRaw[$key]   ?? [];
+            $nb_raw = $needleBonusesRaw[$key] ?? [];
+
+            // Cek missing sebelum defaulting:
+            $missingFields = [];
+
+            if (! array_key_exists('score_absensi', $p)) {
+                $missingFields[] = 'score_presence';
+            }
+            if (! array_key_exists('score_jobdesc', $j_raw)) {
+                $missingFields[] = 'score_performance_job';
+            }
+            if (! array_key_exists('scoreJobdesc6s', $j_raw)) {
+                $missingFields[] = 'score_performance_6s';
+            }
+            // Untuk productivity: butuh minimal satu kunci dari ketiga sumber
+            if (
+                ! array_key_exists('score_productivity', $pr_raw)
+                && ! array_key_exists('score_rosso', $rs_raw)
+                && ! array_key_exists('group', $nb_raw)
+            ) {
+                $missingFields[] = 'score_productivity';
+            }
+
+            // Simpan detail missing (jika ada)
+            if (! empty($missingFields)) {
+                $incompleteData[] = [
+                    'id_employee'      => $p['id_employee'],
+                    'id_main_job_role' => $j_raw['id_main_job_role'],
+                    'id_periode'       => $j_raw['id_periode'],
+                    'missing'          => $missingFields,
+                ];
+            }
+
+            // Setelah pengecekan, kita berikan default jika memang key tidak ada
+            $j = [
+                'score_jobdesc'      => $j_raw['score_jobdesc']      ?? 0,
+                'scoreJobdesc6s'     => $j_raw['scoreJobdesc6s']     ?? 0,
+                'id_main_job_role'   => $j_raw['id_main_job_role'], // sudah pasti ada karena kita cek di atas
+                'id_periode'         => $j_raw['id_periode'],
+            ];
+            $pr = ['score_productivity' => $pr_raw['score_productivity'] ?? 0];
+            $rs = ['score_rosso'       => $rs_raw['score_rosso']       ?? 0];
+            $nb = ['group'             => $nb_raw['group']             ?? 0];
+
+            // Gabungkan ke final
+            $final[$key] = [
+                'id_employee'           => $p['id_employee'],
+                'id_main_job_role'      => $j['id_main_job_role'],
+                'id_periode'            => $j['id_periode'],
+                'score_presence'        => $p['score_absensi'] ?? 0,
+                'score_performance_job' => $j['score_jobdesc'],
+                'score_performance_6s'  => $j['scoreJobdesc6s'],
+                'score_productivity'    => $pr['score_productivity'] + $rs['score_rosso'] + $nb['group'],
+            ];
+        }
+
+        // Jika final kosong, langsung redirect dengan error
+        if (empty($final)) {
+            session()->setFlashdata('error', 'Tidak ada data final assessment yang bisa disimpan.');
+            return redirect()->to(base_url($this->role . '/reportBatch/' . $main_factory));
+        }
+
+        // Ambil data existing lengkap (termasuk nilai-nilai) untuk periode dan karyawan yang relevan
+        $uniquePeriode = array_unique(array_column($final, 'id_periode'));
+        $employeeIds   = array_column($final, 'id_employee');
+        $existingData  = $this->finalAssssmentModel
+            ->whereIn('id_periode', $uniquePeriode)
+            ->whereIn('id_employee', $employeeIds)
+            ->findAll();
+
+        $finalInsert = [];
+        $finalUpdate = [];
+        $duplicateData = [];
+
+        foreach ($final as $row) {
+            $key = "{$row['id_employee']}_{$row['id_main_job_role']}_{$row['id_periode']}";
+
+            $matched = array_filter($existingData, function ($e) use ($row) {
+                return $e['id_employee']       == $row['id_employee']
+                    && $e['id_main_job_role']  == $row['id_main_job_role']
+                    && $e['id_periode']        == $row['id_periode'];
+            });
+
+            if (empty($matched)) {
+                $finalInsert[] = $row;
+            } else {
+                $existingRow = reset($matched);
+                $hasChanged =
+                    (float)$existingRow['score_presence']        !== (float)$row['score_presence'] ||
+                    (float)$existingRow['score_performance_job'] !== (float)$row['score_performance_job'] ||
+                    (float)$existingRow['score_performance_6s']  !== (float)$row['score_performance_6s'] ||
+                    (float)$existingRow['score_productivity']    !== (float)$row['score_productivity'];
+
+                if ($hasChanged) {
+                    $row['id'] = $existingRow['id'];
+                    $finalUpdate[] = $row;
+                } else {
+                    $duplicateData[] = $key;
+                }
+            }
+        }
+
+        // Mulai transaksi DB
+        $db = \Config\Database::connect();
+        $db->transStart();
+
+        if (! empty($finalInsert)) {
+            $this->finalAssssmentModel->insertBatch($finalInsert);
+        }
+        if (! empty($finalUpdate)) {
+            foreach ($finalUpdate as $row) {
+                $id = $row['id'];
+                unset($row['id']);
+                $this->finalAssssmentModel->update($id, $row);
+            }
+        }
+
+        $db->transComplete();
+
+        $totalInsert     = count($finalInsert);
+        $totalUpdate     = count($finalUpdate);
+        $totalDupes      = count($duplicateData);
+        $totalIncomplete = count($incompleteData);
+
+        if ($db->transStatus() === false) {
+            session()->setFlashdata('error', 'Gagal menyimpan data final assessment.');
+        } else {
+            $successMsg = "Insert: $totalInsert. Update: $totalUpdate. Duplikat: $totalDupes.";
+            if ($totalIncomplete > 0) {
+                $successMsg .= " Terdapat $totalIncomplete data tidak lengkap.";
+            }
+            session()->setFlashdata('success', $successMsg);
+        }
+
+        // Jika ada record yang missing fields, set flashdata warning dengan detailnya
+        if (! empty($incompleteData)) {
+            $msg = "Data tidak lengkap:\n";
+            foreach ($incompleteData as $incomplete) {
+                $msg .= "- ID Employee: {$incomplete['id_employee']}, Job Role: {$incomplete['id_main_job_role']}, Periode: {$incomplete['id_periode']} => Missing: "
+                    . implode(', ', $incomplete['missing']) . "\n";
+            }
+            // log_message('warning', $msg);
+            // session()->setFlashdata('warning', nl2br(esc($msg)));
+        }
+
+        return redirect()->to(base_url($this->role . '/reportBatch/' . $main_factory));
+    }
+
+
 
     // public function finalAssesment($id_batch, $main_factory)
     // {

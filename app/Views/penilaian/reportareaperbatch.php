@@ -1,6 +1,11 @@
 <?php $this->extend('layout/template'); ?>
 <?php $this->section('content'); ?>
 <div class="container-fluid py-4">
+    <?php if (session()->has('warning')): ?>
+        <div class="alert alert-warning">
+            <?= session('warning') ?>
+        </div>
+    <?php endif; ?>
     <div class="row my-4">
         <div class="col-xl-12 col-sm-12 mb-xl-0 mb-4">
             <div class="card">
