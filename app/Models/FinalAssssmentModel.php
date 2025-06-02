@@ -54,4 +54,17 @@ class FinalAssssmentModel extends Model
     protected $afterFind      = [];
     protected $beforeDelete   = [];
     protected $afterDelete    = [];
+
+    public function getFinalAssessmentByBatch($id_batch, $main_factory)
+    {
+        return $this->select('final_assessment.*, employees.employee_name, employees.employee_code, factories.main_factory, batches.batch_name, periodes.periode_name')
+            ->join('employees', 'employees.id_employee = final_assessment.id_employee')
+            ->join('factories', 'factories.id_factory = employees.id_factory')
+            ->join('main_job_roles', 'main_job_roles.id_main_job_role = final_assessment.id_main_job_role')
+            ->join('periodes', 'periodes.id_periode = final_assessment.id_periode')
+            ->join('batches', 'batches.id_batch = periodes.id_batch')
+            ->where('batches.id_batch', $id_batch)
+            ->where('factories.main_factory', $main_factory)
+            ->findAll();
+    }
 }

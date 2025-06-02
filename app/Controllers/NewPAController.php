@@ -53,13 +53,13 @@ class NewPAController extends BaseController
             ];
         }
         // dd ($assessmentData);    
-        return $this->response->setJSON($assessmentData);
+        // return $this->response->setJSON($assessmentData);
         // Check if there is existing data for the employee and period
         // if (!empty($existingData)) {
         //     return $this->response->setJSON(['message' => 'Data already exists for this employee and period.']);
         // }
         // // Insert the data into the new performance assessments table
-        // $this->newPAModel->insertBatch($assessmentData);
+        $this->newPAModel->insertBatch($assessmentData);
         // return $this->response->setJSON(['message' => 'Data successfully inserted into new performance assessments table.']);
     }
     public function index()

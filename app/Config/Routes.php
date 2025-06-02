@@ -257,6 +257,8 @@ $routes->group('/Monitoring', ['filter' => 'Monitoring'], function ($routes) {
 
     $routes->get('fetchAssessmentData', 'NewPAController::fetchAssessmentData');
     $routes->post('fetchDataFinalAssesment', 'PerformanceAssessmentsController::fetchDataFinalAssesment');
+
+    $routes->get('finalAssesment/(:any)/(:any)', 'PerformanceAssessmentsController::finalAssesment/$1/$2');
 });
 
 $routes->group('/Mandor', ['filter' => 'Mandor'], function ($routes) {

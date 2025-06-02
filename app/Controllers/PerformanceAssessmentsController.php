@@ -1316,4 +1316,154 @@ class PerformanceAssessmentsController extends BaseController
         // dd($usedNeedle);
         return $usedNeedle;
     }
+
+    // public function finalAssesment($id_batch, $main_factory)
+    // {
+    //     $reportbatch = $this->finalAssssmentModel->getFinalAssessmentByBatch($id_batch, $main_factory);
+    //     if (empty($reportbatch)) {
+    //         session()->setFlashdata('error', 'Tidak ada data final assessment untuk periode ini.');
+    //         return redirect()->back();
+    //     }
+
+    //     $batch_name = $this->batchModel->select('batch_name')
+    //         ->where('id_batch', $id_batch)
+    //         ->first()['batch_name'] ?? '';
+
+    //     $nilaiAkhir = [];
+    //     foreach ($reportbatch as $rb) {
+    //         $key = $rb['employee_code'] . '-' . $rb['employee_name'] . '-' . $rb['id_periode'];
+    //         // Hitung nilai akhir
+    //         $nilaiAkhir[$key] = [
+    //             'id'          => $rb['id'],
+    //             'id_employee'        => $rb['id_employee'],
+    //             'id_main_job_role'   => $rb['id_main_job_role'],
+    //             'id_periode'         => $rb['id_periode'],
+    //             'employee_code'      => $rb['employee_code'],
+    //             'employee_name'      => $rb['employee_name'],
+    //             'score_presence'     => round($rb['score_presence'], 2),
+    //             'score_performance_job' => round($rb['score_performance_job'], 2),
+    //             'score_performance_6s'  => round($rb['score_performance_6s'], 2),
+    //             'score_productivity'    => round($rb['score_productivity'], 2),
+    //             'nilai_akhir' => round(
+    //                 $rb['score_presence'] +
+    //                 $rb['score_performance_job'] +
+    //                 $rb['score_performance_6s'] +
+    //                 $rb['score_productivity'], 2
+    //             ),
+    //         ];
+    //     }
+    //     // dd ($nilaiAkhir);
+    //     $data = [
+    //         'role' => session()->get('role'),
+    //         'title' => 'Final Assesment',
+    //         'active1' => '',
+    //         'active2' => '',
+    //         'active3' => '',
+    //         'active4' => '',
+    //         'active5' => '',
+    //         'active6' => '',
+    //         'active7' => '',
+    //         'active8' => '',
+    //         'active9' => 'active',
+    //         'main_factory' => $main_factory,
+    //         'id_batch' => $id_batch,
+    //         'reportbatch' => $nilaiAkhir,
+    //         'batch_name' => $batch_name
+    //     ];
+    //     // dd ($data['reportbatch']);
+    //     return view('penilaian/finalAssesment', $data);
+    // }
+
+    public function finalAssesment($id_batch, $main_factory)
+    {
+        $reportbatch = $this->finalAssssmentModel->getFinalAssessmentByBatch($id_batch, $main_factory);
+        if (empty($reportbatch)) {
+            session()->setFlashdata('error', 'Tidak ada data final assessment untuk periode ini.');
+            return redirect()->back();
+        }
+
+        $batch_name = $this->batchModel->select('batch_name')
+            ->where('id_batch', $id_batch)
+            ->first()['batch_name'] ?? '';
+
+        $nilaiPerKaryawan = [];
+
+        // 1. Loop pertama: bangun array per karyawan dengan key 'detail'
+        foreach ($reportbatch as $rb) {
+            $empKey = $rb['employee_code'] . '-' . $rb['employee_name'];
+            $nilaiAkhir = round(
+                $rb['score_presence'] +
+                    $rb['score_performance_job'] +
+                    $rb['score_performance_6s'] +
+                    $rb['score_productivity'],
+                2
+            );
+
+            // Simpan setiap periode ke dalam key 'detail'
+            $nilaiPerKaryawan[$empKey]['detail'][] = [
+                'id_periode'            => $rb['id_periode'],
+                'periode_name'          => $rb['periode_name'],
+                'score_presence'        => round($rb['score_presence'], 2),
+                'score_performance_job' => round($rb['score_performance_job'], 2),
+                'score_performance_6s'  => round($rb['score_performance_6s'], 2),
+                'score_productivity'    => round($rb['score_productivity'], 2),
+                'nilai_akhir'           => $nilaiAkhir,
+            ];
+
+            // Simpan info umum karyawan (hanya sekali per key empKey)
+            $nilaiPerKaryawan[$empKey]['employee_code']      = $rb['employee_code'];
+            $nilaiPerKaryawan[$empKey]['employee_name']      = $rb['employee_name'];
+            $nilaiPerKaryawan[$empKey]['id_employee']        = $rb['id_employee'];
+            $nilaiPerKaryawan[$empKey]['id_main_job_role']   = $rb['id_main_job_role'];
+        }
+
+        // 2. Loop kedua: hitung rata-rata dan bangun array JSON detail per id_employee
+        $jsonDetail = [];
+        foreach ($nilaiPerKaryawan as $key => &$karyawan) {
+            $totalNilai    = 0;
+            $jumlahPeriode = count($karyawan['detail']);
+
+            foreach ($karyawan['detail'] as $det) {
+                $totalNilai += $det['nilai_akhir'];
+            }
+
+            // Simpan rata-rata
+            $karyawan['rata_rata'] = $jumlahPeriode > 0
+                ? round($totalNilai / $jumlahPeriode, 2)
+                : 0;
+
+            // Bangun JSON detail berdasarkan id_employee
+            $idEmp = $karyawan['id_employee'];
+            $jsonDetail[$idEmp] = [];
+            foreach ($karyawan['detail'] as $det) {
+                $jsonDetail[$idEmp][] = [
+                    'periode'    => $det['periode_name'],
+                    'nilaiAkhir' => $det['nilai_akhir'],
+                ];
+            }
+        }
+        unset($karyawan); // lepaskan reference
+
+        // Kirim data ke view, termasuk jsonDetail
+        $data = [
+            'role'         => session()->get('role'),
+            'title'        => 'Final Assessment',
+            'active1'      => '',
+            'active2'      => '',
+            'active3'      => '',
+            'active4'      => '',
+            'active5'      => '',
+            'active6'      => '',
+            'active7'      => '',
+            'active8'      => '',
+            'active9'      => 'active',
+            'main_factory' => $main_factory,
+            'id_batch'     => $id_batch,
+            'reportbatch'  => $nilaiPerKaryawan,
+            'batch_name'   => $batch_name,
+            'jsonDetail'   => json_encode($jsonDetail),
+        ];
+
+        return view('penilaian/finalAssesment', $data);
+    }
 }
