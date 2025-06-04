@@ -121,19 +121,109 @@ class EmployeeAssessmentModel extends Model
 
     }
 
+    // public function getData()
+    // {
+    //     return $this->select('assessments.id_assessment, assessments.id_employee,assessments.id_periode, COUNT(assessments.id_job_role) AS ttlJobdesk, employees.employee_name, employees.employee_code, SUM(assessments.score) AS total_score,main_job_roles.id_main_job_role, main_job_roles.main_job_role_name, job_roles.jobdescription, job_roles.description, periodes.periode_name, batches.batch_name,factories.id_factory, factories.factory_name, users.id_user')
+    //         ->join('employees', 'employees.id_employee = assessments.id_employee')
+    //         ->join('job_roles', 'job_roles.id_job_role = assessments.id_job_role')
+    //         ->join('main_job_roles', 'main_job_roles.id_main_job_role = job_roles.id_main_job_role')
+    //         ->join('periodes', 'periodes.id_periode = assessments.id_periode')
+    //         ->join('batches', 'batches.id_batch = periodes.id_batch')
+    //         ->join('history_employees', 'history_employees.id_employee = assessments.id_employee AND history_employees.date_of_change >= periodes.start_date AND history_employees.date_of_change <= periodes.end_date', 'left')
+    //         ->join('factories', 'factories.id_factory = employees.id_factory')
+    //         ->join('users', 'users.id_user = assessments.id_user')
+    //         ->where('assessments.score != 0')
+    //         ->where('assessments.id_employee =882')
+    //         ->groupBy('assessments.id_employee, assessments.id_periode')
+    //         ->orderBy('employees.employee_code', 'ASC')
+    //         ->findAll();
+    // }
     public function getData()
     {
-        return $this->select('assessments.id_assessment, assessments.id_employee,assessments.id_periode, COUNT(assessments.id_job_role) AS ttlJobdesk, employees.employee_name, employees.employee_code, SUM(assessments.score) AS total_score,main_job_roles.id_main_job_role, main_job_roles.main_job_role_name, job_roles.jobdescription, job_roles.description, periodes.periode_name, batches.batch_name,factories.id_factory, factories.factory_name, users.id_user')
-            ->join('employees', 'employees.id_employee = assessments.id_employee')
-            ->join('job_roles', 'job_roles.id_job_role = assessments.id_job_role')
-            ->join('main_job_roles', 'main_job_roles.id_main_job_role = job_roles.id_main_job_role')
-            ->join('periodes', 'periodes.id_periode = assessments.id_periode')
-            ->join('batches', 'batches.id_batch = periodes.id_batch')
-            ->join('factories', 'factories.id_factory = employees.id_factory')
-            ->join('users', 'users.id_user = assessments.id_user')
-            ->where('assessments.score != 0')
-            ->groupBy('assessments.id_employee, assessments.id_periode')
-            ->orderBy('employees.employee_code', 'ASC')
-            ->findAll();
+        // 1. Ambil Query Builder untuk assessments (alias "a")
+        $builder = $this->db->table('assessments a');
+
+        // 2. SELECT + JOIN
+        $builder->select([
+            'a.id_assessment',
+            'a.id_employee',
+            'a.id_periode',
+            'COUNT(a.id_job_role)      AS ttlJobdesk',
+            'e.employee_name',
+            'e.employee_code',
+            'SUM(a.score)             AS total_score',
+            'mjr.id_main_job_role',
+            'mjr.main_job_role_name',
+            'jr.jobdescription',
+            'jr.description',
+            'p.periode_name',
+            'p.start_date',
+            'p.end_date',
+            'b.batch_name',
+            'f.id_factory',
+            'f.factory_name',
+
+            // Sub‐select untuk cari  id_factory_old terakhir sebelum periode.start_date:
+            '(SELECT he2.id_factory_old
+              FROM history_employees he2
+              WHERE he2.id_employee = a.id_employee
+                AND he2.date_of_change < p.start_date
+              ORDER BY he2.date_of_change DESC
+              LIMIT 1
+            ) AS id_factory_old',
+
+            // Sub‐select untuk tanggal pindah terakhir sebelum periode.start_date
+            '(SELECT he3.date_of_change
+              FROM history_employees he3
+              WHERE he3.id_employee = a.id_employee
+                AND he3.date_of_change < p.start_date
+              ORDER BY he3.date_of_change DESC
+              LIMIT 1
+            ) AS date_of_change',
+
+            'u.id_user',
+            'u.username',
+            'u.area            AS user_area'
+        ]);
+
+        $builder->join('employees e',   'e.id_employee = a.id_employee');
+        $builder->join('job_roles jr',  'jr.id_job_role    = a.id_job_role');
+        $builder->join('main_job_roles mjr', 'mjr.id_main_job_role = jr.id_main_job_role');
+        $builder->join('periodes p',    'p.id_periode      = a.id_periode');
+        $builder->join('batches b',     'b.id_batch        = p.id_batch');
+        $builder->join('factories f',   'f.id_factory      = e.id_factory');
+        $builder->join('users u',       'u.id_user         = a.id_user');
+
+        // 3. Filter: hanya score != 0 dan employee sesuai
+        $builder->where('a.score !=', 0);
+        // $builder->where('a.id_employee', 882);
+
+        // 4. Group by (semua kolom non‐aggregate)
+        $builder->groupBy([
+            'a.id_employee',
+            'a.id_periode',
+            // 'e.employee_name',
+            // 'e.employee_code',
+            // 'mjr.id_main_job_role',
+            // 'mjr.main_job_role_name',
+            // 'jr.jobdescription',
+            // 'jr.description',
+            // 'p.periode_name',
+            // 'p.start_date',
+            // 'p.end_date',
+            // 'b.batch_name',
+            // 'f.id_factory',
+            // 'f.factory_name',
+            // 'u.id_user',
+            // 'u.username',
+            // 'u.area'
+            // Tidak perlu id_factory_old atau date_of_change dalam groupBy
+            // karena sudah di‐select menggunakan subquery (bukan tabel langsung)
+        ]);
+
+        $builder->orderBy('e.employee_code', 'ASC');
+
+        // 5. Eksekusi
+        return $builder->get()->getResultArray();
     }
 }

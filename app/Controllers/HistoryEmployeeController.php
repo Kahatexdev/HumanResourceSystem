@@ -141,4 +141,103 @@ class HistoryEmployeeController extends BaseController
             ->with('success', 'Data history karyawan berhasil diimpor.')
             ->with('skipped_rows', $skippedRows);
     }
+
+    /**
+     * Format date from Excel or string to Y-m-d format.
+     */
+    private function formattedDate($date)
+    {
+        if (empty($date)) {
+            return null;
+        }
+        // If the date is a numeric value (Excel date)
+        if (is_numeric($date)) {
+            return \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($date)->format('Y-m-d');
+        }
+        // Try to parse as string date
+        $timestamp = strtotime($date);
+        if ($timestamp !== false) {
+            return date('Y-m-d', $timestamp);
+        }
+        return null;
+    }
+
+    public function updateEmployeeCode()
+    {
+        // Ambil data dari excel
+        $file = $this->request->getFile('file');
+        $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($file->getTempName());
+        $worksheet = $spreadsheet->getActiveSheet();
+        $data = [];
+        foreach ($worksheet->getRowIterator() as $row) {
+            $rowData = [];
+            foreach ($row->getCellIterator() as $cell) {
+                $rowData[] = $cell->getValue();
+            }
+
+            if ($row->getRowIndex() < 4) continue;
+            // if ($row->getRowIndex() >= $worksheet->getHighestRow() - 1) break;
+
+            $data[] = [
+                'employee_code_old' => $rowData[1],
+                'employee_code_new' => $rowData[2],
+                'employee_name' => $rowData[3],
+                'date_of_birth' => $this->formattedDate($rowData[4]),
+                'date_of_joining' => $this->formattedDate($rowData[5])
+            ];
+        }
+        // dd ($data);
+        $updateData = [];
+        $successMessages = [];
+        $errorMessages = [];
+        foreach ($data as $row) {
+            $employee = $this->employeeModel
+                ->where('employee_code', $row['employee_code_old'])
+                ->orWhere('employee_name', $row['employee_name'])
+                ->orWhere('date_of_birth', $row['date_of_birth'])
+                ->orWhere('date_of_joining', $row['date_of_joining'])
+                ->first();
+            // Cek apakah karyawan ditemukan
+            if (!$employee) {
+                $errorMessages[] = 'Karyawan dengan kode ' . $row['employee_code_old'] . ' tidak ditemukan.';
+                continue;
+            }
+            // Cek apakah kode baru sudah ada
+            $existingEmployee = $this->employeeModel
+                ->where('employee_code', $row['employee_code_new'])
+                ->first();
+            if ($existingEmployee) {
+                $errorMessages[] = 'Kode baru ' . $row['employee_code_new'] . ' sudah digunakan oleh karyawan lain.';
+                continue;
+            }
+            // Update kode karyawan
+            $this->employeeModel->update($employee['id_employee'], [
+                'employee_code' => $row['employee_code_new'],
+                'updated_at' => date('Y-m-d H:i:s')
+            ]);
+            // insert ke history_employee
+            $this->historyEmployeeModel->insert([
+                'id_employee' => $employee['id_employee'],
+                'id_job_section_old' => $employee['id_job_section'], // Asumsi id_job_section sudah ada di model Employee
+                'id_factory_old' => $employee['id_factory'], // Asumsi id_factory sudah ada di model Employee
+                'id_job_section_new' => $employee['id_job_section'], // Asumsi id_job_section_new sama dengan id_job_section
+                'id_factory_new' => $employee['id_factory'], // Asumsi id_factory_new sama dengan id_factory
+                'date_of_change' => date('Y-m-d H:i:s'),
+                'reason' => 'Update Kode Kartu dari ' . $row['employee_code_old'] . ' ke ' . $row['employee_code_new'],
+                'id_user' => session()->get('id_user'), // Ambil dari session
+                'created_at' => date('Y-m-d H:i:s'),
+                'updated_at' => date('Y-m-d H:i:s')
+            ]);
+            $successMessages[] = 'Kode karyawan ' . $row['employee_code_old'] . ' berhasil diperbarui menjadi ' . $row['employee_code_new'] . '.';
+        }
+        if (!empty($successMessages)) {
+            // Kalau ada yang sukses, tampilkan dua-duanya
+            $combinedMessages = implode('<br>', array_merge($successMessages, $errorMessages));
+            session()->setFlashdata('success', $combinedMessages);
+        } elseif (!empty($errorMessages)) {
+            // Kalau semuanya gagal
+            session()->setFlashdata('error', implode('<br>', $errorMessages));
+        }
+        return redirect()->back();
+    }
 }

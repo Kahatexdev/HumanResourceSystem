@@ -109,15 +109,20 @@ class BsmcModel extends Model
 
     public function getProductivityData($id_batch, $main_factory)
     {
-        return $this->select(' sum_bsmc.id_employee, employees.employee_code, employees.employee_name,sum_bsmc.tgl_input, SUM(sum_bsmc.produksi) AS total_produksi, SUM(sum_bsmc.bs_mc) AS total_bs, sum_bsmc.id_factory,
-            , periodes.id_periode, periodes.periode_name, batches.batch_name')
+        $builder = $this->select('sum_bsmc.id_employee, employees.employee_code, employees.employee_name, sum_bsmc.tgl_input, SUM(sum_bsmc.produksi) AS total_produksi, SUM(sum_bsmc.bs_mc) AS total_bs, sum_bsmc.id_factory, periodes.id_periode, periodes.periode_name, batches.batch_name')
             ->join('periodes', 'sum_bsmc.tgl_input BETWEEN periodes.start_date AND periodes.end_date', 'left')
             ->join('batches', 'batches.id_batch = periodes.id_batch', 'left')
             ->join('employees', 'employees.id_employee = sum_bsmc.id_employee', 'left')
             ->join('job_sections', 'job_sections.id_job_section = employees.id_job_section', 'left')
             ->join('factories', 'factories.id_factory = sum_bsmc.id_factory')
-            ->where('periodes.id_batch', $id_batch)
-            ->where('factories.main_factory', $main_factory)
+            ->where('periodes.id_batch', $id_batch);
+        if ($main_factory == 'all') {
+            // kalau main_factory adalah 'all', tidak perlu filter
+        } else {
+            $builder->where('factories.main_factory', $main_factory);
+        }
+
+        return $builder
             ->groupBy('employees.employee_code, periodes.id_periode')
             ->findAll();
     }

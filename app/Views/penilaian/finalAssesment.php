@@ -132,6 +132,15 @@
             }
         });
 
+        // Flash message warning dengan SweetAlert (jika ada)
+        <?php if (session()->getFlashdata('warning')): ?>
+            Swal.fire({
+                icon: 'warning',
+                title: 'Warning!',
+                html: '<?= session()->getFlashdata('warning') ?>',
+            });
+        <?php endif; ?>
+
         // Flash message dengan SweetAlert (jika ada)
         <?php if (session()->getFlashdata('success')): ?>
             Swal.fire({

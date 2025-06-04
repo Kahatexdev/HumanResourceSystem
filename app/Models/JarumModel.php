@@ -124,15 +124,22 @@ class JarumModel extends Model
 
     public function getUsedNeedleData($id_batch, $main_factory)
     {
-        return $this->select(' sum_jarum.id_employee,  SUM(sum_jarum.used_needle) AS total_jarum, sum_jarum.id_factory,
+        $builder = $this->select('sum_jarum.id_employee, SUM(sum_jarum.used_needle) AS total_jarum, sum_jarum.id_factory,
             periodes.id_periode, periodes.periode_name, batches.batch_name, employees.employee_code, employees.employee_name')
             ->join('periodes', 'sum_jarum.tgl_input BETWEEN periodes.start_date AND periodes.end_date', 'left')
             ->join('batches', 'batches.id_batch = periodes.id_batch', 'left')
             ->join('employees', 'employees.id_employee = sum_jarum.id_employee', 'left')
             ->join('job_sections', 'job_sections.id_job_section = employees.id_job_section', 'left')
             ->join('factories', 'factories.id_factory = sum_jarum.id_factory')
-            ->where('periodes.id_batch', $id_batch)
-            ->where('factories.main_factory', $main_factory)
+            ->where('periodes.id_batch', $id_batch);
+
+        if ($main_factory == 'all') {
+            // kalau main_factory adalah 'all', tidak perlu filter
+        } else {
+            $builder->where('factories.main_factory', $main_factory);
+        }
+
+        return $builder
             ->groupBy('employees.employee_code, periodes.id_periode') // Grouping berdasarkan kode_kartu dan periode
             ->orderBy('total_jarum', 'ASC')
             ->findAll();

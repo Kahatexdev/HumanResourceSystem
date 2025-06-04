@@ -16,14 +16,41 @@
                                     Data History Pindah Karyawan
                                 </h5>
                             </div>
+                            <!-- Modal for Import History Karyawan -->
+                            <div class="modal fade" id="importHistoryKaryawanModal" tabindex="-1" aria-labelledby="importHistoryKaryawanModalLabel" aria-hidden="true">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="importHistoryKaryawanModalLabel">Update Kode Kartu</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <form action="<?= base_url('TrainingSchool/updateEmployeeCode') ?>" method="post" enctype="multipart/form-data">
+                                            <div class="modal-body">
+                                                <div class="mb-3">
+                                                    <label for="file" class="form-label">Pilih file Excel (.xlsx, .xls, .csv)</label>
+                                                    <input type="file" class="form-control" id="file" name="file" accept=".xlsx, .xls, .csv" required>
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                                                <button type="submit" class="btn btn-success">Import</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="col-4 text-end">
+                        <div class="col-4 d-flex justify-content-end align-items-center">
+
                             <a href="<?= base_url('TrainingSchool/reportHistoryPindahKaryawan') ?>"
-                                class="btn bg-gradient-primary me-2">
-                                <!-- icon download -->
-                                <i class="fas fa-file-excel text-lg opacity-10" aria-hidden="true"></i>
+                                class="btn bg-gradient-primary me-2 d-flex align-items-center">
+                                <i class="fas fa-file-excel text-lg opacity-10 me-1" aria-hidden="true"></i>
                                 Export Excel
                             </a>
+                            <button class="btn bg-gradient-success d-flex align-items-center" data-bs-toggle="modal" data-bs-target="#importHistoryKaryawanModal">
+                                <i class="fas fa-file-import text-lg opacity-10 me-1" aria-hidden="true"></i>
+                                Update Kode Kartu
+                            </button>
                         </div>
                         <div class="col-12">
                             <!-- import history karyawan -->
@@ -85,23 +112,23 @@
 </script>
 
 <?php if (session()->getFlashdata('success')): ?>
-<script>
-    Swal.fire({
-        icon: 'success',
-        title: 'Berhasil',
-        text: '<?= session()->getFlashdata('success'); ?>',
-        confirmButtonText: 'OK'
-    });
-</script>
+    <script>
+        Swal.fire({
+            icon: 'success',
+            title: 'Berhasil',
+            html: '<?= session()->getFlashdata('success'); ?>',
+            confirmButtonText: 'OK'
+        });
+    </script>
 <?php endif; ?>
 <?php if (session()->getFlashdata('error')): ?>
-<script>
-    Swal.fire({
-        icon: 'error',
-        title: 'Gagal',
-        text: '<?= session()->getFlashdata('error'); ?>',
-        confirmButtonText: 'OK'
-    });
-</script>
+    <script>
+        Swal.fire({
+            icon: 'error',
+            title: 'Gagal',
+            html: '<?= session()->getFlashdata('error'); ?>',
+            confirmButtonText: 'OK'
+        });
+    </script>
 <?php endif; ?>
 <?php $this->endSection(); ?>

@@ -13,6 +13,7 @@ class BatchModel extends Model
     protected $useSoftDeletes   = false;
     protected $protectFields    = true;
     protected $allowedFields    = [
+        'id_batch',
         'batch_name',
         'created_at',
         'updated_at'

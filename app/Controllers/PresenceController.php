@@ -165,8 +165,8 @@ class PresenceController extends BaseController
             $startRow = 3; // Assuming the first row is for headers
 
             // Models
-            $absenModel = new \App\Models\AbsenModel();
-            $karyawanModel = new \App\Models\KaryawanModel();
+            $absenModel = new \App\Models\PresenceModel();
+            $karyawanModel = new \App\Models\EmployeeModel();
 
             // Counters for success and errors
             $successCount = 0;
@@ -208,21 +208,21 @@ class PresenceController extends BaseController
                 // If valid, proceed to save
                 if ($isValid) {
                     // Fetch the karyawan data
-                    $karyawan = $karyawanModel->where('nama_karyawan', $namaKaryawan)->first();
+                    $karyawan = $karyawanModel->where('employee_name', $namaKaryawan)->first();
                     if ($karyawan) {
                         // Prepare the data for saving
                         $data = [
-                            'id_karyawan' => $karyawan['id_karyawan'],
+                            'id_employee' => $karyawan['id_employee'],
                             'id_periode' => $id_periode,
-                            'sakit' => $sakit,
-                            'izin' => $izin,
-                            'cuti' => $cuti,
-                            'mangkir' => $mangkir,
+                            'sick' => $sakit,
+                            'permit' => $izin,
+                            'leave' => $cuti,
+                            'absent' => $mangkir,
                             'id_user' => $idUser
                         ];
 
                         // kalau ada data karyawan dan tanggal absen sama maka tidak bisa diinputkan
-                        $absen = $absenModel->where('id_karyawan', $karyawan['id_karyawan'])
+                        $absen = $absenModel->where('id_employee', $karyawan['id_employee'])
                             ->where('id_periode', $id_periode)
                             ->first();
                         if ($absen) {
