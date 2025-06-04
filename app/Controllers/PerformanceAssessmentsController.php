@@ -1065,6 +1065,7 @@ class PerformanceAssessmentsController extends BaseController
                 'id_periode'         => $a['id_periode'],
                 'id_factory'         => $a['id_factory_old'],
                 'id_job_section'     => $a['id_job_section_old'],
+                'job_section_name'   => $a['job_section_name'],
                 'score_absensi'        => round($scoreAbsensi, 2),
             ];
         }
@@ -1313,6 +1314,8 @@ class PerformanceAssessmentsController extends BaseController
             if (! empty($missingFields)) {
                 $incompleteData[] = [
                     'id_employee'      => $p['id_employee'],
+                    'employee_code'    => $p['employee_code'],
+                    'job_section_name' => $p['job_section_name'],
                     'id_main_job_role' => $j_raw['id_main_job_role'],
                     'id_periode'       => $j_raw['id_periode'],
                     'id_factory'      => $j_raw['id_factory'] ?? $p['id_factory'], // gunakan id_factory dari jobdesc jika ada
@@ -1428,7 +1431,7 @@ class PerformanceAssessmentsController extends BaseController
         if (! empty($incompleteData)) {
             $msg = "Data tidak lengkap:\n";
             foreach ($incompleteData as $incomplete) {
-                $msg .= "- ID Employee: {$incomplete['id_employee']}, Job Role: {$incomplete['id_main_job_role']}, Periode: {$incomplete['id_periode']} => Missing: "
+                $msg .= "- ID Employee: {$incomplete['id_employee']}, employee_code: {$incomplete['employee_code']}, ". "Job Section: {$incomplete['job_section_name']}, ". " Periode: {$incomplete['id_periode']} => Missing: "
                     . implode(', ', $incomplete['missing']) . "\n";
             }
             // log_message('debug', 'Missing fields: ' . $msg);
