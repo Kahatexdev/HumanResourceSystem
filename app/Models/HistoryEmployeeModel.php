@@ -59,6 +59,8 @@ class HistoryEmployeeModel extends Model
     public function getPindahGroupedByDate()
     {
         return $this->select('DATE(date_of_change) as tgl, COUNT(*) as jumlah')
+            ->where('DATE(date_of_change) >=', date('Y-m-d', strtotime('-30 days')))
+            ->where('DATE(date_of_change) <=', date('Y-m-d'))
             ->groupBy('DATE(date_of_change)')
             ->orderBy('DATE(date_of_change)', 'DESC')
             ->findAll();

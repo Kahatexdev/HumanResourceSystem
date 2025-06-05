@@ -251,6 +251,12 @@ $routes->group('/Monitoring', ['filter' => 'Monitoring'], function ($routes) {
     // $routes->get('bsmcEdit/(:num)', 'BsmcController::edit/$1');
     // $routes->get('bsmcUpdate/(:num)', 'BsmcController::update/$1');
     // $routes->get('bsmcDelete/(:num)', 'BsmcController::delete/$1');
+    $routes->get('historyPindahKaryawan', 'TrainingSchoolController::historyPindahKaryawan');
+    $routes->get('reportHistoryPindahKaryawan', 'HistoryEmployeeController::reportExcel');
+    $routes->post('updateEmployeeCode', 'HistoryEmployeeController::updateEmployeeCode');
+
+
+
 
     //Dashboard
     $routes->get('evaluasiKaryawan/(:any)/(:any)', 'MandorController::getEmployeeEvaluationStatus/$1/$2');
@@ -312,11 +318,13 @@ $routes->group('/TrainingSchool', ['filter' => 'TrainingSchool'], function ($rou
 
     // penilaian
     $routes->get('reportPenilaian', 'MonitoringController::reportpenilaian');
-    $routes->get('reportPenilaian/(:segment)', 'PenilaianController::penilaianPerArea/$1');
-    $routes->get('reportPenilaian/(:segment)/(:segment)/(:segment)', 'PenilaianController::excelReportPerPeriode/$1/$2/$3');
     $routes->get('reportBatch', 'MonitoringController::reportBatch');
-    $routes->get('reportBatch/(:segment)', 'PenilaianController::reportAreaperBatch/$1');
-    $routes->get('exelReportBatch/(:num)/(:segment)', 'PenilaianController::exelReportBatch/$1/$2');
+    $routes->get('reportBatch/(:segment)', 'PerformanceAssessmentsController::reportAreaperBatch/$1');
+    $routes->get('reportPenilaian/(:segment)', 'PerformanceAssessmentsController::penilaianPerArea/$1');
+    $routes->get('reportPenilaian/(:segment)/(:segment)/(:segment)', 'PerformanceAssessmentsController::excelReportPerPeriode/$1/$2/$3');
+    $routes->get('exelReportBatch/(:segment)/(:segment)', 'PerformanceAssessmentsController::exelReportBatch/$1/$2');
+    $routes->get('finalAssesment/(:any)/(:any)', 'PerformanceAssessmentsController::finalAssesment/$1/$2');
+    $routes->post('exportFinalAssessment', 'PerformanceAssessmentsController::exportFinalAssessment');
 });
 
 $routes->group('api', function ($routes) {

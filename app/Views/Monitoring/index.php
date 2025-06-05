@@ -96,23 +96,51 @@
             </a>
         </div> -->
     </div>
-
+    <?php
+    // Di controller (atau di view sebelum di‐encode), kita pisah dengan \n.
+    // Misal: [
+    // 'ADMINISTRASI & KEUANGAN', 
+    // 'OPERATOR PRODUKSI LINE 1', ...
+    // ]
+    $labelsMulti = array_map(function ($txt) {
+        // Ganti spasi setelah kata ke-2 jadi newline
+        $words = explode(' ', $txt);
+        if (count($words) > 2) {
+            return $words[0] . ' ' . $words[1] . "\n" . implode(' ', array_slice($words, 2));
+        }
+        return $txt;
+    }, $labels);
+    ?>
     <!-- Grafik Data -->
     <div class="row mt-4">
-        <!-- Diagram Batang: Total Karyawan Berdasarkan Bagian -->
-        <div class="col-5 mb-4">
+        <div class="col-6 mb-4">
             <div class="card">
                 <div class="card-body">
-                    <canvas id="karyawanBarChart" style="width: 100%; height: 300px;"></canvas>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="mb-3">Total Karyawan Berdasarkan Bagian
+                            <br>
+                            <font style="font-size: small; color: darkgray;">(Klik dan drag untuk zoom, scroll untuk zoom in/out)</font>
+                        </h6>
+                        <button class="btn btn-sm bg-gradient-info text-white" onclick="chartKaryawan.resetZoom()">
+                            Reset Zoom
+                        </button>
+                    </div>
+
+
+                    <div style="width: 100%;">
+                        <canvas id="chartKaryawan" style="width: 100%; height: 400px;"></canvas>
+                    </div>
                 </div>
             </div>
         </div>
-
-        <!-- Diagram Batang: Grafik Pindahan Karyawan -->
-        <div class="col-7 mb-4">
+        <div class="col-6 mb-4">
             <div class="card">
                 <div class="card-body">
-                    <canvas id="pindahanBarChart" style="width: 100%; height: 300px;"></canvas>
+                    <!-- Bagian Perpindahan Karyawan per Tanggal (Line Chart) -->
+                    <div style="width: 100%;">
+                        <h6 class="text-center mb-3">Perpindahan Karyawan Bulan Ini</h6>
+                        <canvas id="lineChartPindah" style="width: 100%; height: 400px;"></canvas>
+                    </div>
                 </div>
             </div>
         </div>
@@ -226,30 +254,21 @@
 
 <!-- Library Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
 
 <script>
-    // Contoh data dari PHP (sesuaikan dengan data Anda)
-    <?php
-    $labels = [];
-    $values = [];
-    foreach ($karyawanByBagian as $row) {
-        if ($row['job_section_name'] == '-') {
-            continue;
-        }
-        $labels[] = $row['job_section_name'];
-        $values[] = (int)$row['jumlah_employees'];
-    }
-    ?>
+    const ctx = document.getElementById('chartKaryawan').getContext('2d');
 
-    var ctxBar = document.getElementById('karyawanBarChart').getContext('2d');
-    var karyawanBarChart = new Chart(ctxBar, {
+    // Make chartKaryawan global so the button can access it
+    window.chartKaryawan = new Chart(ctx, {
         type: 'bar',
         data: {
             labels: <?= json_encode($labels) ?>,
             datasets: [{
-                label: 'Total Karyawan',
+                label: 'Jumlah Karyawan per Bagian',
                 data: <?= json_encode($values) ?>,
-                backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40'],
+                backgroundColor: 'rgba(75, 192, 192, 0.6)',
+                borderColor: 'rgba(75, 192, 192, 1)',
                 borderWidth: 1
             }]
         },
@@ -258,37 +277,37 @@
             maintainAspectRatio: false,
             scales: {
                 x: {
-                    title: {
-                        display: true,
-                        text: 'Bagian'
-                    },
                     ticks: {
-                        maxRotation: 45,
+                        autoSkip: false, // tampilkan semua label
+                        maxRotation: 90,
                         minRotation: 45
                     }
                 },
                 y: {
-                    beginAtZero: true,
-                    title: {
-                        display: true,
-                        text: 'Jumlah Karyawan'
-                    }
+                    beginAtZero: true
                 }
             },
             plugins: {
-                title: {
-                    display: true,
-                    text: 'Total Karyawan Berdasarkan Bagian'
-                },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            return 'Jumlah: ' + context.parsed.y;
-                        }
+                zoom: {
+                    pan: {
+                        enabled: true,
+                        mode: 'x'
+                    },
+                    zoom: {
+                        wheel: {
+                            enabled: true
+                        },
+                        pinch: {
+                            enabled: true
+                        },
+                        mode: 'x'
                     }
                 },
+                tooltip: {
+                    enabled: true
+                },
                 legend: {
-                    display: true
+                    display: false
                 }
             }
         }
@@ -296,26 +315,42 @@
 </script>
 
 <script>
-    var ctxBar2 = document.getElementById('pindahanBarChart').getContext('2d');
-    var pindahanBarChart = new Chart(ctxBar2, {
-        type: 'bar',
+    // ===========================
+    // 2. Line Chart (Perpindahan Karyawan per Tanggal)
+    // ===========================
+    const ctxLine = document.getElementById('lineChartPindah').getContext('2d');
+
+    // Data history perpindahan sudah di-encode di controller: $labelsKar dan $valuesKar
+    const labelsLine = <?= json_encode($labelsKar) ?>; // Array: ['2025-06-01', '2025-06-02', ...]
+    const valuesLine = <?= json_encode($valuesKar) ?>; // Array: [2, 5, 0, 3, ...]
+
+    new Chart(ctxLine, {
+        type: 'line',
         data: {
-            labels: <?= json_encode($labelsKar) ?>,
+            labels: labelsLine,
             datasets: [{
-                label: 'Jumlah Pindahan',
-                data: <?= json_encode($valuesKar) ?>,
-                backgroundColor: 'rgba(255, 159, 64, 0.6)',
-                borderColor: 'rgba(255, 159, 64, 1)',
-                borderWidth: 1,
-                barPercentage: 0.6,
-                categoryPercentage: 0.6
+                label: 'Jumlah Perpindahan',
+                data: valuesLine,
+                fill: false,
+                tension: 0.3, // kurva halus
+                pointBackgroundColor: 'rgba(54, 162, 235, 1)',
+                borderColor: 'rgba(54, 162, 235, 0.8)',
+                borderWidth: 2
             }]
         },
         options: {
             responsive: true,
-            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: true
+                },
+                tooltip: {
+                    enabled: true
+                }
+            },
             scales: {
                 x: {
+                    display: true,
                     title: {
                         display: true,
                         text: 'Tanggal'
@@ -325,29 +360,14 @@
                     beginAtZero: true,
                     title: {
                         display: true,
-                        text: 'Jumlah Pindahan'
+                        text: 'Jumlah'
                     }
-                }
-            },
-            plugins: {
-                title: {
-                    display: true,
-                    text: 'Grafik Pindahan Karyawan'
-                },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            return 'Jumlah: ' + context.parsed.y;
-                        }
-                    }
-                },
-                legend: {
-                    display: true
                 }
             }
         }
     });
 </script>
+
 
 <script>
     document.addEventListener("DOMContentLoaded", function() {
