@@ -121,6 +121,18 @@
         });
     </script>
 <?php endif; ?>
+<!-- alert warning -->
+ <?php if (session()->getFlashdata('warning')): ?>
+    <script>
+        Swal.fire({
+            icon: 'warning',
+            title: 'Peringatan',
+            html: '<?= session()->getFlashdata('warning'); ?>',
+            confirmButtonText: 'OK'
+        });
+    </script>
+<?php endif; ?>
+
 <?php if (session()->getFlashdata('error')): ?>
     <script>
         Swal.fire({
