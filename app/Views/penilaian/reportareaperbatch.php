@@ -47,7 +47,7 @@
     <div class="row">
         <?php foreach ($reportbatch as $ar) : ?>
             <div class="col-xl-3 col-sm-6 mb-xl-0 mb-4 mt-2">
-                <a href="<?= base_url($role . '/finalAssesment/' . $ar['id_batch'] . '/' . $ar['main_factory']) ?>">
+                <a href="<?= base_url($role . '/finalAssesment/' . $ar['id_batch'] . '/' . $ar['main_factory'] ?? 'all') ?>">
                     <div class="card">
                         <div class="card-body p-3">
                             <div class="row">

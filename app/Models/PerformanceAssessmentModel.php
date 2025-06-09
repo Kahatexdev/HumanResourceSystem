@@ -178,7 +178,7 @@ class PerformanceAssessmentModel extends Model
     }
     public function getBatchName()
     {
-        return $this->select('batches.id_batch, batches.batch_name, factories.main_factory')
+        return $this->select('batches.id_batch, batches.batch_name')
             ->join('periodes', 'periodes.id_periode = performance_assessments.id_periode')
             ->join('batches', 'batches.id_batch = periodes.id_batch')
             ->join('factories', 'factories.id_factory = performance_assessments.id_factory')

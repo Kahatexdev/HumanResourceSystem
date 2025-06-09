@@ -20,7 +20,7 @@
                             <div class="d-flex justify-content-end align-items-end gap-2">
                                 <form action="<?= base_url($role . '/exportFinalAssessment') ?>" method="POST" id="formExport">
                                     <input type="hidden" name="id_batch" value="<?= $id_batch ?>">
-                                    <input type="hidden" name="main_factory" value="<?= $main_factory ?>">
+                                    <input type="hidden" name="main_factory" value="<?= $main_factory ?? 'all' ?>">
                                     <button type="submit" class="btn bg-gradient-success mb-1">
                                         <i class="fas fa-file-excel me-1"></i>
                                         Export Data</button>

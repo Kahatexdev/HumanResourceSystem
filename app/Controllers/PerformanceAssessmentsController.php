@@ -827,11 +827,16 @@ class PerformanceAssessmentsController extends BaseController
 
     public function reportAreaperBatch($main_factory)
     {
+        // dd ($main_factory);
         if ($main_factory === 'all') {
             $batch = $this->paModel->getBatchName();
+            foreach ($batch as $key => $b) {
+                $batch[$key]['main_factory'] = $b['main_factory'] ?? 'all';
+            }
         } else {
             $batch = $this->paModel->getBatchNameByMainFactory($main_factory);
         }
+        // dd ($batch);
         $data = [
             'role' => session()->get('role'),
             'title' => 'Report Batch',
@@ -1570,7 +1575,7 @@ class PerformanceAssessmentsController extends BaseController
             }
         }
         unset($karyawan); // lepaskan reference
-
+        // dd ($nilaiPerKaryawan);
         // Kirim data ke view, termasuk jsonDetail
         $data = [
             'role'         => session()->get('role'),
