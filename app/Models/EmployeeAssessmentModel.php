@@ -68,23 +68,26 @@ class EmployeeAssessmentModel extends Model
                 'jr.description',
                 'a.score',
                 'a.id_assessment',
-                'pa.nilai',
-                'p.permit',
-                'p.sick',
-                'p.absent',
+                'npa.performance_score',
+                'npa.id_periode',
+                'pr.periode_name',
+                // 'p.permit',
+                // 'p.sick',
+                // 'p.absent',
                 'f.factory_name'
             ])
             ->join('employees AS e', 'e.id_employee = a.id_employee')
             ->join('job_roles AS jr', 'jr.id_job_role = a.id_job_role')
             ->join('main_job_roles AS mj', 'mj.id_main_job_role = jr.id_main_job_role')
-            ->join('performance_assessments AS pa', 'pa.id_employee = a.id_employee')
-            ->join('presences AS p', 'p.id_employee = a.id_employee')
+            ->join('new_performance_assessments AS npa', 'npa.id_employee = a.id_employee AND npa.id_periode = a.id_periode')
+            // ->join('presences AS p', 'p.id_employee = a.id_employee')
             ->join('factories AS f', 'f.id_factory = e.id_factory')
             ->join('periodes AS pr', 'pr.id_periode = a.id_periode')
             ->join('batches AS b', 'b.id_batch = pr.id_batch')
             ->where('f.main_factory', $main_factory)
             ->where('b.batch_name', $batch_name)
             ->where('pr.periode_name', $periode_name)
+            // ->where('e.id_employment_status  =', 3)
             ->groupBy('a.id_job_role,a.id_employee, a.id_periode')
             ->get()
             ->getResultArray();
@@ -148,10 +151,9 @@ class EmployeeAssessmentModel extends Model
             'a.id_assessment',
             'a.id_employee',
             'a.id_periode',
-            'COUNT(a.id_job_role)      AS ttlJobdesk',
+            'SUM(a.score)/(COUNT(a.id_job_role)*6)*100      AS performance_score', // Hitung persentase
             'e.employee_name',
             'e.employee_code',
-            'SUM(a.score)             AS total_score',
             'mjr.id_main_job_role',
             'mjr.main_job_role_name',
             'jr.jobdescription',
