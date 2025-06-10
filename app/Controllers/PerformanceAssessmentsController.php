@@ -269,7 +269,7 @@ class PerformanceAssessmentsController extends BaseController
                     $currentCol++;
                 }
             }
-            
+
             // Tambahkan Header untuk grade, skor, dan tracking
             $additionalHeaders = ['SKOR', 'GRADE', 'TRACKING'];
             foreach ($additionalHeaders as $header) {
@@ -319,13 +319,13 @@ class PerformanceAssessmentsController extends BaseController
 
                     $sheet->setCellValue(Coordinate::stringFromColumnIndex($colIndex) . $row, $p['nilai'] ?? '-');
                     $colIndex++;
-                    
+
                     $sheet->setCellValue(Coordinate::stringFromColumnIndex($colIndex) . $row, $grade);
                     $colIndex++;
 
 
                     //tracking
-                    $sheet->setCellValue(Coordinate::stringFromColumnIndex($colIndex) . $row, $this->calculateGradeBatch($p['previous_performance_score'] ?? '-').$grade);
+                    $sheet->setCellValue(Coordinate::stringFromColumnIndex($colIndex) . $row, $this->calculateGradeBatch($p['previous_performance_score'] ?? '-') . $grade);
 
                     $jobdescArr = json_decode($p['jobdesc'] ?? '[]', true);
                     if (!is_array($jobdescArr)) {
@@ -639,9 +639,9 @@ class PerformanceAssessmentsController extends BaseController
     }
 
 
-    public function exelReportBatch($id_batch,$main_factory)
+    public function exelReportBatch($id_batch, $main_factory)
     {
-        $reportbatch = $this->paModel->getReportBatch($id_batch,$main_factory);
+        $reportbatch = $this->paModel->getReportBatch($id_batch, $main_factory);
         // get batch name
         $batch = $this->batchModel->select('batch_name')
             ->where('id_batch', $id_batch)
@@ -651,7 +651,7 @@ class PerformanceAssessmentsController extends BaseController
             session()->setFlashdata('error', 'Tidak ada data penilaian untuk periode ini.');
             return redirect()->back();
         }
-        
+
         // dd($reportbatch);
         // Buat Spreadsheet baru
         $spreadsheet = new Spreadsheet();
@@ -674,7 +674,7 @@ class PerformanceAssessmentsController extends BaseController
         $sheet->mergeCells('E3:E4')->setCellValue('E3', 'L/P');
         $sheet->mergeCells('F3:F4')->setCellValue('F3', 'TGL. MASUK KERJA');
         $sheet->mergeCells('G3:G4')->setCellValue('G3', 'BAGIAN');
-        
+
         $sheet->mergeCells('H3:J3')->setCellValue('H3', 'Bulan');
         // header bulan per batch
         $bulan = $this->batchModel->getBulanPerBatch($id_batch);
@@ -684,7 +684,7 @@ class PerformanceAssessmentsController extends BaseController
             $b['bulan'] = date('F', mktime(0, 0, 0, $b['bulan'], 1)); // Mengubah angka bulan menjadi nama bulan
             $sheet->setCellValue(Coordinate::stringFromColumnIndex($currentCol) . '4', $b['bulan']);
             $currentCol++;
-        }   
+        }
 
         $filename = 'Report_Batch_' . $main_factory . '_' . date('m-d-Y') . '.xlsx';
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
@@ -694,7 +694,6 @@ class PerformanceAssessmentsController extends BaseController
         $writer = new Xlsx($spreadsheet);
         $writer->save('php://output');
         exit();
-        
     }
 
     private function scorePresence($id_batch, $main_factory)
@@ -934,7 +933,7 @@ class PerformanceAssessmentsController extends BaseController
 
             // Hitung skor
             // $score = $raw * ($percent / 100);
-            
+
 
             $usedNeedle[$key] = [
                 'id_employee'        => $un['id_employee'],
@@ -979,6 +978,8 @@ class PerformanceAssessmentsController extends BaseController
             $pr_raw = $productivityRaw[$key]  ?? [];
             $rs_raw = $rossoScoresRaw[$key]   ?? [];
             $nb_raw = $needleBonusesRaw[$key] ?? [];
+            $section = strtoupper($j_raw['main_job_role_name']); // misal ada kolom ini
+
 
             // Cek missing sebelum defaulting:
             $missingFields = [];
@@ -992,13 +993,15 @@ class PerformanceAssessmentsController extends BaseController
             if (! array_key_exists('scoreJobdesc6s', $j_raw)) {
                 $missingFields[] = 'score_performance_6s';
             }
-            // Untuk productivity: butuh minimal satu kunci dari ketiga sumber
-            if (
-                ! array_key_exists('score_productivity', $pr_raw)
-                && ! array_key_exists('score_rosso', $rs_raw)
-                && ! array_key_exists('group', $nb_raw)
-            ) {
-                $missingFields[] = 'score_productivity';
+            // **Hanya cek productivity kalau bukan SEWING**
+            if ($section !== 'SEWING') {
+                if (
+                    ! array_key_exists('score_productivity', $pr_raw)
+                    && ! array_key_exists('score_rosso', $rs_raw)
+                    && ! array_key_exists('group', $nb_raw)
+                ) {
+                    $missingFields[] = 'score_productivity';
+                }
             }
 
             // Simpan detail missing (jika ada)
@@ -1122,7 +1125,7 @@ class PerformanceAssessmentsController extends BaseController
         if (! empty($incompleteData)) {
             $msg = "Data tidak lengkap:\n";
             foreach ($incompleteData as $incomplete) {
-                $msg .= "- ID Employee: {$incomplete['id_employee']}, employee_code: {$incomplete['employee_code']}, ". "Job Section: {$incomplete['job_section_name']}, ". " Periode: {$incomplete['id_periode']} => Missing: "
+                $msg .= "- ID Employee: {$incomplete['id_employee']}, employee_code: {$incomplete['employee_code']}, " . "Job Section: {$incomplete['job_section_name']}, " . " Periode: {$incomplete['id_periode']} => Missing: "
                     . implode(', ', $incomplete['missing']) . "\n";
             }
             // log_message('debug', 'Missing fields: ' . $msg);
@@ -1734,7 +1737,7 @@ class PerformanceAssessmentsController extends BaseController
 
         // Subtitle (batch + tahun) di A2:D2
         $sheetReport->mergeCells('A2:D2');
-        $sheetReport->setCellValue('A2', 'AREA ' . $main_factory . ' - '  . strtoupper($nameBatch) );
+        $sheetReport->setCellValue('A2', 'AREA ' . $main_factory . ' - '  . strtoupper($nameBatch));
         $sheetReport->getStyle('A2')->getFont()->setBold(true);
         $sheetReport->getStyle('A2')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
