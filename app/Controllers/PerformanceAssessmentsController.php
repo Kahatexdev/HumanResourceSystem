@@ -480,8 +480,6 @@ class PerformanceAssessmentsController extends BaseController
                 'nilai' => $p['performance_score'],
                 // 'grade_akhir' => $p['grade_akhir'],
                 // 'previous_grade' => $p['previous_grade'],
-                'description' => json_decode($p['description'], true),
-                'jobdescription' => json_decode($p['jobdescription'], true),
             ];
         }
 
@@ -518,9 +516,24 @@ class PerformanceAssessmentsController extends BaseController
         });
 
         // Reorganize sorted data back by grade
+        $gradeDPerBagian = []; // key = main_job_role_name
         $dataByGrade = [];
-        foreach ($sortedData as $sortedEmployee) {
-            $dataByGrade[$sortedEmployee['employee_code']] = $sortedEmployee;
+        foreach ($grouped as $key => $p) {
+            $dataByGrade[] = [
+                'employee_code'    => $p['employee_code'],
+                'employee_name'    => $p['employee_name'],
+                'shift'            => $p['shift'],
+                'main_job_role_name' => $p['main_job_role_name'],
+                'score'            => $p['nilai'],
+                'id_assessment'    => $p['id_periode'], // simpan id_periode
+                'gender'           => $p['gender'] ?? '',
+                'date_of_joining'  => $p['date_of_joining'] ?? '',
+                'factory_name'     => $p['factory_name'] ?? '',
+                'previous_performance_score' => $p['previous_performance_score'] ?? null,
+                'nilai'            => $p['nilai'],
+                'assessments'      => $p['assessments'],
+                'periode_name'     => $p['periode_name'] ?? '',
+            ];
         }
         // dd($dataByGrade);
         // Tulis Data Karyawan Berdasarkan Shift
@@ -582,6 +595,127 @@ class PerformanceAssessmentsController extends BaseController
         foreach ($sheet->getColumnIterator() as $column) {
             $sheet->getColumnDimension($column->getColumnIndex())->setAutoSize(true);
         }
+
+        //Sheet Grade D
+        // dd ($dataByGrade);
+        $gradeD = [];
+        foreach ($dataByGrade as $item => $p) {
+            if ($p['nilai'] < 75) { // Grade D
+                $gradeD[] = [
+                    'kode_kartu' => $p['employee_code'],
+                    'nama_karyawan' => $p['employee_name'],
+                    'shift' => $p['shift'],
+                    'main_job_role_name' => $p['main_job_role_name'],
+                    'grade_akhir' => $this->calculateGradeBatch($p['nilai']),
+                    'failJobdesc' => [],
+                    'failNilai' => [],
+                ];
+                // Tambahkan jobdesc dan nilai yang gagal
+                foreach ($p['assessments'] as $assessment) {
+                    if ($assessment['score'] < 75) { // Nilai gagal
+                        // jika nilai < 4 maka tambahkan ke failJobdesc dan failNilai
+                        $gradeD[count($gradeD) - 1]['failJobdesc'][] = $assessment['jobdescription'] ?? '(tidak ada jobdesc)';
+                        $gradeD[count($gradeD) - 1]['failNilai'][] = $assessment['score'] ?? '-';
+                        // dd($gradeD[count($gradeD) - 1]['failJobdesc'], $gradeD[count($gradeD) - 1]['failNilai']);
+                        
+                    }
+                }
+                // Tambahkan ke gradeDPerBagian
+                $bagian = $p['main_job_role_name'];
+                if (!isset($gradeDPerBagian[$bagian])) {
+                    $gradeDPerBagian[$bagian] = [];
+                }
+                $gradeDPerBagian[$bagian][] = $gradeD[count($gradeD) - 1];
+            }
+        }
+
+        // dd ($gradeD, $gradeDPerBagian);
+        foreach ($gradeDPerBagian as $bagian => $dataKaryawan) {
+            // Buat sheet baru
+            $sheet = $spreadsheet->createSheet();
+            $sheet->setTitle(substr($bagian, 0, 31) . ' Grade D'); // Maks 31 karakter
+
+            // Header
+            $headers = ['No', 'Kode Kartu', 'Nama Karyawan', 'Grade Akhir', 'Jobdesc', 'Nilai'];
+            $col = 'A';
+            foreach ($headers as $header) {
+                $sheet->setCellValue($col . '1', $header);
+                $col++;
+            }
+            // Style header 
+            $sheet->getStyle('A1:F1')->applyFromArray([
+                'font' => [
+                    'bold' => true,
+                    'name' => 'Times New Roman',
+                    'size' => 11, // Sedikit lebih besar untuk header
+                ],
+                'borders' => [
+                    'allBorders' => [
+                        'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                    ],
+                ],
+                'alignment' => [
+                    'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER, // Biar header tengah
+                    'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER,
+                ],
+            ]);
+
+            $row = 2; // Mulai dari baris ke-2
+            $no = 1;
+            foreach ($dataKaryawan as $karyawan) {
+                // Filter failJobdesc dan failNilai hanya jika failNilai < 4
+                $failJobdescs = [];
+                $failNilais = [];
+                foreach ($karyawan['failNilai'] as $i => $nilai) {
+                    if ($nilai < 4) {
+                        $failJobdescs[] = $karyawan['failJobdesc'][$i] ?? '';
+                        $failNilais[] = $nilai;
+                    }
+                }
+
+                $first = true; // Penanda untuk baris pertama karyawan
+                foreach ($failJobdescs as $i => $jobdesc) {
+                    if ($first) {
+                        $sheet->setCellValue('A' . $row, $no++);
+                        $sheet->setCellValue('B' . $row, $karyawan['kode_kartu']);
+                        $sheet->setCellValue('C' . $row, $karyawan['nama_karyawan']);
+                        $sheet->setCellValue('D' . $row, $karyawan['grade_akhir']);
+
+                        $first = false;
+                    }
+
+                    // Kolom Jobdesc dan Nilai
+                    $sheet->setCellValue('E' . $row, $jobdesc);
+                    $sheet->setCellValue('F' . $row, $failNilais[$i] ?? '-');
+
+                    // Apply style untuk setiap baris
+                    $sheet->getStyle('A' . $row . ':F' . $row)->applyFromArray([
+                        'font' => ['name' => 'Times New Roman', 'size' => 10],
+                        'borders' => ['allBorders' => ['borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN]],
+                    ]);
+
+                    $row++;
+                }
+            }
+
+            // Setelah semua data karyawan dimasukkan, baru set auto-size untuk semua kolom
+            foreach (range('A', 'F') as $columnID) {
+                $sheet->getColumnDimension($columnID)->setAutoSize(true);
+            }
+
+            $lastRow = $row - 1;
+
+            // Kolom-kolom yang ingin di-center
+            $columnsToCenter = ['A', 'B','C', 'D', 'E', 'F'];
+
+            foreach ($columnsToCenter as $colID) {
+                $sheet->getStyle("{$colID}2:{$colID}{$lastRow}")
+                    ->getAlignment()
+                    ->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER)
+                    ->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER);
+            }
+        }
+
 
         // Simpan file Excel
         $filename = 'Report_Penilaian-' . $main_factory . '-' . $batch_name . '-' . $periode_name . '-' . date('Y-m-d') . '.xlsx';
