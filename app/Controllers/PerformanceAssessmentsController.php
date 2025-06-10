@@ -133,7 +133,7 @@ class PerformanceAssessmentsController extends BaseController
         $grouped = [];
         foreach ($reportbatch as $row) {
             // pakai key unik termasuk periode
-            $key = $row['employee_code'] . '_' . $row['id_periode'] . '_' . str_replace(' ', '', $batch_name) . '_' . str_replace(' ', '', $row['main_job_role_name']);
+            $key = $row['employee_code'] . '_' . $row['id_periode'] . '_' . $batch_name . '_' . $row['main_job_role_name'];
             // dd ($key);
             if (! isset($grouped[$key])) {
                 // inisialisasi data employee + periode
@@ -171,8 +171,8 @@ class PerformanceAssessmentsController extends BaseController
         foreach ($uniqueSheets as $sheetName) {
             $sheet = $spreadsheet->createSheet();
             $sheet->setTitle(substr($sheetName, 0, 31)); // Nama sheet sesuai area dan bagian
-            // Pisahkan area dan nama bagian
-            list($currentBagian) = explode(' ', $sheetName, 2);
+            // Gunakan nama sheet (main_job_role_name) secara penuh untuk filter
+            $currentBagian = $sheetName;
 
             // Filter data untuk sheet ini
             $dataFiltered = array_filter($employees, function ($item) use ($currentBagian) {
@@ -226,6 +226,7 @@ class PerformanceAssessmentsController extends BaseController
                     }
                 }
             }
+            // dd ($dataFiltered[18], $jobdescGrouped);
             // dd ($jobdescGrouped);
             // Hilangkan duplikasi dalam setiap keterangan
             foreach ($jobdescGrouped as $keterangan => &$jobs) {
@@ -360,6 +361,7 @@ class PerformanceAssessmentsController extends BaseController
                 $sheet->getColumnDimension($column->getColumnIndex())->setAutoSize(true);
             }
         }
+        // dd ($uniqueSheets, $reportbatch, $dataByShift, $dataFiltered, $grouped);
 
         // dd($shift, $karyawan);
         // sheet baru untuk report tracking
