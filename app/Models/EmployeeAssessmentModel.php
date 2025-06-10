@@ -74,7 +74,17 @@ class EmployeeAssessmentModel extends Model
                 // 'p.permit',
                 // 'p.sick',
                 // 'p.absent',
-                'f.factory_name'
+                'f.factory_name',
+                // Previous performance tanpa batch filter:
+                '( SELECT npa2.performance_score
+            FROM new_performance_assessments AS npa2
+            JOIN periodes AS pr2 
+              ON pr2.id_periode = npa2.id_periode
+            WHERE npa2.id_employee = a.id_employee
+              AND pr2.start_date < pr.start_date
+            ORDER BY pr2.start_date DESC
+            LIMIT 1
+         ) AS previous_performance_score',
             ])
             ->join('employees AS e', 'e.id_employee = a.id_employee')
             ->join('job_roles AS jr', 'jr.id_job_role = a.id_job_role')
@@ -121,7 +131,6 @@ class EmployeeAssessmentModel extends Model
             ->groupBy('a.id_job_role, a.id_employee, a.id_periode')
             ->get()
             ->getResultArray();
-
     }
 
     // public function getData()

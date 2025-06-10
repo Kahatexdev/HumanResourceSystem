@@ -144,6 +144,7 @@ class PerformanceAssessmentsController extends BaseController
                     'gender'             => $row['gender'],
                     'date_of_joining'    => $row['date_of_joining'],
                     'main_job_role_name' => $row['main_job_role_name'],
+                    'previous_performance_score' => $row['previous_performance_score'] ?? null,
                     'nilai'              => $row['performance_score'],
                     'factory_name'       => $row['factory_name'],
                     'assessments'        => [],
@@ -299,7 +300,7 @@ class PerformanceAssessmentsController extends BaseController
                     $sheet->setCellValue('E' . $row, $p['gender']);
                     $sheet->setCellValue('F' . $row, $p['date_of_joining']);
                     $sheet->setCellValue('G' . $row, $p['main_job_role_name']);
-
+                    $sheet->setCellValue('H' . $row, $this->calculateGradeBatch($p['previous_performance_score'] ?? '-'));
                     // Decode nilai
                     $nilai = $assessment['score'];
                     // dd($nilai);
@@ -324,7 +325,7 @@ class PerformanceAssessmentsController extends BaseController
 
 
                     //tracking
-                    $sheet->setCellValue(Coordinate::stringFromColumnIndex($colIndex) . $row, '-'.$grade);
+                    $sheet->setCellValue(Coordinate::stringFromColumnIndex($colIndex) . $row, $this->calculateGradeBatch($p['previous_performance_score'] ?? '-').$grade);
 
                     $jobdescArr = json_decode($p['jobdesc'] ?? '[]', true);
                     if (!is_array($jobdescArr)) {
@@ -475,6 +476,7 @@ class PerformanceAssessmentsController extends BaseController
                 'date_of_joining' => $p['date_of_joining'],
                 'main_job_role_name' => $p['main_job_role_name'],
                 'factory_name' => $p['factory_name'],
+                'previous_performance_score' => $p['previous_performance_score'] ?? null,
                 'nilai' => $p['performance_score'],
                 // 'grade_akhir' => $p['grade_akhir'],
                 // 'previous_grade' => $p['previous_grade'],
@@ -539,7 +541,7 @@ class PerformanceAssessmentsController extends BaseController
             }
 
             // set tracking
-            $tracking = '-' . $this->calculateGradeBatch($p['nilai'] ?? 0);
+            $tracking = $this->calculateGradeBatch($p['previous_performance_score'] ?? '-') . $this->calculateGradeBatch($p['nilai'] ?? 0);
             $sheet->setCellValue('I' . $row, $tracking);
 
             //style from array
@@ -582,7 +584,7 @@ class PerformanceAssessmentsController extends BaseController
         }
 
         // Simpan file Excel
-        $filename = 'Report_Penilaian-' . $main_factory . '-' . date('m-d-Y') . '.xlsx';
+        $filename = 'Report_Penilaian-' . $main_factory . '-' . $batch_name . '-' . $periode_name . '-' . date('Y-m-d') . '.xlsx';
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         header('Content-Disposition: attachment;filename="' . $filename . '"');
         header('Cache-Control: max-age=0');
