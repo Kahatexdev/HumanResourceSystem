@@ -190,4 +190,11 @@ class NewPAModel extends Model
         // 7. Eksekusi dan kembalikan sebagai array
         return $builder->get()->getResultArray();
     }
+
+    public function getRataRataGrade()
+    {
+        return $this->select('AVG(performance_score) as rata_rata')
+            // ->groupBy('id_periode')
+            ->first();
+    }
 }

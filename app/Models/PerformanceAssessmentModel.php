@@ -137,6 +137,7 @@ class PerformanceAssessmentModel extends Model
         $builder->join('performance_assessments as p', "p.id_employee = k.id_employee AND p.id_periode = \"$periode\"", 'left');
         $builder->whereIn('job.job_section_name', ['OPERATOR', 'OPERATOR (8D)', 'OPERATOR (8J)', 'OPERATOR (KK9)', 'OPERATOR MEKANIK DOUBLE', 'MONTIR', 'MONTIR (A1)', 'MONTIR (8J)', 'MONTIR (DAKONG)', 'MONTIR (LONATI SINGLE)', 'MONTIR (LONATI DOUBLE)', 'ROSSO', 'SEWING']);
         $builder->where('factory.factory_name', $area);
+        $builder->where('k.id_employment_status', 3); // Hanya karyawan baju biru
         $builder->groupBy('k.id_employee');
         $builder->groupBy('p.id_periode');
 
