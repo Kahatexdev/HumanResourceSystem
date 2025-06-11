@@ -240,6 +240,7 @@ class EmployeeModel extends Model
         return $this->select('employees.id_employee, employees.employee_name, employees.employee_code, employees.shift, employees.id_factory, factories.factory_name')
             ->join('factories', 'factories.id_factory = employees.id_factory')
             ->where('factories.factory_name', $area)
+            ->whereIn('employees.id_job_section', [11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 153, 154, 155])
             ->orderBy('employees.shift', 'ASC')
             ->findAll();
     }

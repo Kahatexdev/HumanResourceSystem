@@ -777,6 +777,7 @@ class PerformanceAssessmentsController extends BaseController
     public function exelReportBatch($id_batch, $main_factory)
     {
         $reportbatch = $this->paModel->getReportBatch($id_batch, $main_factory);
+        // dd ($reportbatch);
         // get batch name
         $batch = $this->batchModel->select('batch_name')
             ->where('id_batch', $id_batch)
