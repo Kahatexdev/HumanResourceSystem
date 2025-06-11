@@ -1319,7 +1319,8 @@ class PerformanceAssessmentsController extends BaseController
         $jsonDetail = [];
         foreach ($nilaiPerKaryawan as $key => &$karyawan) {
             $totalNilai    = 0;
-            $jumlahPeriode = count($karyawan['detail']);
+            // $jumlahPeriode = count($karyawan['detail']);
+            $jumlahPeriode = 3;
 
             foreach ($karyawan['detail'] as $det) {
                 $totalNilai += $det['nilai_akhir'];
