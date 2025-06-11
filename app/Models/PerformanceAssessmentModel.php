@@ -71,9 +71,12 @@ class PerformanceAssessmentModel extends Model
         // Menambahkan kondisi id_periode langsung di join penilaian agar record mandor tetap muncul walau belum ada penilaian
         $builder->join('performance_assessments', "performance_assessments.id_employee = employees.id_employee 
         AND performance_assessments.id_user = users.id_user 
-        AND performance_assessments.id_periode = '$id_periode'", 'left');
+        AND performance_assessments.id_periode = " . $this->db->escape($id_periode), 'left', false);
 
         $builder->where('users.role', 'Mandor');
+        $builder->where('employees.id_employment_status', 3); // Hanya karyawan baju biru
+        // where in
+        $builder->whereIn('employees.id_job_section', [11,12,13,14,15,16,17,18,19,20,153,154,155]);
         $builder->groupBy('users.id_user');
 
         return $builder->get()->getResultArray();
