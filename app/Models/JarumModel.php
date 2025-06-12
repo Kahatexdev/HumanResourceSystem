@@ -79,7 +79,7 @@ class JarumModel extends Model
             ->join('factories', 'factories.id_factory = sum_jarum.id_factory')
             ->join('history_employees h', 'h.id_employee = sum_jarum.id_employee', 'left')
             // ->join('history_pindah_karyawan h', 'h.id_employee = sum_jarum.id_employee', 'left')
-            ->Like('job_sections.job_section_name', '%MONTIR%')
+            ->like('job_sections.job_section_name', 'MONTIR')
             ->where('periodes.id_batch', $id_batch)
             // Group kondisi: id_factory saat ini OR data id_factory lama sebelum tanggal pindah
             ->groupStart()
@@ -87,12 +87,7 @@ class JarumModel extends Model
             ->where('sum_jarum.id_factory', $id_factory)
             // 2) OR data dari id_factory asal, tapi hanya yg tgl_input < tanggal_pindah
             ->orWhere(
-            "sum_jarum.id_factory = (
-                    SELECT id_factory_old 
-                    FROM history_employees h
-                    WHERE h.id_employee = sum_jarum.id_employee
-                )
-                AND sum_jarum.tgl_input < h.date_of_change",
+                "(sum_jarum.id_factory = h.id_factory_old AND sum_jarum.tgl_input < h.date_of_change)",
                 null,
                 false
             )
