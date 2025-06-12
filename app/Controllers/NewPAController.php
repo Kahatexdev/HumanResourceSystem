@@ -197,7 +197,7 @@ class NewPAController extends BaseController
 
         // 6) Response
         return $this->response->setJSON([
-            'message'  => 'Process completed.',
+            'message'  => '==============',
             'inserted' => $inserted,
             'skipped'  => $skipped
         ]);
