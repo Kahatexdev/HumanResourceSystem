@@ -266,6 +266,7 @@ $routes->group('/Monitoring', ['filter' => 'Monitoring'], function ($routes) {
 
     $routes->get('finalAssesment/(:any)/(:any)', 'PerformanceAssessmentsController::finalAssesment/$1/$2');
     $routes->post('exportFinalAssessment', 'PerformanceAssessmentsController::exportFinalAssessment');
+    $routes->post('printFinalAssessment', 'PerformanceAssessmentsController::printFinalAssessment');
 });
 
 $routes->group('/Mandor', ['filter' => 'Mandor'], function ($routes) {

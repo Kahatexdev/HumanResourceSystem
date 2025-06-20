@@ -1974,4 +1974,97 @@ class PerformanceAssessmentsController extends BaseController
         $writer->save('php://output');
         exit;
     }
+
+    public function printFinalAssessment()
+    {
+        $id_batch     = $this->request->getPost('id_batch');
+        $main_factory = $this->request->getPost('main_factory');
+
+        // Ambil nama batch
+        $batch       = $this->batchModel
+            ->select('batch_name')
+            ->where('id_batch', $id_batch)
+            ->first();
+        $batch_name  = $batch['batch_name'] ?? '';
+
+        // Ambil data final assessment
+        $reportbatch = $this->finalAssssmentModel
+            ->getFinalAssessmentByBatch($id_batch, $main_factory);
+        // dd ($reportbatch);
+        if (empty($reportbatch)) {
+            session()->setFlashdata('error', 'Tidak ada data final assessment untuk periode ini.');
+            return redirect()->back();
+        }
+
+        // 1. Kumpulkan data per karyawan
+        $nilaiPerKaryawan = [];
+        foreach ($reportbatch as $rb) {
+            $key = $rb['employee_code'] . '|' . $rb['employee_name'] . '|' . $rb['id_periode'];
+
+            if (!isset($nilaiPerKaryawan[$key])) {
+                $nilaiPerKaryawan[$key] = [
+                    'employee_code'             => $rb['employee_code'],
+                    'employee_name'             => $rb['employee_name'],
+                    'shift'                     => $rb['shift'] ?? '',
+                    'main_job_role_name'        => $rb['main_job_role_name'] ?? '',
+                    'factory_name'              => $rb['factory_name'] ?? '',
+                    'score_presence'            => $rb['score_presence'] ?? 0,
+                    'score_performance_job'     => $rb['score_performance_job'] ?? 0,
+                    'score_performance_6s'      => $rb['score_performance_6s'] ?? 0,
+                    'score_productivity'        => $rb['score_productivity'] ?? 0,
+                    'periode_name'              => $rb['periode_name'] ?? '',
+                    'batch_name'                => $rb['batch_name'] ?? $batch_name,
+                ];
+            }
+        }
+
+        // 2. Buat Spreadsheet dan header kolom
+        $spreadsheet = new Spreadsheet();
+        $sheet       = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Final Assessment');
+
+        $headers = [
+            'A1' => 'Employee Code',
+            'B1' => 'Employee Name',
+            'C1' => 'Shift',
+            'D1' => 'Main Job Role',
+            'E1' => 'Factory',
+            'F1' => 'Score Presence',
+            'G1' => 'Score Performance Job',
+            'H1' => 'Score Performance 6S',
+            'I1' => 'Score Productivity',
+            'J1' => 'Periode Name',
+            'K1' => 'Batch Name',
+        ];
+        foreach ($headers as $cell => $text) {
+            $sheet->setCellValue($cell, $text);
+        }
+
+        // 3. Isi data mulai row 2
+        $rowNum = 2;
+        foreach ($nilaiPerKaryawan as $data) {
+            $sheet->setCellValue('A' . $rowNum, $data['employee_code']);
+            $sheet->setCellValue('B' . $rowNum, $data['employee_name']);
+            $sheet->setCellValue('C' . $rowNum, $data['shift']);
+            $sheet->setCellValue('D' . $rowNum, $data['main_job_role_name']);
+            $sheet->setCellValue('E' . $rowNum, $data['factory_name']);
+            $sheet->setCellValue('F' . $rowNum, $data['score_presence']);
+            $sheet->setCellValue('G' . $rowNum, $data['score_performance_job']);
+            $sheet->setCellValue('H' . $rowNum, $data['score_performance_6s']);
+            $sheet->setCellValue('I' . $rowNum, $data['score_productivity']);
+            $sheet->setCellValue('J' . $rowNum, $data['periode_name']);
+            $sheet->setCellValue('K' . $rowNum, $data['batch_name']);
+            $rowNum++;
+        }
+
+        // 4. Kirim header download dan keluarkan file
+        $filename = 'Final_Assessment_' . date('Ymd_His') . '.xlsx';
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header("Content-Disposition: attachment;filename=\"$filename\"");
+        header('Cache-Control: max-age=0');
+
+        $writer = new Xlsx($spreadsheet);
+        $writer->save('php://output');
+        exit;
+    }
 }
