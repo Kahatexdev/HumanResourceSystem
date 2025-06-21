@@ -326,6 +326,7 @@ $routes->group('/TrainingSchool', ['filter' => 'TrainingSchool'], function ($rou
     $routes->get('exelReportBatch/(:segment)/(:segment)', 'PerformanceAssessmentsController::exelReportBatch/$1/$2');
     $routes->get('finalAssesment/(:any)/(:any)', 'PerformanceAssessmentsController::finalAssesment/$1/$2');
     $routes->post('exportFinalAssessment', 'PerformanceAssessmentsController::exportFinalAssessment');
+    $routes->get('exportKaryawan/', 'EmployeeController::exportAll');
 });
 
 $routes->group('api', function ($routes) {

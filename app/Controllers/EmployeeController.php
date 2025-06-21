@@ -632,6 +632,10 @@ class EmployeeController extends BaseController
 
     public function exportPerArea($area)
     {
+        if($area === 'ALL') {
+            return redirect()->to(base_url($this->role . '/exportKaryawan'));
+        }
+
         // Definisikan urutan kode kartu berdasarkan area
         $sortOrders = [
             'KK1A' => ['KKMA', 'KKMB', 'KKMC', 'KKMNS', 'KKSA', 'KKSB', 'KKSC', 'KKJHA', 'KKJHB', 'KKJHC'],
