@@ -1180,7 +1180,7 @@ class PerformanceAssessmentsController extends BaseController
                 'score_productivity'    => $pr['score_productivity'] + $rs['score_rosso'] + $nb['group'],
             ];
         }
-        log_message('debug', 'Final assessment data: ' . print_r($final, true));
+        // log_message('debug', 'Final assessment data: ' . print_r($final, true));
         // Jika final kosong, langsung redirect dengan error
         if (empty($final)) {
             session()->setFlashdata('error', 'Tidak ada data final assessment yang bisa disimpan.');
