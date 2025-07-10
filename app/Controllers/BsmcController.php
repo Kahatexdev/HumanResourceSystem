@@ -549,7 +549,7 @@ class BsmcController extends BaseController
                     'id_employee' => $idEmp,
                     'tgl_input'   => $tgl,
                     'produksi'    => $row['qty_produksi'],
-                    'bs_mc'       => $row['qty_gram'],
+                    'bs_mc'       => $row['qty_pcs'],
                     'id_factory'  => $fac,
                 ];
             }

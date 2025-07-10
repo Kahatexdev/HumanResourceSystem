@@ -990,9 +990,10 @@ class PerformanceAssessmentsController extends BaseController
                 'score_productivity' => round($scoreProductivity, 2),
             ];
         }
-        return $productivity;
+        // return $productivity;
         // Contoh dump hasil
-        // dd($productivity);
+        dd($productivity, $prodTotal , $bsTotal , $prodTotal, $productivityData);
+
     }
 
     private function getProductivityRosso($id_batch, $main_factory)
