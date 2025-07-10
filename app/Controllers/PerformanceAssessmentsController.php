@@ -600,7 +600,7 @@ class PerformanceAssessmentsController extends BaseController
                         $gradeD[count($gradeD) - 1]['failDesc'][] = $assessment['description'] ?? '(tidak ada deskripsi)';
                         $gradeD[count($gradeD) - 1]['failNilai'][] = $assessment['score'] ?? '-';
                         // dd($gradeD[count($gradeD) - 1]['failJobdesc'], $gradeD[count($gradeD) - 1]['failNilai']);
-                        
+
                     }
                 }
                 // Tambahkan ke gradeDPerBagian
@@ -619,14 +619,14 @@ class PerformanceAssessmentsController extends BaseController
             $sheet->setTitle(substr($bagian, 0, 31) . ' Grade D'); // Maks 31 karakter
 
             // Header
-            $headers = ['No', 'Kode Kartu', 'Nama Karyawan', 'Grade Akhir', 'Deskripsi', 'Jobdesc', 'Nilai'];
+            $headers = ['No', 'Kode Kartu', 'Nama Karyawan', 'Shift', 'Grade Akhir', 'Deskripsi', 'Jobdesc', 'Nilai'];
             $col = 'A';
             foreach ($headers as $header) {
                 $sheet->setCellValue($col . '1', $header);
                 $col++;
             }
-            // Style header 
-            $sheet->getStyle('A1:G1')->applyFromArray([
+            // Style header
+            $sheet->getStyle('A1:H1')->applyFromArray([
                 'font' => [
                     'bold' => true,
                     'name' => 'Times New Roman',
@@ -650,7 +650,7 @@ class PerformanceAssessmentsController extends BaseController
                 $failJobdescs = [];
                 $failNilais = [];
                 $failDesc = [];
-                foreach ($karyawan['failNilai'] as $i => $nilai) {   
+                foreach ($karyawan['failNilai'] as $i => $nilai) {
                     if ($nilai < 4) {
                         $failJobdescs[] = $karyawan['failJobdesc'][$i] ?? '';
                         $failNilais[] = $nilai;
@@ -667,11 +667,13 @@ class PerformanceAssessmentsController extends BaseController
                             $sheet->mergeCells('B' . $row . ':B' . ($row + count($failJobdescs) - 1));
                             $sheet->mergeCells('C' . $row . ':C' . ($row + count($failJobdescs) - 1));
                             $sheet->mergeCells('D' . $row . ':D' . ($row + count($failJobdescs) - 1));
+                            $sheet->mergeCells('E' . $row . ':E' . ($row + count($failJobdescs) - 1));
                         }
                         $sheet->setCellValue('A' . $row, $no++);
                         $sheet->setCellValue('B' . $row, $karyawan['kode_kartu']);
                         $sheet->setCellValue('C' . $row, $karyawan['nama_karyawan']);
-                        $sheet->setCellValue('D' . $row, $karyawan['grade_akhir']);
+                        $sheet->setCellValue('D' . $row, $karyawan['shift']);
+                        $sheet->setCellValue('E' . $row, $karyawan['grade_akhir']);
 
                         $first = false;
                     }
@@ -679,18 +681,18 @@ class PerformanceAssessmentsController extends BaseController
                     // Jika deskripsi sama dengan baris sebelumnya, merge cell F
                     if ($i > 0 && $failDesc[$i] === $failDesc[$i - 1]) {
                         // Merge cell F dari baris sebelumnya ke baris sekarang
-                        $sheet->mergeCells('E' . ($row - 1) . ':E' . $row);
+                        $sheet->mergeCells('F' . ($row - 1) . ':F' . $row);
                         // Kosongkan cell F pada baris ini agar tidak double value
-                        $sheet->setCellValue('E' . $row, '');
+                        $sheet->setCellValue('F' . $row, '');
                     } else {
-                        $sheet->setCellValue('E' . $row, $failDesc[$i] ?? '-');
+                        $sheet->setCellValue('F' . $row, $failDesc[$i] ?? '-');
                     }
                     // Kolom Jobdesc dan Nilai
-                    $sheet->setCellValue('F' . $row, $jobdesc);
-                    $sheet->setCellValue('G' . $row, $failNilais[$i] ?? '-');
+                    $sheet->setCellValue('G' . $row, $jobdesc);
+                    $sheet->setCellValue('H' . $row, $failNilais[$i] ?? '-');
 
                     // Apply style untuk setiap baris
-                    $sheet->getStyle('A' . $row . ':G' . $row)->applyFromArray([
+                    $sheet->getStyle('A' . $row . ':H' . $row)->applyFromArray([
                         'font' => ['name' => 'Times New Roman', 'size' => 10],
                         'borders' => ['allBorders' => ['borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN]],
                     ]);
@@ -700,14 +702,14 @@ class PerformanceAssessmentsController extends BaseController
             }
 
             // Setelah semua data karyawan dimasukkan, baru set auto-size untuk semua kolom
-            foreach (range('A', 'G') as $columnID) {
+            foreach (range('A', 'H') as $columnID) {
                 $sheet->getColumnDimension($columnID)->setAutoSize(true);
             }
 
             $lastRow = $row - 1;
 
             // Kolom-kolom yang ingin di-center
-            $columnsToCenter = ['A', 'B','C', 'D', 'E', 'F', 'G'];
+            $columnsToCenter = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
 
             foreach ($columnsToCenter as $colID) {
                 $sheet->getStyle("{$colID}2:{$colID}{$lastRow}")
