@@ -534,7 +534,7 @@ class BsmcController extends BaseController
                         'id_employee' => $idEmp,
                         'tgl_input'   => $currentDate,
                         'produksi'    => $row['qty_produksi'],
-                        'bs_mc'       => $row['qty_pcs'],
+                        'bs_mc'       => round($row['qty_pcs']),
                         'id_factory'  => $fac,
                     ];
 
@@ -555,7 +555,7 @@ class BsmcController extends BaseController
                 }
             }
         }
-
+        // dd ($inserts, $updates, $errors);
         // Hitung dan eksekusi batch
         $countInserts = count($inserts);
         $countUpdates = count($updates);
