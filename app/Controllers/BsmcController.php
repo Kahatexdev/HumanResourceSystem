@@ -479,7 +479,7 @@ class BsmcController extends BaseController
             'KK2A',
             'KK2B',
             'KK2C',
-            'KK5',
+            'KK5G',
             'KK7K',
             'KK7L',
             'KK8D',
