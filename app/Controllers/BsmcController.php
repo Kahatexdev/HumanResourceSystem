@@ -527,8 +527,8 @@ class BsmcController extends BaseController
                 $employeeData = [];
                 foreach ($rows as $row) {
                     $employeeData[] = [
-                        'name' => $row['nama_karyawan'],
-                        'shift' => $row['shift']
+                        'name' => strtoupper($row['nama_karyawan']),
+                        // 'shift' => $row['shift']
                     ];
                 }
 
@@ -537,13 +537,13 @@ class BsmcController extends BaseController
                 // dd($$employeeMap);
 
                 foreach ($rows as $row) {
-                    $key = $row['nama_karyawan'] . '|' . $row['shift'] . '|' . $id_factory_current;
+                    $key = strtoupper($row['nama_karyawan']) . '|' . $id_factory_current;
                     $emp = $employeeMap[$key] ?? null; // Data karyawan
                     // dd($emp['id_employee'], $emp['id_factory'], $emp['shift'], $id_factory_current);
                     $idEmp = $emp['id_employee'] ?? null;
                     $fac   = $emp['id_factory']  ?? null;
                     if (!$emp) {
-                        $errors[] = "Karyawan {$row['nama_karyawan']} (Shift: {$row['shift']}) tidak ditemukan di factory $factory";
+                        $errors[] = "Karyawan ".strtoupper($row['nama_karyawan'])." tidak ditemukan di factory $factory";
                         continue;
                     }
 
@@ -607,7 +607,7 @@ class BsmcController extends BaseController
     private function getEmployeeMap(array $employeeData, $factoryId)
     {
         $names = array_column($employeeData, 'name');
-        $shifts = array_column($employeeData, 'shift');
+        // $shifts = array_column($employeeData, 'shift');
         // dd($factoryId);
 
 
@@ -620,17 +620,18 @@ class BsmcController extends BaseController
             $builder->whereIn('employee_name', $names);
         }
 
-        if (!empty($shifts)) {
-            $builder->whereIn('shift', $shifts);
-        }
+        // if (!empty($shifts)) {
+        //     $builder->whereIn('shift', $shifts);
+        // }
 
         $result = $builder->get()->getResultArray();
 
         $map = [];
         foreach ($result as $emp) {
-            $key = $emp['employee_name'] . '|' . $emp['shift'] . '|' . $emp['id_factory'];
+            $key = $emp['employee_name'] . '|' . $emp['id_factory'];
             $map[$key] = $emp;
         }
+        // dd ($map);
         return $map;
     }
 
