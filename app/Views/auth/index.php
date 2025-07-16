@@ -65,7 +65,7 @@
                         </div>
                         <div class="col-md-6">
                             <div class="oblique position-absolute top-0 h-100 d-md-block d-none me-n8">
-                                <div class="oblique-image bg-cover position-absolute fixed-top ms-auto h-100 z-index-0 ms-n6" style="background-image:url('<?= base_url('assets/img/rating.jpg') ?>')"></div>
+                                <div class="oblique-image bg-cover position-absolute fixed-top ms-auto h-100 z-index-0 ms-n6" style="background-image:url('<?= base_url('assets/img/hris.png') ?>')"></div>
                                 <!-- https://www.freepik.com/free-photo/closeup-doctor-checking-patient-daily-report-checklist_2767783.htm#fromView=search&page=1&position=36&uuid=fd47a838-0f65-41de-bf11-dab96bbb68db -->
                             </div>
                         </div>
