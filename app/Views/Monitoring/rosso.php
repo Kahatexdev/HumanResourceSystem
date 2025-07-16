@@ -1,6 +1,27 @@
 <?php $this->extend('layout/template'); ?>
 <?php $this->section('content'); ?>
 <div class="container-fluid py-4">
+    <!-- alert -->
+    <?php if (session()->has('error')): ?>
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <?= session('error') ?>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    <?php endif; ?>
+
+    <?php if (session()->has('success')): ?>
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <?= session('success') ?>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    <?php endif; ?>
+
+    <?php if (session()->has('info')): ?>
+        <div class="alert alert-info alert-dismissible fade show" role="alert">
+            <?= session('info') ?>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    <?php endif; ?>
 
     <div class="row">
         <div class="col-xl-12 col-sm-12 mb-xl-0 mb-4 mt-2">
@@ -140,23 +161,6 @@
     $(document).ready(function() {
         // Initialize DataTable with export options
         $('#table_report_batch').DataTable({});
-
-        // Flash message SweetAlerts
-        <?php if (session()->getFlashdata('success')) : ?>
-            Swal.fire({
-                icon: 'success',
-                title: 'Success!',
-                html: '<?= session()->getFlashdata('success') ?>',
-            });
-        <?php endif; ?>
-
-        <?php if (session()->getFlashdata('error')) : ?>
-            Swal.fire({
-                icon: 'error',
-                title: 'Error!',
-                html: '<?= session()->getFlashdata('error') ?>',
-            });
-        <?php endif; ?>
     });
 </script>
 <script>

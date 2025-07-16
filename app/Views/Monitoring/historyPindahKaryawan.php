@@ -24,7 +24,7 @@
                                             <h5 class="modal-title" id="importHistoryKaryawanModalLabel">Update Kode Kartu</h5>
                                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                         </div>
-                                        <form action="<?= base_url('TrainingSchool/updateEmployeeCode') ?>" method="post" enctype="multipart/form-data">
+                                        <form action="<?= base_url($role. '/updateEmployeeCode') ?>" method="post" enctype="multipart/form-data">
                                             <div class="modal-body">
                                                 <div class="mb-3">
                                                     <label for="file" class="form-label">Pilih file Excel (.xlsx, .xls, .csv)</label>
@@ -42,7 +42,7 @@
                         </div>
                         <div class="col-4 d-flex justify-content-end align-items-center">
 
-                            <a href="<?= base_url('TrainingSchool/reportHistoryPindahKaryawan') ?>"
+                            <a href="<?= base_url($role. '/reportHistoryPindahKaryawan') ?>"
                                 class="btn bg-gradient-primary me-2 d-flex align-items-center">
                                 <i class="fas fa-file-excel text-lg opacity-10 me-1" aria-hidden="true"></i>
                                 Export Excel
@@ -52,15 +52,14 @@
                                 Update Kode Kartu
                             </button>
                         </div>
-                        <div class="col-12">
-                            <!-- import history karyawan -->
+                        <!-- <div class="col-12">
                             <form action="<?= base_url('TrainingSchool/importHistoryEmployee') ?>" method="post" enctype="multipart/form-data">
                                 <div class="input-group mb-3">
                                     <input type="file" class="form-control" name="file" accept=".xlsx, .xls, .csv" required>
                                     <button class="btn bg-gradient-success" type="submit">Import</button>
                                 </div>
                             </form>
-                        </div>
+                        </div> -->
                     </div>
                 </div>
             </div>

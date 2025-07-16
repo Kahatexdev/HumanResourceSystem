@@ -251,6 +251,12 @@ $routes->group('/Monitoring', ['filter' => 'Monitoring'], function ($routes) {
     // $routes->get('bsmcEdit/(:num)', 'BsmcController::edit/$1');
     // $routes->get('bsmcUpdate/(:num)', 'BsmcController::update/$1');
     // $routes->get('bsmcDelete/(:num)', 'BsmcController::delete/$1');
+    $routes->get('historyPindahKaryawan', 'TrainingSchoolController::historyPindahKaryawan');
+    $routes->get('reportHistoryPindahKaryawan', 'HistoryEmployeeController::reportExcel');
+    $routes->post('updateEmployeeCode', 'HistoryEmployeeController::updateEmployeeCode');
+
+
+
 
     //Dashboard
     $routes->get('evaluasiKaryawan/(:any)/(:any)', 'MandorController::getEmployeeEvaluationStatus/$1/$2');
@@ -260,6 +266,7 @@ $routes->group('/Monitoring', ['filter' => 'Monitoring'], function ($routes) {
 
     $routes->get('finalAssesment/(:any)/(:any)', 'PerformanceAssessmentsController::finalAssesment/$1/$2');
     $routes->post('exportFinalAssessment', 'PerformanceAssessmentsController::exportFinalAssessment');
+    $routes->post('printFinalAssessment', 'PerformanceAssessmentsController::printFinalAssessment');
 });
 
 $routes->group('/Mandor', ['filter' => 'Mandor'], function ($routes) {
@@ -293,29 +300,33 @@ $routes->group('/TrainingSchool', ['filter' => 'TrainingSchool'], function ($rou
     $routes->get('historyPindahKaryawan', 'TrainingSchoolController::historyPindahKaryawan');
     $routes->get('reportHistoryPindahKaryawan', 'HistoryEmployeeController::reportExcel');
     $routes->post('importHistoryEmployee', 'HistoryEmployeeController::importHistoryEmployee');
+    $routes->post('updateEmployeeCode', 'HistoryEmployeeController::updateEmployeeCode');
 
     // routes/web.php atau routes.php (tergantung pada versi CodeIgniter)
-    $routes->get('contacts', 'ChatController::getContactsWithLastMessage');
-    $routes->get('chat', 'TrainingSchoolController::chat');
+    // $routes->get('contacts', 'ChatController::getContactsWithLastMessage');
+    // $routes->get('chat', 'TrainingSchoolController::chat');
 
     // $routes->get('conversation/(:num)/(:num)', 'ChatController::fetchConversation/$1/$2');
     // $routes->post('send-message', 'ChatController::sendMessage');
-    $routes->get('conversation/(:num)/(:num)', 'ChatController::fetchConversation/$1/$2');
-    $routes->post('send-message', 'ChatController::sendMessage');
-    $routes->get('getContacts/(:num)', 'ChatController::getContacts/$1');
-    $routes->post('mark-messages-as-read/(:num)', 'ChatController::markMessagesAsRead/$1');
-    $routes->get('count-unread-messages', 'ChatController::countUnreadMessages');
-    $routes->get('check-new-messages', 'ChatController::checkNewMessages');
-    $routes->get('long-poll-new-messages', 'ChatController::longPollNewMessages'); // Untuk long polling
+    // $routes->get('conversation/(:num)/(:num)', 'ChatController::fetchConversation/$1/$2');
+    // $routes->post('send-message', 'ChatController::sendMessage');
+    // $routes->get('getContacts/(:num)', 'ChatController::getContacts/$1');
+    // $routes->post('mark-messages-as-read/(:num)', 'ChatController::markMessagesAsRead/$1');
+    // $routes->get('count-unread-messages', 'ChatController::countUnreadMessages');
+    // $routes->get('check-new-messages', 'ChatController::checkNewMessages');
+    // $routes->get('long-poll-new-messages', 'ChatController::longPollNewMessages'); // Untuk long polling
 
 
     // penilaian
     $routes->get('reportPenilaian', 'MonitoringController::reportpenilaian');
-    $routes->get('reportPenilaian/(:segment)', 'PenilaianController::penilaianPerArea/$1');
-    $routes->get('reportPenilaian/(:segment)/(:segment)/(:segment)', 'PenilaianController::excelReportPerPeriode/$1/$2/$3');
     $routes->get('reportBatch', 'MonitoringController::reportBatch');
-    $routes->get('reportBatch/(:segment)', 'PenilaianController::reportAreaperBatch/$1');
-    $routes->get('exelReportBatch/(:num)/(:segment)', 'PenilaianController::exelReportBatch/$1/$2');
+    $routes->get('reportBatch/(:segment)', 'PerformanceAssessmentsController::reportAreaperBatch/$1');
+    $routes->get('reportPenilaian/(:segment)', 'PerformanceAssessmentsController::penilaianPerArea/$1');
+    $routes->get('reportPenilaian/(:segment)/(:segment)/(:segment)', 'PerformanceAssessmentsController::excelReportPerPeriode/$1/$2/$3');
+    $routes->get('exelReportBatch/(:segment)/(:segment)', 'PerformanceAssessmentsController::exelReportBatch/$1/$2');
+    $routes->get('finalAssesment/(:any)/(:any)', 'PerformanceAssessmentsController::finalAssesment/$1/$2');
+    $routes->post('exportFinalAssessment', 'PerformanceAssessmentsController::exportFinalAssessment');
+    $routes->get('exportKaryawan/', 'EmployeeController::exportAll');
 });
 
 $routes->group('api', function ($routes) {
@@ -325,4 +336,5 @@ $routes->group('api', function ($routes) {
     $routes->get('area_utama/(:segment)', 'ApiController::getKaryawanByAreaUtama/$1');
     $routes->get('area/(:segment)', 'ApiController::getKaryawanByArea/$1');
     $routes->get('getdataforbs/(:any)/(:any)', 'ApiController::getDataForBsMc/$1/$2');
+    $routes->get('getEmployeeByName/(:segment)', 'ApiController::getEmployeeByName/$1');
 });

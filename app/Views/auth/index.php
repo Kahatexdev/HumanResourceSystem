@@ -65,7 +65,7 @@
                         </div>
                         <div class="col-md-6">
                             <div class="oblique position-absolute top-0 h-100 d-md-block d-none me-n8">
-                                <div class="oblique-image bg-cover position-absolute fixed-top ms-auto h-100 z-index-0 ms-n6" style="background-image:url('<?= base_url('assets/img/hris.png') ?>')"></div>
+                                <div class="oblique-image bg-cover position-absolute fixed-top ms-auto h-100 z-index-0 ms-n6" style="background-image:url('<?= base_url('assets/img/hrs.png') ?>')"></div>
                                 <!-- https://www.freepik.com/free-photo/closeup-doctor-checking-patient-daily-report-checklist_2767783.htm#fromView=search&page=1&position=36&uuid=fd47a838-0f65-41de-bf11-dab96bbb68db -->
                             </div>
                         </div>
@@ -78,11 +78,12 @@
     <footer class="footer py-5">
         <div class="container">
             <div class="row">
-                <div class="col-8 mx-auto text-center mt-7">
+                <div class="col-8 mx-auto text-center mt-1">
                     <p class="mb-0 text-secondary">
-                        Copyright © <script>
+                        RnD BP System <br>
+                        © <script>
                             document.write(new Date().getFullYear())
-                        </script> RnD Team
+                        </script>UI Template by <a href="https://www.creative-tim.com/">Creative Tim</a>, licensed under MIT License
                     </p>
                 </div>
             </div>

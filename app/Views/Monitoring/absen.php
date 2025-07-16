@@ -90,6 +90,7 @@
                         <table id="absenTable" class="table table-striped table-hover table-bordered">
                             <thead>
                                 <th>No</th>
+                                <th>Kode Kartu</th>
                                 <th>Nama Karyawan</th>
                                 <th>Periode</th>
                                 <th>SI(Sakit)</th>
@@ -105,6 +106,7 @@
                                     <?php foreach ($absen as $absen) : ?>
                                         <tr>
                                             <td><?= $absen['id_presence'] ?></td>
+                                            <td><?= $absen['employee_code'] ?></td>
                                             <td><?= $absen['employee_name'] ?></td>
                                             <td><?= $absen['batch_name'] ?> - <?= $absen['periode_name'] ?></br></td>
                                             <?php if ($absen['sick'] == 0) : ?>

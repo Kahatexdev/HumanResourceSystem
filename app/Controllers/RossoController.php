@@ -517,153 +517,280 @@ class RossoController extends BaseController
         exit;
     }
 
+    // public function import()
+    // {
+    //     // 1. Validasi file upload
+    //     $file = $this->request->getFile('file');
+    //     if (!$file->isValid() || !in_array($file->getClientExtension(), ['xlsx'])) {
+    //         return redirect()->back()->with('error', 'File tidak valid atau format tidak didukung. Pastikan berekstensi .xlsx');
+    //     }
+    //     // dd ($file);
+    //     try {
+    //         // 2. Load spreadsheet & mapping data reference
+    //         $spreadsheet = IOFactory::load($file->getTempName());
+    //         $sheetNames  = $spreadsheet->getSheetNames();
+    //         $today       = date('Y-m-d');
+
+    //         // 2a. Mapping karyawan: kode → [id, nama, factory]
+    //         $karyawanMap = [];
+    //         foreach ($this->employeeModel->findAll() as $row) {
+    //             $code = strtolower(trim($row['employee_code']));
+    //             $karyawanMap[$code] = [
+    //                 'id_employee' => $row['id_employee'],
+    //                 // Ubah key 'employee_name' jika berbeda di DB
+    //                 'name'        => strtolower(trim($row['employee_name'])),
+    //                 'id_factory'  => $row['id_factory'] ?? null,
+    //             ];
+    //         }
+    //         // dd ($karyawanMap);
+    //         // 2b. Mapping factory → nama area (sheet)
+    //         $areaMap = [];
+    //         foreach ($this->factoriesModel->findAll() as $row) {
+    //             $areaMap[$row['id_factory']] = trim($row['main_factory']);
+    //         }
+    //         // dd ($areaMap);
+    //         // 3. Inisialisasi penampung
+    //         $toInsert     = [];
+    //         $dupeExcel    = [];
+    //         $dupeDb       = [];
+    //         $invalidDates = [];
+    //         $wrongAreas   = [];
+    //         $seenEntries  = [];
+
+    //         // 4. Loop tiap sheet & row
+    //         foreach ($sheetNames as $sheetName) {
+    //             $ws      = $spreadsheet->getSheetByName($sheetName);
+    //             $lastRow = $ws->getHighestRow();
+
+    //             for ($r = 2; $r <= $lastRow; $r++) {
+    //                 $rawDate = $ws->getCell('A' . $r)->getFormattedValue();
+    //                 $name    = strtolower(trim($ws->getCell('B' . $r)->getValue()));
+    //                 $code    = strtolower(trim($ws->getCell('C' . $r)->getValue()));
+    //                 $prod    = $ws->getCell('D' . $r)->getValue();
+    //                 $rework  = $ws->getCell('E' . $r)->getValue();
+    //                 // dd ($rawDate, $name, $code, $prod, $rework);
+    //                 // Normalize & composite key
+    //                 $tglInput = date('Y-m-d', strtotime(str_replace('/', '-', $rawDate)));
+    //                 // dd($tglInput);
+    //                 $key      = "{$name}|{$code}|{$tglInput}";
+
+    //                 // 4a. Duplikat di Excel (name+code+date)
+    //                 if (isset($seenEntries[$key])) {
+    //                     $dupeExcel[] = "{$name} / {$code} ({$tglInput})";
+    //                     continue;
+    //                 }
+    //                 $seenEntries[$key] = true;
+
+    //                 // 4b. Validasi tanggal tidak > hari ini
+    //                 if ($tglInput > $today) {
+    //                     $invalidDates[] = "{$name} / {$code} ({$tglInput})";
+    //                     continue;
+    //                 }
+
+    //                 // 4c. Validasi karyawan exist & nama cocok
+    //                 if (!isset($karyawanMap[$code]) || $karyawanMap[$code]['name'] !== $name) {
+    //                     continue;
+    //                 }
+    //                 $empl = $karyawanMap[$code];
+    //                 $area = $areaMap[$empl['id_factory']] ?? null;
+
+    //                 // 4d. Validasi sheetName sesuai area
+    //                 if ($sheetName !== $area) {
+    //                     $wrongAreas[] = "{$name} / {$code} (sheet: {$sheetName}, seharusnya: {$area})";
+    //                     continue;
+    //                 }
+
+    //                 // 4e. Cek duplikat di DB (name+code+date)
+    //                 $existing = $this->summaryRosso
+    //                     ->select('sr.*')
+    //                     ->from('rosso sr')
+    //                     ->join('employees e', 'e.id_employee = sr.id_employee')
+    //                     ->where('sr.input_date', $tglInput)
+    //                     ->where('e.employee_code', $code)
+    //                     ->where('LOWER(e.employee_name)', $name)
+    //                     ->get()
+    //                     ->getRow();
+    //                 if ($existing) {
+    //                     $dupeDb[] = "{$name} / {$code} ({$tglInput})";
+    //                     continue;
+    //                 }
+
+    //                 // 4f. Siapkan data insert
+    //                 $toInsert[] = [
+    //                     'input_date'  => $tglInput,
+    //                     'id_employee' => $empl['id_employee'],
+    //                     'production'  => is_numeric($prod)   ? $prod   : 0,
+    //                     'rework'      => is_numeric($rework) ? $rework : 0,
+    //                     'id_factory'  => $empl['id_factory'],
+    //                     'created_at'  => date('Y-m-d H:i:s'),
+    //                     'updated_at'  => date('Y-m-d H:i:s'),
+    //                 ];
+    //             }
+    //         }
+    //         // dd ($toInsert);
+    //         // 5. Transaksi & batch insert
+    //         $db = \Config\Database::connect();
+    //         $db->transBegin();
+    //         if (!empty($toInsert)) {
+    //             $this->summaryRosso->insertBatch($toInsert);
+    //         }
+    //         if ($db->transStatus() === false) {
+    //             $db->transRollback();
+    //             throw new \RuntimeException('Gagal menyimpan data ke database.');
+    //         }
+    //         $db->transCommit();
+
+    //         // 6. Flash message
+    //         $msgs = [];
+    //         if ($toInsert) {
+    //             $msgs[] = "✅ Berhasil import " . count($toInsert) . " record.";
+    //         }
+    //         if ($dupeExcel) {
+    //             $msgs[] = "⛔ Duplikat di Excel: " . implode(', ', $dupeExcel);
+    //         }
+    //         if ($invalidDates) {
+    //             $msgs[] = "⛔ Tanggal > hari ini: " . implode(', ', $invalidDates);
+    //         }
+    //         if ($dupeDb) {
+    //             $msgs[] = "⛔ Sudah ada di DB: " . implode(', ', $dupeDb);
+    //         }
+    //         if ($wrongAreas) {
+    //             $msgs[] = "⚠️ Salah sheet area: " . implode('; ', $wrongAreas);
+    //         }
+
+    //         $status = empty($dupeExcel) && empty($invalidDates) && empty($dupeDb) && empty($wrongAreas)
+    //             ? 'success' : 'error';
+
+    //         return redirect()->back()->with($status, implode("<br>", $msgs));
+    //     } catch (\Exception $e) {
+    //         return redirect()->back()->with('error', 'Error saat import: ' . $e->getMessage());
+    //     }
+    // }
+
     public function import()
     {
-        // 1. Validasi file upload
         $file = $this->request->getFile('file');
         if (!$file->isValid() || !in_array($file->getClientExtension(), ['xlsx'])) {
             return redirect()->back()->with('error', 'File tidak valid atau format tidak didukung. Pastikan berekstensi .xlsx');
         }
 
         try {
-            // 2. Load spreadsheet & mapping data reference
             $spreadsheet = IOFactory::load($file->getTempName());
             $sheetNames  = $spreadsheet->getSheetNames();
             $today       = date('Y-m-d');
 
-            // 2a. Mapping karyawan: kode → [id, nama, factory]
             $karyawanMap = [];
             foreach ($this->employeeModel->findAll() as $row) {
                 $code = strtolower(trim($row['employee_code']));
                 $karyawanMap[$code] = [
                     'id_employee' => $row['id_employee'],
-                    // Ubah key 'employee_name' jika berbeda di DB
                     'name'        => strtolower(trim($row['employee_name'])),
                     'id_factory'  => $row['id_factory'] ?? null,
                 ];
             }
 
-            // 2b. Mapping factory → nama area (sheet)
             $areaMap = [];
             foreach ($this->factoriesModel->findAll() as $row) {
                 $areaMap[$row['id_factory']] = trim($row['main_factory']);
             }
 
-            // 3. Inisialisasi penampung
-            $toInsert     = [];
-            $dupeExcel    = [];
-            $dupeDb       = [];
-            $invalidDates = [];
-            $wrongAreas   = [];
-            $seenEntries  = [];
+            $toInsert = [];
+            $seenEntries = [];
+            $logs = []; // Log error/sukses
 
-            // 4. Loop tiap sheet & row
             foreach ($sheetNames as $sheetName) {
-                $ws      = $spreadsheet->getSheetByName($sheetName);
+                $ws = $spreadsheet->getSheetByName($sheetName);
                 $lastRow = $ws->getHighestRow();
 
                 for ($r = 2; $r <= $lastRow; $r++) {
-                    $rawDate = $ws->getCell('A' . $r)->getFormattedValue();
-                    $name    = strtolower(trim($ws->getCell('B' . $r)->getValue()));
-                    $code    = strtolower(trim($ws->getCell('C' . $r)->getValue()));
-                    $prod    = $ws->getCell('D' . $r)->getValue();
-                    $rework  = $ws->getCell('E' . $r)->getValue();
+                    try {
+                        $rawDate = $ws->getCell('A' . $r)->getFormattedValue();
+                        $name    = strtolower(trim($ws->getCell('B' . $r)->getValue()));
+                        $code    = strtolower(trim($ws->getCell('C' . $r)->getValue()));
+                        $prod    = $ws->getCell('D' . $r)->getValue();
+                        $rework  = $ws->getCell('E' . $r)->getValue();
 
-                    // Normalize & composite key
-                    $tglInput = date('Y-m-d', strtotime(str_replace('/', '-', $rawDate)));
-                    // dd($tglInput);
-                    $key      = "{$name}|{$code}|{$tglInput}";
+                        if (empty($rawDate) || empty($name) || empty($code)) {
+                            $logs[] = "❌ [Baris $r / Sheet: $sheetName] Data kosong atau tidak lengkap.";
+                            continue;
+                        }
 
-                    // 4a. Duplikat di Excel (name+code+date)
-                    if (isset($seenEntries[$key])) {
-                        $dupeExcel[] = "{$name} / {$code} ({$tglInput})";
+                        $tglInput = date('Y-m-d', strtotime(str_replace('/', '-', $rawDate)));
+                        $key = "{$name}|{$code}|{$tglInput}";
+
+                        if (isset($seenEntries[$key])) {
+                            $logs[] = "⚠️ [Baris $r] Duplikat di Excel: {$name} / {$code} ({$tglInput})";
+                            continue;
+                        }
+                        $seenEntries[$key] = true;
+
+                        if ($tglInput > $today) {
+                            $logs[] = "⚠️ [Baris $r] Tanggal lebih dari hari ini: {$tglInput}";
+                            continue;
+                        }
+
+                        if (!isset($karyawanMap[$code]) || $karyawanMap[$code]['name'] !== $name) {
+                            $logs[] = "❌ [Baris $r] Karyawan tidak ditemukan / nama tidak cocok: {$name} / {$code}";
+                            continue;
+                        }
+
+                        $empl = $karyawanMap[$code];
+                        $area = $areaMap[$empl['id_factory']] ?? null;
+
+                        if ($sheetName !== $area) {
+                            $logs[] = "⚠️ [Baris $r] Salah sheet area untuk {$name} / {$code}. Sheet: {$sheetName}, Seharusnya: {$area}";
+                            continue;
+                        }
+
+                        // Duplikat di DB
+                        $existing = $this->summaryRosso
+                            ->select('sr.*')
+                            ->from('rosso sr')
+                            ->join('employees e', 'e.id_employee = sr.id_employee')
+                            ->where('sr.input_date', $tglInput)
+                            ->where('e.employee_code', $code)
+                            ->where('LOWER(e.employee_name)', $name)
+                            ->get()
+                            ->getRow();
+
+                        if ($existing) {
+                            $logs[] = "⚠️ [Baris $r] Data sudah ada di DB: {$name} / {$code} ({$tglInput})";
+                            continue;
+                        }
+
+                        $toInsert[] = [
+                            'input_date'  => $tglInput,
+                            'id_employee' => $empl['id_employee'],
+                            'production'  => is_numeric($prod)   ? $prod   : 0,
+                            'rework'      => is_numeric($rework) ? $rework : 0,
+                            'id_factory'  => $empl['id_factory'],
+                            'created_at'  => date('Y-m-d H:i:s'),
+                            'updated_at'  => date('Y-m-d H:i:s'),
+                        ];
+                    } catch (\Throwable $e) {
+                        $logs[] = "❌ [Baris $r] Error parsing data: " . $e->getMessage();
                         continue;
                     }
-                    $seenEntries[$key] = true;
-
-                    // 4b. Validasi tanggal tidak > hari ini
-                    if ($tglInput > $today) {
-                        $invalidDates[] = "{$name} / {$code} ({$tglInput})";
-                        continue;
-                    }
-
-                    // 4c. Validasi karyawan exist & nama cocok
-                    if (!isset($karyawanMap[$code]) || $karyawanMap[$code]['name'] !== $name) {
-                        continue;
-                    }
-                    $empl = $karyawanMap[$code];
-                    $area = $areaMap[$empl['id_factory']] ?? null;
-
-                    // 4d. Validasi sheetName sesuai area
-                    if ($sheetName !== $area) {
-                        $wrongAreas[] = "{$name} / {$code} (sheet: {$sheetName}, seharusnya: {$area})";
-                        continue;
-                    }
-
-                    // 4e. Cek duplikat di DB (name+code+date)
-                    $existing = $this->summaryRosso
-                        ->select('sr.*')
-                        ->from('rosso sr')
-                        ->join('employees e', 'e.id_employee = sr.id_employee')
-                        ->where('sr.input_date', $tglInput)
-                        ->where('e.employee_code', $code)
-                        ->where('LOWER(e.employee_name)', $name)
-                        ->get()
-                        ->getRow();
-                    if ($existing) {
-                        $dupeDb[] = "{$name} / {$code} ({$tglInput})";
-                        continue;
-                    }
-
-                    // 4f. Siapkan data insert
-                    $toInsert[] = [
-                        'input_date'  => $tglInput,
-                        'id_employee' => $empl['id_employee'],
-                        'production'  => is_numeric($prod)   ? $prod   : 0,
-                        'rework'      => is_numeric($rework) ? $rework : 0,
-                        'id_factory'  => $empl['id_factory'],
-                        'created_at'  => date('Y-m-d H:i:s'),
-                        'updated_at'  => date('Y-m-d H:i:s'),
-                    ];
                 }
             }
-            // dd ($toInsert);
-            // 5. Transaksi & batch insert
+
             $db = \Config\Database::connect();
             $db->transBegin();
             if (!empty($toInsert)) {
                 $this->summaryRosso->insertBatch($toInsert);
             }
+
             if ($db->transStatus() === false) {
                 $db->transRollback();
                 throw new \RuntimeException('Gagal menyimpan data ke database.');
             }
             $db->transCommit();
 
-            // 6. Flash message
-            $msgs = [];
-            if ($toInsert) {
-                $msgs[] = "✅ Berhasil import " . count($toInsert) . " record.";
-            }
-            if ($dupeExcel) {
-                $msgs[] = "⛔ Duplikat di Excel: " . implode(', ', $dupeExcel);
-            }
-            if ($invalidDates) {
-                $msgs[] = "⛔ Tanggal > hari ini: " . implode(', ', $invalidDates);
-            }
-            if ($dupeDb) {
-                $msgs[] = "⛔ Sudah ada di DB: " . implode(', ', $dupeDb);
-            }
-            if ($wrongAreas) {
-                $msgs[] = "⚠️ Salah sheet area: " . implode('; ', $wrongAreas);
-            }
+            $logs[] = "✅ Berhasil import: " . count($toInsert) . " data.";
 
-            $status = empty($dupeExcel) && empty($invalidDates) && empty($dupeDb) && empty($wrongAreas)
-                ? 'success' : 'error';
-
-            return redirect()->back()->with($status, implode("<br>", $msgs));
+            return redirect()->back()->with('info', implode("<br>", $logs));
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Error saat import: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Terjadi kesalahan saat import: ' . $e->getMessage());
         }
     }
 

@@ -165,8 +165,8 @@ class PresenceController extends BaseController
             $startRow = 3; // Assuming the first row is for headers
 
             // Models
-            $absenModel = new \App\Models\AbsenModel();
-            $karyawanModel = new \App\Models\KaryawanModel();
+            $absenModel = new \App\Models\PresenceModel();
+            $karyawanModel = new \App\Models\EmployeeModel();
 
             // Counters for success and errors
             $successCount = 0;
@@ -208,21 +208,21 @@ class PresenceController extends BaseController
                 // If valid, proceed to save
                 if ($isValid) {
                     // Fetch the karyawan data
-                    $karyawan = $karyawanModel->where('nama_karyawan', $namaKaryawan)->first();
+                    $karyawan = $karyawanModel->where('employee_name', $namaKaryawan)->first();
                     if ($karyawan) {
                         // Prepare the data for saving
                         $data = [
-                            'id_karyawan' => $karyawan['id_karyawan'],
+                            'id_employee' => $karyawan['id_employee'],
                             'id_periode' => $id_periode,
-                            'sakit' => $sakit,
-                            'izin' => $izin,
-                            'cuti' => $cuti,
-                            'mangkir' => $mangkir,
+                            'sick' => $sakit,
+                            'permit' => $izin,
+                            'leave' => $cuti,
+                            'absent' => $mangkir,
                             'id_user' => $idUser
                         ];
 
                         // kalau ada data karyawan dan tanggal absen sama maka tidak bisa diinputkan
-                        $absen = $absenModel->where('id_karyawan', $karyawan['id_karyawan'])
+                        $absen = $absenModel->where('id_employee', $karyawan['id_employee'])
                             ->where('id_periode', $id_periode)
                             ->first();
                         if ($absen) {
@@ -271,15 +271,16 @@ class PresenceController extends BaseController
 
         // header
         $sheet->setCellValue('A1', 'No');
-        $sheet->setCellValue('B1', ' Nama Karyawan');
-        $sheet->setCellValue('C1', 'Periode');
-        $sheet->setCellValue('D1', 'Izin');
-        $sheet->setCellValue('E1', 'Sakit');
-        $sheet->setCellValue('F1', 'Mangkir');
-        $sheet->setCellValue('G1', 'Cuti');
-        $sheet->setCellValue('H1', 'Input By');
-        $sheet->setCellValue('I1', 'Created At');
-        $sheet->setCellValue('J1', 'Updated At');
+        $sheet->setCellValue('B1', 'Kode Kartu');
+        $sheet->setCellValue('C1', 'Nama Karyawan');
+        $sheet->setCellValue('D1', 'Periode');
+        $sheet->setCellValue('E1', 'Izin');
+        $sheet->setCellValue('F1', 'Sakit');
+        $sheet->setCellValue('G1', 'Mangkir');
+        $sheet->setCellValue('H1', 'Cuti');
+        $sheet->setCellValue('I1', 'Input By');
+        $sheet->setCellValue('J1', 'Created At');
+        $sheet->setCellValue('K1', 'Updated At');
 
         $no = 1;
         $column = 2;
@@ -288,29 +289,30 @@ class PresenceController extends BaseController
         $sheet->getColumnDimension('A')->setWidth(5);
         $sheet->getColumnDimension('B')->setWidth(20);
         $sheet->getColumnDimension('C')->setWidth(20);
-        $sheet->getColumnDimension('D')->setWidth(10);
+        $sheet->getColumnDimension('D')->setWidth(20);
         $sheet->getColumnDimension('E')->setWidth(10);
         $sheet->getColumnDimension('F')->setWidth(10);
         $sheet->getColumnDimension('G')->setWidth(10);
-        $sheet->getColumnDimension('H')->setWidth(20);
+        $sheet->getColumnDimension('H')->setWidth(10);
         $sheet->getColumnDimension('I')->setWidth(20);
         $sheet->getColumnDimension('J')->setWidth(20);
+        $sheet->getColumnDimension('K')->setWidth(20);
 
-        $sheet->getStyle('A1:J1')->getFont()->setBold(true);
-        $sheet->getStyle('A1:J1')->getFill()->setFillType('solid')->getStartColor()->setARGB('FFA0A0A0');
-        $sheet->getStyle('A1:J1')->getAlignment()->setHorizontal('center');
-
+        $sheet->getStyle('A1:K1')->getFont()->setBold(true);
+        $sheet->getStyle('A1:K1')->getFill()->setFillType('solid')->getStartColor()->setARGB('FFA0A0A0');
+        $sheet->getStyle('A1:K1')->getAlignment()->setHorizontal('center');
         foreach ($data as $row) {
             $sheet->setCellValue('A' . $column, $no++);
-            $sheet->setCellValue('B' . $column, $row['employee_name']);
-            $sheet->setCellValue('C' . $column, $row['periode_name']);
-            $sheet->setCellValue('D' . $column, $row['permit']);
-            $sheet->setCellValue('E' . $column, $row['sick']);
-            $sheet->setCellValue('F' . $column, $row['absent']);
-            $sheet->setCellValue('G' . $column, $row['leave']);
-            $sheet->setCellValue('H' . $column, $row['username']);
-            $sheet->setCellValue('I' . $column, $row['created_at']);
-            $sheet->setCellValue('J' . $column, $row['updated_at']);
+            $sheet->setCellValue('B' . $column, $row['employee_code'] ?? '');
+            $sheet->setCellValue('C' . $column, $row['employee_name']);
+            $sheet->setCellValue('D' . $column, $row['periode_name']);
+            $sheet->setCellValue('E' . $column, $row['permit']);
+            $sheet->setCellValue('F' . $column, $row['sick']);
+            $sheet->setCellValue('G' . $column, $row['absent']);
+            $sheet->setCellValue('H' . $column, $row['leave']);
+            $sheet->setCellValue('I' . $column, $row['username']);
+            $sheet->setCellValue('J' . $column, $row['created_at']);
+            $sheet->setCellValue('K' . $column, $row['updated_at']);
 
             $column++;
         }

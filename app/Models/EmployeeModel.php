@@ -240,7 +240,29 @@ class EmployeeModel extends Model
         return $this->select('employees.id_employee, employees.employee_name, employees.employee_code, employees.shift, employees.id_factory, factories.factory_name')
             ->join('factories', 'factories.id_factory = employees.id_factory')
             ->where('factories.factory_name', $area)
+            ->whereIn('employees.id_job_section', [11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 153, 154, 155])
             ->orderBy('employees.shift', 'ASC')
             ->findAll();
+    }
+
+    public function getEmployeeByName($name)
+    {
+        return $this->db->table('employees')
+            ->select('employees.employee_name, employees.employee_code, employees.shift,
+                       job_sections.job_section_name,
+                       factories.factory_name, factories.main_factory,
+                       employment_statuses.employment_status_name,
+                       employment_statuses.clothes_color,
+                       days.day_name AS holiday_name,
+                       days2.day_name AS additional_holiday_name')
+            ->join('job_sections', 'job_sections.id_job_section = employees.id_job_section')
+            ->join('factories', 'factories.id_factory = employees.id_factory')
+            ->join('employment_statuses', 'employment_statuses.id_employment_status = employees.id_employment_status')
+            ->join('days', 'days.id_day = employees.holiday')
+            ->join('days AS days2', 'days2.id_day = employees.additional_holiday', 'left')
+            ->where('employees.employee_name', $name)
+            ->groupBy('employees.id_employee')
+            ->get()
+            ->getRowArray();
     }
 }

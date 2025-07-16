@@ -1,4 +1,4 @@
-<?php $this->extend('Layout/index'); ?>
+<?php $this->extend('layout/template'); ?>
 <?php $this->section('content'); ?>
 <div class="container-fluid py-4">
     <div class="row my-4">
@@ -14,9 +14,6 @@
                                 </h5>
                             </div>
                         </div>
-                        <div class="col-4 text-end">
-                            <a href="<?= base_url($role . '/updateGradeAkhirPerPeriode') ?>" class="btn bg-gradient-info btn-sm mb-0 me-1">Fetch Data</a>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -27,13 +24,13 @@
 
         <?php foreach ($tampilperarea as $key => $ar) : ?>
             <div class="col-xl-3 col-sm-6 mb-xl-0 mb-4 mt-2">
-                <a href="<?= base_url($role . '/reportPenilaian/' . $ar['area_utama']) ?>">
+                <a href="<?= base_url($role . '/reportPenilaian/' . $ar['main_factory']) ?>">
                     <div class="card">
                         <div class="card-body p-3">
                             <div class="row">
                                 <div class="col-8">
                                     <div class="numbers">
-                                        <p class="text-sm mb-0 text-capitalize font-weight-bold"><?= $ar['area_utama'] ?></p>
+                                        <p class="text-sm mb-0 text-capitalize font-weight-bold"><?= $ar['main_factory'] ?></p>
                                         <h5 class="font-weight-bolder mb-0">
                                         </h5>
                                     </div>

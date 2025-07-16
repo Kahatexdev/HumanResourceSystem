@@ -72,9 +72,9 @@ class PerformanceAssessmentsController extends BaseController
     private function calculateGradeBatch($average)
     {
         if (!is_numeric($average)) return '-';
-        if ($average >= 3.5) return 'A';
-        if ($average >= 2.5) return 'B';
-        if ($average >= 1.5) return 'C';
+        if ($average >= 90) return 'A';
+        if ($average >= 85) return 'B';
+        if ($average >= 75) return 'C';
         return 'D';
     }
 
@@ -128,51 +128,41 @@ class PerformanceAssessmentsController extends BaseController
         $gradeD = [];
         $gradeDPerBagian = []; // key = main_job_role_name
 
-        // function getMainBagian($bagian)
-        // {
-        //     $bagian = strtoupper(trim($bagian));
 
-        //     if (strpos($bagian, 'OPERATOR') === 0) {
-        //         return 'OPERATOR';
-        //     } elseif (strpos($bagian, 'MONTIR') === 0) {
-        //         return 'MONTIR';
-        //     } elseif (strpos($bagian, 'ROSSO') === 0) {
-        //         return 'ROSSO';
-        //     }
-
-        //     // fallback: tetap pakai nama bagian aslinya
-        //     return $bagian;
-        // }
-
-        // 1. Grup per employee_code
+        // 1. Grup per kombinasi employee_code + id_periode
         $grouped = [];
         foreach ($reportbatch as $row) {
-            $code = $row['employee_code'];
-            if (! isset($grouped[$code])) {
-                // inisialisasi data employee
-                $grouped[$code] = [
+            // pakai key unik termasuk periode
+            $key = $row['employee_code'] . '_' . $row['id_periode'] . '_' . $batch_name . '_' . $row['main_job_role_name'];
+            // dd ($key);
+            if (! isset($grouped[$key])) {
+                // inisialisasi data employee + periode
+                $grouped[$key] = [
                     'employee_code'      => $row['employee_code'],
                     'employee_name'      => $row['employee_name'],
                     'shift'              => $row['shift'],
                     'gender'             => $row['gender'],
                     'date_of_joining'    => $row['date_of_joining'],
                     'main_job_role_name' => $row['main_job_role_name'],
-                    'nilai'              => $row['nilai'],
-                    'permit'             => $row['permit'],
-                    'sick'               => $row['sick'],
-                    'absent'             => $row['absent'],
+                    'previous_performance_score' => $row['previous_performance_score'] ?? null,
+                    'nilai'              => $row['performance_score'],
                     'factory_name'       => $row['factory_name'],
-                    'assessments'        => [],   // tempatkan penilaian
+                    'assessments'        => [],
+                    'id_periode'         => $row['id_periode'],       // simpan periode
+                    'periode_name'       => $row['periode_name'],     // simpan nama periode
                 ];
             }
-            // tambahkan assessment ke karyawan tersebut
-            $grouped[$code]['assessments'][] = [
+            // tambahkan assessment ke kombinasi karyawan+periode
+            $grouped[$key]['assessments'][] = [
                 'jobdescription' => $row['jobdescription'],
                 'description'    => $row['description'],
                 'score'          => $row['score'],
                 'id_assessment'  => $row['id_assessment'],
             ];
         }
+
+        // dd ($grouped);
+
 
         // 2. Ubah jadi indexed array, bukan associative by code
         $employees = array_values($grouped);
@@ -181,8 +171,8 @@ class PerformanceAssessmentsController extends BaseController
         foreach ($uniqueSheets as $sheetName) {
             $sheet = $spreadsheet->createSheet();
             $sheet->setTitle(substr($sheetName, 0, 31)); // Nama sheet sesuai area dan bagian
-            // Pisahkan area dan nama bagian
-            list($currentBagian) = explode(' ', $sheetName, 2);
+            // Gunakan nama sheet (main_job_role_name) secara penuh untuk filter
+            $currentBagian = $sheetName;
 
             // Filter data untuk sheet ini
             $dataFiltered = array_filter($employees, function ($item) use ($currentBagian) {
@@ -223,20 +213,9 @@ class PerformanceAssessmentsController extends BaseController
             // Header Dinamis untuk keterangan dan jobdesc
             $currentCol = 9; // Dimulai dari kolom I
             $jobdescGrouped = [];
-
+            // dd ($dataFiltered);
             foreach ($dataFiltered as $p) {
                 foreach ($p['assessments'] as $assessment) {
-                    // Jika description & jobdescription adalah string JSON, decode dulu
-                    // $keterangan = json_decode($assessment['description'], true);
-                    // $jobdesc = json_decode($assessment['jobdescription'], true);
-
-                    // // Jika bukan JSON, langsung pakai
-                    // if (!is_array($keterangan)) {
-                    //     $keterangan = [$assessment['description']];
-                    // }
-                    // if (!is_array($jobdesc)) {
-                    //     $jobdesc = [$assessment['jobdescription']];
-                    // }
                     $keterangan = [$assessment['description']];
                     $jobdesc = [$assessment['jobdescription']];
 
@@ -247,14 +226,14 @@ class PerformanceAssessmentsController extends BaseController
                     }
                 }
             }
-            // dd($jobdescGrouped);
-
+            // dd ($dataFiltered[18], $jobdescGrouped);
+            // dd ($jobdescGrouped);
             // Hilangkan duplikasi dalam setiap keterangan
             foreach ($jobdescGrouped as $keterangan => &$jobs) {
                 $jobs = array_unique($jobs);
             }
             unset($jobs); // Lepaskan referensi
-
+            // dd ($jobdescGrouped);
             // Tulis header keterangan dan jobdesc
             foreach ($jobdescGrouped as $keterangan => $jobs) {
                 $startColLetter = Coordinate::stringFromColumnIndex($currentCol);
@@ -274,32 +253,26 @@ class PerformanceAssessmentsController extends BaseController
 
                 // Header jobdesc
                 foreach ($jobs as $job) {
-                    $sheet->setCellValue(Coordinate::stringFromColumnIndex($currentCol) . '6', $job);
-                    $sheet->getStyle(Coordinate::stringFromColumnIndex($currentCol) . '6')->applyFromArray([
+                    $colLetter = Coordinate::stringFromColumnIndex($currentCol);
+                    $sheet->setCellValue($colLetter . '6', $job);
+                    $sheet->getStyle($colLetter . '6')->applyFromArray([
                         'font' => ['bold' => true],
                         'alignment' => [
                             'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
                             'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER,
+                            'textRotation' => 90, // Rotate text up
+                            'wrapText' => true,    // Enable wrap text
                         ],
                         'borders' => ['allBorders' => ['borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN]],
                     ]);
+                    // Set row height for header row 6 (taller for rotated text)
+                    $sheet->getRowDimension(6)->setRowHeight(100);
                     $currentCol++;
                 }
             }
 
-            // Header absen
-            $sheet->mergeCells(Coordinate::stringFromColumnIndex($currentCol + 2) . '4:' . Coordinate::stringFromColumnIndex($currentCol + 4) . '4');
-            $sheet->setCellValue(Coordinate::stringFromColumnIndex($currentCol + 2) . '4', 'KEHADIRAN');
-            $sheet->getStyle(Coordinate::stringFromColumnIndex($currentCol + 2) . '4:' . Coordinate::stringFromColumnIndex($currentCol + 4) . '4')->applyFromArray([
-                'font' => ['bold' => true],
-                'alignment' => [
-                    'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
-                    'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER,
-                ],
-                'borders' => ['allBorders' => ['borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN]],
-            ]);
-            // Tambahkan Header SAKIT, IZIN, MANGKIR, CUTI
-            $additionalHeaders = ['GRADE', 'SKOR', 'SI', 'MI', 'M', 'JML HARI TIDAK MASUK KERJA', 'PERSENTASE KEHADIRAN', 'AKUMULASI ABSENSI', 'GRADE AKHIR', 'TRACKING'];
+            // Tambahkan Header untuk grade, skor, dan tracking
+            $additionalHeaders = ['SKOR', 'GRADE', 'TRACKING'];
             foreach ($additionalHeaders as $header) {
                 $sheet->mergeCells(Coordinate::stringFromColumnIndex($currentCol) . '5:' . Coordinate::stringFromColumnIndex($currentCol) . '6');
                 $sheet->setCellValue(Coordinate::stringFromColumnIndex($currentCol) . '5', $header);
@@ -313,8 +286,6 @@ class PerformanceAssessmentsController extends BaseController
                 ]);
                 $currentCol++;
             }
-
-
 
             // Tulis Data Karyawan Berdasarkan Shift
             $row = 7;
@@ -330,16 +301,7 @@ class PerformanceAssessmentsController extends BaseController
                     $sheet->setCellValue('E' . $row, $p['gender']);
                     $sheet->setCellValue('F' . $row, $p['date_of_joining']);
                     $sheet->setCellValue('G' . $row, $p['main_job_role_name']);
-                    // dd($p);
-                    // $sheet->setCellValue('H' . $row, $p['previous_grade'] ?? '-');
-                    // $col = 'I';
-                    // if (isset($p['assessments']) && is_array($p['assessments'])) {
-                    //     foreach ($p['assessments'] as $assessment) {
-                    //         $score = $assessment['score'] ?? '-';
-                    //         $sheet->setCellValue($col . $row, $score);
-                    //         $col++;
-                    //     }
-                    // }
+                    $sheet->setCellValue('H' . $row, $this->calculateGradeBatch($p['previous_performance_score'] ?? '-'));
                     // Decode nilai
                     $nilai = $assessment['score'];
                     // dd($nilai);
@@ -352,138 +314,20 @@ class PerformanceAssessmentsController extends BaseController
                         $sheet->setCellValue(Coordinate::stringFromColumnIndex($colIndex) . $row, $score);
                         $colIndex++;
 
-
-                        // $skor = $this->calculateSkor($grade);
-                        // Set job description and additional columns
-                        // foreach ($nilai as $value) {
-                        //     $sheet->setCellValue(Coordinate::stringFromColumnIndex($colIndex) . $row, $value);
-                        //     $colIndex++;
-                        // }
-
-                        // set grade
-                        // $sheet->setCellValue(Coordinate::stringFromColumnIndex($colIndex) . $row, $p['nilai'] ?? '-');
-                        // $colIndex++;
-                        // // set skor
-                        // $sheet->setCellValue(Coordinate::stringFromColumnIndex($colIndex) . $row, $nilai);
-                        // $colIndex++;
                         $skor = $assessment['nilai'] ?? 0;
                     }
                     $grade = $this->calculateGradeBatch($p['nilai'] ?? 0);
 
-                    $sheet->setCellValue(Coordinate::stringFromColumnIndex($colIndex) . $row, $grade);
-                    $colIndex++;
-
                     $sheet->setCellValue(Coordinate::stringFromColumnIndex($colIndex) . $row, $p['nilai'] ?? '-');
                     $colIndex++;
 
-                    // Set absen
-                    $izin = $p['permit'] ?? 0;
-                    $sakit = $p['sick'] ?? 0;
-                    $mangkir = $p['absent'] ?? 0;
-                    $cuti = $p['leave'] ?? 0;
-                    $totalAbsen = ($sakit * 1) + ($izin * 2) + ($mangkir * 3);
-                    // $kehadiran = 100 - $totalAbsen;
-
-                    //Set Persentase Kehadiran
-                    $start_date = new \DateTime($bulan['start_date']);
-                    $end_date = new \DateTime($bulan['end_date']);
-                    $selisih = $start_date->diff($end_date);
-                    $totalHari = $selisih->days + 1; // +1 untuk menyertakan hari pertama
-                    $jmlLibur = $bulan['holiday'];
-                    $persentaseKehadiran = (($totalHari - $jmlLibur - $totalAbsen) / ($totalHari - $jmlLibur)) * 100;
-
-                    // =IF(BW9<0.94,"-1",IF(BW9>0.93,"0"))
-                    $accumulasi = $persentaseKehadiran < 94 ? -1 : 0;
-
-
-                    // hasil akhir = skor + accumulasi
-                    $hasil_akhir = $skor + $accumulasi;
-                    $grade_akhir = $this->calculateGradeBatch($hasil_akhir);
-                    // Update grade akhir ke database
-                    // $this->penilaianmodel->updateGradeAkhir($p['karyawan_id'], $p['id_periode'], $grade_akhir);
-
-                    // $tracking = $previous_grade . $grade_akhir;
-
-                    $sheet->setCellValue(Coordinate::stringFromColumnIndex($colIndex) . $row, $sakit);
-                    $colIndex++;
-                    $sheet->setCellValue(Coordinate::stringFromColumnIndex($colIndex) . $row, $izin);
-                    $colIndex++;
-                    $sheet->setCellValue(Coordinate::stringFromColumnIndex($colIndex) . $row, $mangkir);
+                    $sheet->setCellValue(Coordinate::stringFromColumnIndex($colIndex) . $row, $grade);
                     $colIndex++;
 
-                    //jml hari tidak masuk kerja
-                    $sheet->setCellValue(Coordinate::stringFromColumnIndex($colIndex) . $row, $totalAbsen);
-                    $colIndex++;
-                    //persentase kehadiran
-                    $sheet->setCellValue(Coordinate::stringFromColumnIndex($colIndex) . $row, round($persentaseKehadiran) . '%'); // Tambahkan , 2 jika ingin menampilkan desimal
-                    $colIndex++;
-                    //accumulasi absensi
-                    $sheet->setCellValue(Coordinate::stringFromColumnIndex($colIndex) . $row, $accumulasi);
-                    $colIndex++;
-                    //grade akhir
-                    $sheet->setCellValue(Coordinate::stringFromColumnIndex($colIndex) . $row, '-');
-                    $colIndex++;
+
                     //tracking
-                    $sheet->setCellValue(Coordinate::stringFromColumnIndex($colIndex) . $row, '-');
-                    // $colIndex++;
+                    $sheet->setCellValue(Coordinate::stringFromColumnIndex($colIndex) . $row, $this->calculateGradeBatch($p['previous_performance_score'] ?? '-') . $grade);
 
-                    $jobdescArr = json_decode($p['jobdesc'] ?? '[]', true);
-                    if (!is_array($jobdescArr)) {
-                        $jobdescArr = [$jobdescArr];
-                    }
-                    $nilaiArr = json_decode($p['bobot_nilai'] ?? '[]', true);
-                    if (!is_array($nilaiArr)) {
-                        $nilaiArr = [$nilaiArr];
-                    }
-                    $jobdescArr = array_values($jobdescArr);
-                    $nilaiArr   = array_values($nilaiArr);
-
-                    // filter hanya yang nilai ≤ 4
-                    $failJobdesc = [];
-                    $failNilai   = [];
-                    foreach ($nilaiArr as $i => $val) {
-                        if ($val > 0 && $val < 4) {
-                            // Sekarang $jobdescArr[$i] pasti ada
-                            $failJobdesc[] = $jobdescArr[$i] ?? '(tidak ada)';
-                            $failNilai[]   = $val;
-                        }
-                    }
-
-                    // if ($grade_akhir === 'D' && ! empty($failJobdesc)) {
-                    //     $bagian = getMainBagian($p['main_job_role_name']);
-                    //     if (! isset($gradeDPerBagian[$bagian])) {
-                    //         $gradeDPerBagian[$bagian] = [];
-                    //     }
-
-                    //     $entry = [
-                    //         'no'            => $no - 1,
-                    //         'employee_code'    => $p['employee_code'],
-                    //         'employee_name' => $p['employee_name'],
-                    //         'izin'          => $p['izin']      ?? 0,
-                    //         'sakit'         => $p['sakit']     ?? 0,
-                    //         'mangkir'       => $p['mangkir']   ?? 0,
-                    //         'accumulasi'    => $accumulasi,
-                    //         'grade_akhir'   => $grade_akhir,
-                    //         'failJobdesc'   => $failJobdesc,
-                    //         'failNilai'     => $failNilai,
-                    //     ];
-
-                    //     switch ($bagian) {
-                    //         case 'OPERATOR':
-                    //             $entry['prod_op'] = $p['prod_op'] ?? 0;
-                    //             $entry['bs_mc']   = $p['bs_mc']   ?? 0;
-                    //             break;
-                    //         case 'ROSSO':
-                    //             $entry['prod_rosso'] = $p['prod_rosso'] ?? 0;
-                    //             $entry['perb_rosso'] = $p['perb_rosso'] ?? 0;
-                    //             break;
-                    //         case 'MONTIR':
-                    //             $entry['used_needle'] = $p['used_needle'] ?? 0;
-                    //             break;
-                    //     }
-
-                    //     $gradeDPerBagian[$bagian][] = $entry;
-                    // }
 
                     //style from array
                     $sheet->getStyle('A' . $row . ':' . Coordinate::stringFromColumnIndex($colIndex) . $row)->applyFromArray([
@@ -517,6 +361,7 @@ class PerformanceAssessmentsController extends BaseController
                 $sheet->getColumnDimension($column->getColumnIndex())->setAutoSize(true);
             }
         }
+        // dd ($uniqueSheets, $reportbatch, $dataByShift, $dataFiltered, $grouped);
 
         // dd($shift, $karyawan);
         // sheet baru untuk report tracking
@@ -612,11 +457,10 @@ class PerformanceAssessmentsController extends BaseController
                 'date_of_joining' => $p['date_of_joining'],
                 'main_job_role_name' => $p['main_job_role_name'],
                 'factory_name' => $p['factory_name'],
-                'nilai' => $p['nilai'],
+                'previous_performance_score' => $p['previous_performance_score'] ?? null,
+                'nilai' => $p['performance_score'],
                 // 'grade_akhir' => $p['grade_akhir'],
                 // 'previous_grade' => $p['previous_grade'],
-                'description' => json_decode($p['description'], true),
-                'jobdescription' => json_decode($p['jobdescription'], true),
             ];
         }
 
@@ -653,11 +497,26 @@ class PerformanceAssessmentsController extends BaseController
         });
 
         // Reorganize sorted data back by grade
+        $gradeDPerBagian = []; // key = main_job_role_name
         $dataByGrade = [];
-        foreach ($sortedData as $sortedEmployee) {
-            $dataByGrade[$sortedEmployee['employee_code']] = $sortedEmployee;
+        foreach ($grouped as $key => $p) {
+            $dataByGrade[] = [
+                'employee_code'    => $p['employee_code'],
+                'employee_name'    => $p['employee_name'],
+                'shift'            => $p['shift'],
+                'main_job_role_name' => $p['main_job_role_name'],
+                'score'            => $p['nilai'],
+                'id_assessment'    => $p['id_periode'], // simpan id_periode
+                'gender'           => $p['gender'] ?? '',
+                'date_of_joining'  => $p['date_of_joining'] ?? '',
+                'factory_name'     => $p['factory_name'] ?? '',
+                'previous_performance_score' => $p['previous_performance_score'] ?? null,
+                'nilai'            => $p['nilai'],
+                'assessments'      => $p['assessments'],
+                'periode_name'     => $p['periode_name'] ?? '',
+            ];
         }
-        // dd($dataByGrade);
+        // dd($dataByGrade[200]['assessments']);
         // Tulis Data Karyawan Berdasarkan Shift
         $row = 7;
 
@@ -676,8 +535,8 @@ class PerformanceAssessmentsController extends BaseController
             }
 
             // set tracking
-            // $tracking = $p['previous_grade'] . $p['grade_akhir'];
-            // $sheet->setCellValue('I' . $row, $tracking);
+            $tracking = $this->calculateGradeBatch($p['previous_performance_score'] ?? '-') . $this->calculateGradeBatch($p['nilai'] ?? 0);
+            $sheet->setCellValue('I' . $row, $tracking);
 
             //style from array
             $sheet->getStyle('A' . $row . ':I' . $row)->applyFromArray([
@@ -713,96 +572,154 @@ class PerformanceAssessmentsController extends BaseController
 
         // Set wrap text
         $sheet->getStyle('A' . $row . ':I' . $row)->getAlignment()->setWrapText(true);
+        // Set auto-size untuk semua kolom
+        foreach ($sheet->getColumnIterator() as $column) {
+            $sheet->getColumnDimension($column->getColumnIndex())->setAutoSize(true);
+        }
 
-        // //Sheet Grade D
-        // foreach ($gradeDPerBagian as $bagian => $dataKaryawan) {
-        //     // Buat sheet baru
-        //     $sheet = $spreadsheet->createSheet();
-        //     $sheet->setTitle(substr($bagian, 0, 31) . ' Grade D'); // Maks 31 karakter
+        //Sheet Grade D
+        // dd ($dataByGrade);
+        $gradeD = [];
+        foreach ($dataByGrade as $item => $p) {
+            if ($p['nilai'] < 75) { // Grade D
+                $gradeD[] = [
+                    'kode_kartu' => $p['employee_code'],
+                    'nama_karyawan' => $p['employee_name'],
+                    'shift' => $p['shift'],
+                    'main_job_role_name' => $p['main_job_role_name'],
+                    'grade_akhir' => $this->calculateGradeBatch($p['nilai']),
+                    'failJobdesc' => [],
+                    'failDesc' => [],
+                    'failNilai' => [],
+                ];
+                // Tambahkan jobdesc dan nilai yang gagal
+                foreach ($p['assessments'] as $assessment) {
+                    if ($assessment['score'] < 75) { // Nilai gagal
+                        // jika nilai < 4 maka tambahkan ke failJobdesc dan failNilai
+                        $gradeD[count($gradeD) - 1]['failJobdesc'][] = $assessment['jobdescription'] ?? '(tidak ada jobdesc)';
+                        $gradeD[count($gradeD) - 1]['failDesc'][] = $assessment['description'] ?? '(tidak ada deskripsi)';
+                        $gradeD[count($gradeD) - 1]['failNilai'][] = $assessment['score'] ?? '-';
+                        // dd($gradeD[count($gradeD) - 1]['failJobdesc'], $gradeD[count($gradeD) - 1]['failNilai']);
+                        
+                    }
+                }
+                // Tambahkan ke gradeDPerBagian
+                $bagian = $p['main_job_role_name'];
+                if (!isset($gradeDPerBagian[$bagian])) {
+                    $gradeDPerBagian[$bagian] = [];
+                }
+                $gradeDPerBagian[$bagian][] = $gradeD[count($gradeD) - 1];
+            }
+        }
 
-        //     // Header
-        //     $headers = ['No', 'Kode Kartu', 'Nama Karyawan', 'Izin', 'Sakit', 'Mangkir', 'Akumulasi', 'Grade Akhir', 'Jobdesc', 'Nilai', 'Produksi', 'BS', 'Used Needle'];
-        //     $col = 'A';
-        //     foreach ($headers as $header) {
-        //         $sheet->setCellValue($col . '1', $header);
-        //         $col++;
-        //     }
-        //     // Style header 
-        //     $sheet->getStyle('A1:M1')->applyFromArray([
-        //         'font' => [
-        //             'bold' => true,
-        //             'name' => 'Times New Roman',
-        //             'size' => 11, // Sedikit lebih besar untuk header
-        //         ],
-        //         'borders' => [
-        //             'allBorders' => [
-        //                 'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
-        //             ],
-        //         ],
-        //         'alignment' => [
-        //             'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER, // Biar header tengah
-        //             'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER,
-        //         ],
-        //     ]);
+        // dd ($gradeD, $gradeDPerBagian);
+        foreach ($gradeDPerBagian as $bagian => $dataKaryawan) {
+            // Buat sheet baru
+            $sheet = $spreadsheet->createSheet();
+            $sheet->setTitle(substr($bagian, 0, 31) . ' Grade D'); // Maks 31 karakter
 
-        //     $row = 2; // Mulai dari baris ke-2
-        //     $no = 1;
-        //     foreach ($dataKaryawan as $karyawan) {
-        //         $failJobdescs = $karyawan['failJobdesc'];
-        //         $failNilais = $karyawan['failNilai'];
+            // Header
+            $headers = ['No', 'Kode Kartu', 'Nama Karyawan', 'Grade Akhir', 'Deskripsi', 'Jobdesc', 'Nilai'];
+            $col = 'A';
+            foreach ($headers as $header) {
+                $sheet->setCellValue($col . '1', $header);
+                $col++;
+            }
+            // Style header 
+            $sheet->getStyle('A1:G1')->applyFromArray([
+                'font' => [
+                    'bold' => true,
+                    'name' => 'Times New Roman',
+                    'size' => 11, // Sedikit lebih besar untuk header
+                ],
+                'borders' => [
+                    'allBorders' => [
+                        'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                    ],
+                ],
+                'alignment' => [
+                    'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER, // Biar header tengah
+                    'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER,
+                ],
+            ]);
 
-        //         $first = true; // Penanda untuk baris pertama karyawan
-        //         foreach ($failJobdescs as $i => $jobdesc) {
-        //             if ($first) {
-        //                 $sheet->setCellValue('A' . $row, $no++);
-        //                 $sheet->setCellValue('B' . $row, $karyawan['employee_code']);
-        //                 $sheet->setCellValue('C' . $row, $karyawan['employee_name']);
-        //                 $sheet->setCellValue('D' . $row, $karyawan['izin']);
-        //                 $sheet->setCellValue('E' . $row, $karyawan['sakit']);
-        //                 $sheet->setCellValue('F' . $row, $karyawan['mangkir']);
-        //                 $sheet->setCellValue('G' . $row, $karyawan['accumulasi']);
-        //                 $sheet->setCellValue('H' . $row, $karyawan['grade_akhir']);
-        //                 $sheet->setCellValue('K' . $row, $karyawan['prod_op'] ?? $karyawan['prod_rosso'] ?? '');
-        //                 $sheet->setCellValue('L' . $row, $karyawan['bs_mc'] ?? $karyawan['perb_rosso'] ?? '');
-        //                 $sheet->setCellValue('M' . $row, $karyawan['used_needle'] ?? '');
+            $row = 2; // Mulai dari baris ke-2
+            $no = 1;
+            foreach ($dataKaryawan as $karyawan) {
+                // Filter failJobdesc dan failNilai hanya jika failNilai < 4
+                $failJobdescs = [];
+                $failNilais = [];
+                $failDesc = [];
+                foreach ($karyawan['failNilai'] as $i => $nilai) {   
+                    if ($nilai < 4) {
+                        $failJobdescs[] = $karyawan['failJobdesc'][$i] ?? '';
+                        $failNilais[] = $nilai;
+                        $failDesc[] = $karyawan['failDesc'][$i] ?? '';
+                    }
+                }
 
-        //                 $first = false;
-        //             }
+                $first = true; // Penanda untuk baris pertama karyawan
+                foreach ($failJobdescs as $i => $jobdesc) {
+                    if ($first) {
+                        // Merge cell A, B, C jika ada lebih dari satu failJobdesc
+                        if (count($failJobdescs) > 1) {
+                            $sheet->mergeCells('A' . $row . ':A' . ($row + count($failJobdescs) - 1));
+                            $sheet->mergeCells('B' . $row . ':B' . ($row + count($failJobdescs) - 1));
+                            $sheet->mergeCells('C' . $row . ':C' . ($row + count($failJobdescs) - 1));
+                            $sheet->mergeCells('D' . $row . ':D' . ($row + count($failJobdescs) - 1));
+                        }
+                        $sheet->setCellValue('A' . $row, $no++);
+                        $sheet->setCellValue('B' . $row, $karyawan['kode_kartu']);
+                        $sheet->setCellValue('C' . $row, $karyawan['nama_karyawan']);
+                        $sheet->setCellValue('D' . $row, $karyawan['grade_akhir']);
 
-        //             // Kolom Jobdesc dan Nilai
-        //             $sheet->setCellValue('I' . $row, $jobdesc);
-        //             $sheet->setCellValue('J' . $row, $failNilais[$i] ?? '-');
+                        $first = false;
+                    }
 
-        //             // Apply style untuk setiap baris
-        //             $sheet->getStyle('A' . $row . ':M' . $row)->applyFromArray([
-        //                 'font' => ['name' => 'Times New Roman', 'size' => 10],
-        //                 'borders' => ['allBorders' => ['borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN]],
-        //             ]);
+                    // Jika deskripsi sama dengan baris sebelumnya, merge cell F
+                    if ($i > 0 && $failDesc[$i] === $failDesc[$i - 1]) {
+                        // Merge cell F dari baris sebelumnya ke baris sekarang
+                        $sheet->mergeCells('E' . ($row - 1) . ':E' . $row);
+                        // Kosongkan cell F pada baris ini agar tidak double value
+                        $sheet->setCellValue('E' . $row, '');
+                    } else {
+                        $sheet->setCellValue('E' . $row, $failDesc[$i] ?? '-');
+                    }
+                    // Kolom Jobdesc dan Nilai
+                    $sheet->setCellValue('F' . $row, $jobdesc);
+                    $sheet->setCellValue('G' . $row, $failNilais[$i] ?? '-');
 
-        //             $row++;
-        //         }
-        //     }
+                    // Apply style untuk setiap baris
+                    $sheet->getStyle('A' . $row . ':G' . $row)->applyFromArray([
+                        'font' => ['name' => 'Times New Roman', 'size' => 10],
+                        'borders' => ['allBorders' => ['borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN]],
+                    ]);
 
-        //     // Setelah semua data karyawan dimasukkan, baru set auto-size untuk semua kolom
-        //     foreach (range('A', 'M') as $columnID) {
-        //         $sheet->getColumnDimension($columnID)->setAutoSize(true);
-        //     }
+                    $row++;
+                }
+            }
 
-        //     $lastRow = $row - 1;
+            // Setelah semua data karyawan dimasukkan, baru set auto-size untuk semua kolom
+            foreach (range('A', 'G') as $columnID) {
+                $sheet->getColumnDimension($columnID)->setAutoSize(true);
+            }
 
-        //     // Kolom-kolom yang ingin di-center
-        //     $columnsToCenter = ['A', 'B', 'D', 'E', 'F', 'G', 'H', 'J', 'K', 'L', 'M'];
+            $lastRow = $row - 1;
 
-        //     foreach ($columnsToCenter as $colID) {
-        //         $sheet->getStyle("{$colID}2:{$colID}{$lastRow}")
-        //             ->getAlignment()
-        //             ->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER)
-        //             ->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER);
-        //     }
-        // }
+            // Kolom-kolom yang ingin di-center
+            $columnsToCenter = ['A', 'B','C', 'D', 'E', 'F', 'G'];
+
+            foreach ($columnsToCenter as $colID) {
+                $sheet->getStyle("{$colID}2:{$colID}{$lastRow}")
+                    ->getAlignment()
+                    ->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER)
+                    ->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER);
+            }
+        }
+
 
         // Simpan file Excel
-        $filename = 'Report_Penilaian-' . $main_factory . '-' . date('m-d-Y') . '.xlsx';
+        $filename = 'Report_Penilaian-' . $main_factory . '-' . $batch_name . '-' . $periode_name . '-' . date('Y-m-d') . '.xlsx';
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         header('Content-Disposition: attachment;filename="' . $filename . '"');
         header('Cache-Control: max-age=0');
@@ -827,11 +744,16 @@ class PerformanceAssessmentsController extends BaseController
 
     public function reportAreaperBatch($main_factory)
     {
+        // dd ($main_factory);
         if ($main_factory === 'all') {
             $batch = $this->paModel->getBatchName();
+            foreach ($batch as $key => $b) {
+                $batch[$key]['main_factory'] = $b['main_factory'] ?? 'all';
+            }
         } else {
             $batch = $this->paModel->getBatchNameByMainFactory($main_factory);
         }
+        // dd ($batch);
         $data = [
             'role' => session()->get('role'),
             'title' => 'Report Batch',
@@ -852,9 +774,10 @@ class PerformanceAssessmentsController extends BaseController
     }
 
 
-    public function exelReportBatch($id_batch,$main_factory)
+    public function exelReportBatch($id_batch, $main_factory)
     {
-        $reportbatch = $this->paModel->getReportBatch($id_batch,$main_factory);
+        $reportbatch = $this->paModel->getReportBatch($id_batch, $main_factory);
+        // dd ($reportbatch);
         // get batch name
         $batch = $this->batchModel->select('batch_name')
             ->where('id_batch', $id_batch)
@@ -864,7 +787,7 @@ class PerformanceAssessmentsController extends BaseController
             session()->setFlashdata('error', 'Tidak ada data penilaian untuk periode ini.');
             return redirect()->back();
         }
-        
+
         // dd($reportbatch);
         // Buat Spreadsheet baru
         $spreadsheet = new Spreadsheet();
@@ -887,7 +810,7 @@ class PerformanceAssessmentsController extends BaseController
         $sheet->mergeCells('E3:E4')->setCellValue('E3', 'L/P');
         $sheet->mergeCells('F3:F4')->setCellValue('F3', 'TGL. MASUK KERJA');
         $sheet->mergeCells('G3:G4')->setCellValue('G3', 'BAGIAN');
-        
+
         $sheet->mergeCells('H3:J3')->setCellValue('H3', 'Bulan');
         // header bulan per batch
         $bulan = $this->batchModel->getBulanPerBatch($id_batch);
@@ -897,7 +820,7 @@ class PerformanceAssessmentsController extends BaseController
             $b['bulan'] = date('F', mktime(0, 0, 0, $b['bulan'], 1)); // Mengubah angka bulan menjadi nama bulan
             $sheet->setCellValue(Coordinate::stringFromColumnIndex($currentCol) . '4', $b['bulan']);
             $currentCol++;
-        }   
+        }
 
         $filename = 'Report_Batch_' . $main_factory . '_' . date('m-d-Y') . '.xlsx';
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
@@ -907,104 +830,7 @@ class PerformanceAssessmentsController extends BaseController
         $writer = new Xlsx($spreadsheet);
         $writer->save('php://output');
         exit();
-        
     }
-
-    // public function fetchDataFinalAssesment()
-    // {
-    //     $id_batch       = $this->request->getPost('id_batch');
-    //     // dd ($id_batch);
-    //     $main_factory   = $this->request->getPost('main_factory');
-    //     // $aspects        = $this->evaluationAspectModel->select('department')->groupBy('department')->findAll();
-    //     // $aspects = array_column($aspects, 'department');
-    //     $aspects = ['ROSSO', 'MONTIR', 'OPERATOR', 'SEWING'];
-
-    //     $jobdesc       = $this->jobdesc($id_batch, $main_factory);              // sudah pakai aspek di dalamnya
-    //     $absen         = $this->scorePresence($id_batch, $main_factory);
-    //     $productivity  = $this->productivity($id_batch, $main_factory);
-    //     $rossoScores   = $this->getProductivityRosso($id_batch, $main_factory);
-    //     $needleBonuses = $this->usedNeedle($id_batch, $main_factory);
-    //     // 4. Gabungkan data
-    //     $final = [];
-
-    //     foreach ($absen as $key => $p) {
-    //         // pastikan kunci ada di semua set
-    //         $j   = $jobdesc[$key]       ?? ['score_jobdesc' => 0, 'scoreJobdesc6s' => 0, 'id_main_job_role' => null, 'id_periode' => null, 'main_job_role_name' => null];
-    //         $pr  = $productivity[$key]  ?? ['score_productivity' => 0];
-    //         $rs  = $rossoScores[$key]   ?? ['score_rosso' => 0];
-    //         $nb  = $needleBonuses[$key] ?? ['group' => 0];
-
-    //         // hanya ambil yang punya id_main_job_role (valid)
-    //         if (empty($j['id_main_job_role'])) {
-    //             continue;
-    //         }
-
-    //         $final[$key] = [
-    //             'id_employee'        => $p['id_employee'],
-    //             'id_main_job_role'   => $j['id_main_job_role'],
-    //             'id_periode'         => $j['id_periode'],
-    //             // 'main_job_role_name' => $j['main_job_role_name'],
-    //             'score_presence'      => $p['score_absensi']      ?? 0,
-    //             'score_performance_job'      => $j['score_jobdesc'],
-    //             'score_performance_6s'     => $j['scoreJobdesc6s'],
-    //             'score_productivity'      => ($pr['score_productivity'] ?? 0) + ($rs['score_rosso'] ?? 0) + ($nb['group'] ?? 0),
-    //         ];
-    //     }
-    //     // dd ($final);
-    //     // Setelah foreach selesai
-    //     if (!empty($final)) {
-    //         $finalInsert = [];
-    //         $duplicateData = []; // <- Tambahan untuk nyimpan yang duplikat
-    //         $uniquePeriode = array_unique(array_column($final, 'id_periode'));
-
-    //         $existingData = $this->finalAssssmentModel
-    //             ->select(['id_employee', 'id_main_job_role', 'id_periode'])
-    //             ->whereIn('id_periode', $uniquePeriode)
-    //             ->whereIn('id_employee', array_column($final, 'id_employee'))
-    //             ->findAll();
-
-    //         $existingKeys = [];
-    //         foreach ($existingData as $row) {
-    //             $key = (string)$row['id_employee'] . '_' . (string)$row['id_main_job_role'] . '_' . (string)$row['id_periode'];
-    //             $existingKeys[$key] = true;
-    //         }
-
-    //         foreach ($final as $row) {
-    //             $key = (string)$row['id_employee'] . '_' . (string)$row['id_main_job_role'] . '_' . (string)$row['id_periode'];
-
-    //             if (!isset($existingKeys[$key])) {
-    //                 $finalInsert[] = $row;
-    //             } else {
-    //                 $duplicateData[] = $key; // <- Simpan duplikat
-    //             }
-    //         }
-
-    //         if (!empty($finalInsert)) {
-    //             $db = \Config\Database::connect();
-    //             $db->transStart();
-    //             $this->finalAssssmentModel->insertBatch($finalInsert);
-    //             $db->transComplete();
-
-    //             if ($db->transStatus() === false) {
-    //                 session()->setFlashdata('error', 'Gagal menyimpan data final assessment.');
-    //             } else {
-    //                 $successMsg = 'Data final assessment berhasil disimpan. Jumlah: ' . count($finalInsert);
-    //                 if (!empty($duplicateData)) {
-    //                     $successMsg .= '. Duplikat yang dilewati: ' . count($duplicateData);
-    //                     // Jika ingin detailnya:
-    //                     $successMsg .= '. Duplikat: ' . implode(', ', $duplicateData);
-    //                 }
-    //                 session()->setFlashdata('success', $successMsg);
-    //             }
-    //         } else {
-    //             session()->setFlashdata('error', 'Semua data sudah ada, tidak ada data baru yang disimpan. Total duplikat: ' . count($duplicateData));
-    //         }
-
-    //         return redirect()->to(base_url($this->role . '/reportBatch/' . $main_factory));
-    //     }
-    //     session()->setFlashdata('error', 'Tidak ada data final assessment yang bisa disimpan.');
-    //     return redirect()->to(base_url($this->role . '/reportBatch/' . $main_factory)); 
-    // }
 
     private function scorePresence($id_batch, $main_factory)
     {
@@ -1055,7 +881,7 @@ class PerformanceAssessmentsController extends BaseController
 
             // 2.e) Terapkan bobot absensi (30%)
             $scoreAbsensiRaw    = $pctHadir;
-            $scoreAbsensi       = $pctHadir * 0.30;
+            $scoreAbsensi       = $pctHadir * 0.35;
 
             // Simpan hasilnya
             $presence[$key] = [
@@ -1063,6 +889,9 @@ class PerformanceAssessmentsController extends BaseController
                 'employee_code'      => $a['employee_code'],
                 'employee_name'      => $a['employee_name'],
                 'id_periode'         => $a['id_periode'],
+                'id_factory'         => $a['id_factory_old'],
+                'id_job_section'     => $a['id_job_section_old'],
+                'job_section_name'   => $a['job_section_name'],
                 'score_absensi'        => round($scoreAbsensi, 2),
             ];
         }
@@ -1076,10 +905,10 @@ class PerformanceAssessmentsController extends BaseController
     {
         // 1. Mapping bobot per aspek (jobdesc & jobdesc6s)
         $aspectWeights = [
-            'ROSSO'    => ['jobdesc' => 0.15, 'jobdesc6s' => 0.15],
-            'MONTIR'   => ['jobdesc' => 0.50, 'jobdesc6s' => 0.15],
-            'OPERATOR' => ['jobdesc' => 0.15, 'jobdesc6s' => 0.15],
-            'SEWING'   => ['jobdesc' => 0.45, 'jobdesc6s' => 0.25],
+            'ROSSO'    => ['jobdesc' => 0.35, 'jobdesc6s' => 0.15],
+            'MONTIR'   => ['jobdesc' => 0.45, 'jobdesc6s' => 0.15],
+            'OPERATOR' => ['jobdesc' => 0.35, 'jobdesc6s' => 0.15],
+            'SEWING'   => ['jobdesc' => 0.45, 'jobdesc6s' => 0.20],
         ];
 
         // 2. Ambil data jobdesc sesuai aspek-aspek di atas
@@ -1112,9 +941,11 @@ class PerformanceAssessmentsController extends BaseController
 
             // 4. Simpan hasil dengan pembulatan 2 desimal
             $jobdesc[$key] = [
+                'id_employee'        => $jd['id_employee'],
                 'employee_code'      => $jd['employee_code'],
                 'employee_name'      => $jd['employee_name'],
                 'id_periode'         => $jd['id_periode'],
+                'id_factory'       => $jd['id_factory'], // Tambahkan id_factory jika ada
                 'id_main_job_role' => $jd['id_main_job_role'] ?? '', // Tambahkan id_main_job_role jika ada
                 'main_job_role_name' => $roleRaw,
                 'score_jobdesc'      => round($scoreJobdesc, 2),
@@ -1138,6 +969,7 @@ class PerformanceAssessmentsController extends BaseController
 
             $prodTotal = $pd['total_produksi'] ?? 0;
             $bsTotal = $pd['total_bs'] ?? 0;
+            
 
             $productivityRaw = 0;
             if ($prodTotal > 0) {
@@ -1149,7 +981,7 @@ class PerformanceAssessmentsController extends BaseController
             }
 
             // Terapkan bobot produktivitas (40%)
-            $scoreProductivity = $productivityRaw * 0.40;
+            $scoreProductivity = $productivityRaw * 0.15;
 
             // Simpan hasilnya
             $productivity[$key] = [
@@ -1161,7 +993,8 @@ class PerformanceAssessmentsController extends BaseController
         }
         return $productivity;
         // Contoh dump hasil
-        // dd($productivity);
+        // dd($productivity, $prodTotal , $bsTotal , $prodTotal, $productivityData);
+
     }
 
     private function getProductivityRosso($id_batch, $main_factory)
@@ -1186,7 +1019,7 @@ class PerformanceAssessmentsController extends BaseController
                 $nilaiRosso = 0;
             }
             // Terapkan bobot rosso (40%)
-            $scoreRosso = $nilaiRosso * 0.40;
+            $scoreRosso = $nilaiRosso * 0.15;
 
             // Simpan hasilnya
             $rosso[$key] = [
@@ -1238,7 +1071,7 @@ class PerformanceAssessmentsController extends BaseController
 
             // Hitung skor
             // $score = $raw * ($percent / 100);
-            
+
 
             $usedNeedle[$key] = [
                 'id_employee'        => $un['id_employee'],
@@ -1269,7 +1102,7 @@ class PerformanceAssessmentsController extends BaseController
         $productivityRaw  = $this->productivity($id_batch, $main_factory);
         $rossoScoresRaw   = $this->getProductivityRosso($id_batch, $main_factory);
         $needleBonusesRaw = $this->usedNeedle($id_batch, $main_factory);
-
+        // dd ($jobdescRaw, $absenRaw, $productivityRaw, $rossoScoresRaw, $needleBonusesRaw);
         $final = [];
         $incompleteData = [];
 
@@ -1283,12 +1116,14 @@ class PerformanceAssessmentsController extends BaseController
             $pr_raw = $productivityRaw[$key]  ?? [];
             $rs_raw = $rossoScoresRaw[$key]   ?? [];
             $nb_raw = $needleBonusesRaw[$key] ?? [];
+            $section = strtoupper($j_raw['main_job_role_name']); // misal ada kolom ini
+
 
             // Cek missing sebelum defaulting:
             $missingFields = [];
 
             if (! array_key_exists('score_absensi', $p)) {
-                $missingFields[] = 'score_presence';
+                $missingFields[] = 'score_absensi';
             }
             if (! array_key_exists('score_jobdesc', $j_raw)) {
                 $missingFields[] = 'score_performance_job';
@@ -1296,31 +1131,38 @@ class PerformanceAssessmentsController extends BaseController
             if (! array_key_exists('scoreJobdesc6s', $j_raw)) {
                 $missingFields[] = 'score_performance_6s';
             }
-            // Untuk productivity: butuh minimal satu kunci dari ketiga sumber
-            if (
-                ! array_key_exists('score_productivity', $pr_raw)
-                && ! array_key_exists('score_rosso', $rs_raw)
-                && ! array_key_exists('group', $nb_raw)
-            ) {
-                $missingFields[] = 'score_productivity';
+            // **Hanya cek productivity kalau bukan SEWING**
+            if ($section !== 'SEWING') {
+                if (
+                    ! array_key_exists('score_productivity', $pr_raw)
+                    && ! array_key_exists('score_rosso', $rs_raw)
+                    && ! array_key_exists('group', $nb_raw)
+                ) {
+                    $missingFields[] = 'score_productivity';
+                }
             }
 
             // Simpan detail missing (jika ada)
             if (! empty($missingFields)) {
                 $incompleteData[] = [
                     'id_employee'      => $p['id_employee'],
+                    'employee_code'    => $p['employee_code'],
+                    'job_section_name' => $p['job_section_name'],
                     'id_main_job_role' => $j_raw['id_main_job_role'],
                     'id_periode'       => $j_raw['id_periode'],
+                    'id_factory'      => $j_raw['id_factory'] ?? $p['id_factory'], // gunakan id_factory dari jobdesc jika ada
                     'missing'          => $missingFields,
                 ];
             }
 
             // Setelah pengecekan, kita berikan default jika memang key tidak ada
             $j = [
+                'id_employee'        => $p['id_employee'],
                 'score_jobdesc'      => $j_raw['score_jobdesc']      ?? 0,
                 'scoreJobdesc6s'     => $j_raw['scoreJobdesc6s']     ?? 0,
                 'id_main_job_role'   => $j_raw['id_main_job_role'], // sudah pasti ada karena kita cek di atas
                 'id_periode'         => $j_raw['id_periode'],
+                'id_factory'        => $j_raw['id_factory'] ?? $p['id_factory'], // gunakan id_factory dari jobdesc jika ada
             ];
             $pr = ['score_productivity' => $pr_raw['score_productivity'] ?? 0];
             $rs = ['score_rosso'       => $rs_raw['score_rosso']       ?? 0];
@@ -1331,13 +1173,14 @@ class PerformanceAssessmentsController extends BaseController
                 'id_employee'           => $p['id_employee'],
                 'id_main_job_role'      => $j['id_main_job_role'],
                 'id_periode'            => $j['id_periode'],
-                'score_presence'        => $p['score_absensi'] ?? 0,
+                'id_factory'           => $j['id_factory'], // gunakan id_factory dari jobdesc jika ada
+                'score_presence'        => $p['score_absensi'],
                 'score_performance_job' => $j['score_jobdesc'],
                 'score_performance_6s'  => $j['scoreJobdesc6s'],
                 'score_productivity'    => $pr['score_productivity'] + $rs['score_rosso'] + $nb['group'],
             ];
         }
-
+        // log_message('debug', 'Final assessment data: ' . print_r($final, true));
         // Jika final kosong, langsung redirect dengan error
         if (empty($final)) {
             session()->setFlashdata('error', 'Tidak ada data final assessment yang bisa disimpan.');
@@ -1387,7 +1230,7 @@ class PerformanceAssessmentsController extends BaseController
         // Mulai transaksi DB
         $db = \Config\Database::connect();
         $db->transStart();
-
+        // log_message('debug', 'Final assessment insert: ' . print_r($finalInsert, true));
         if (! empty($finalInsert)) {
             $this->finalAssssmentModel->insertBatch($finalInsert);
         }
@@ -1420,74 +1263,16 @@ class PerformanceAssessmentsController extends BaseController
         if (! empty($incompleteData)) {
             $msg = "Data tidak lengkap:\n";
             foreach ($incompleteData as $incomplete) {
-                $msg .= "- ID Employee: {$incomplete['id_employee']}, Job Role: {$incomplete['id_main_job_role']}, Periode: {$incomplete['id_periode']} => Missing: "
+                $msg .= "- ID Employee: {$incomplete['id_employee']}, employee_code: {$incomplete['employee_code']}, " . "Job Section: {$incomplete['job_section_name']}, " . " Periode: {$incomplete['id_periode']} => Missing: "
                     . implode(', ', $incomplete['missing']) . "\n";
             }
-            // log_message('warning', $msg);
-            // session()->setFlashdata('warning', nl2br(esc($msg)));
+            // log_message('debug', 'Missing fields: ' . $msg);
+            session()->setFlashdata('warning', nl2br(esc($msg)));
         }
 
         return redirect()->to(base_url($this->role . '/reportBatch/' . $main_factory));
     }
 
-
-
-    // public function finalAssesment($id_batch, $main_factory)
-    // {
-    //     $reportbatch = $this->finalAssssmentModel->getFinalAssessmentByBatch($id_batch, $main_factory);
-    //     if (empty($reportbatch)) {
-    //         session()->setFlashdata('error', 'Tidak ada data final assessment untuk periode ini.');
-    //         return redirect()->back();
-    //     }
-
-    //     $batch_name = $this->batchModel->select('batch_name')
-    //         ->where('id_batch', $id_batch)
-    //         ->first()['batch_name'] ?? '';
-
-    //     $nilaiAkhir = [];
-    //     foreach ($reportbatch as $rb) {
-    //         $key = $rb['employee_code'] . '-' . $rb['employee_name'] . '-' . $rb['id_periode'];
-    //         // Hitung nilai akhir
-    //         $nilaiAkhir[$key] = [
-    //             'id'          => $rb['id'],
-    //             'id_employee'        => $rb['id_employee'],
-    //             'id_main_job_role'   => $rb['id_main_job_role'],
-    //             'id_periode'         => $rb['id_periode'],
-    //             'employee_code'      => $rb['employee_code'],
-    //             'employee_name'      => $rb['employee_name'],
-    //             'score_presence'     => round($rb['score_presence'], 2),
-    //             'score_performance_job' => round($rb['score_performance_job'], 2),
-    //             'score_performance_6s'  => round($rb['score_performance_6s'], 2),
-    //             'score_productivity'    => round($rb['score_productivity'], 2),
-    //             'nilai_akhir' => round(
-    //                 $rb['score_presence'] +
-    //                 $rb['score_performance_job'] +
-    //                 $rb['score_performance_6s'] +
-    //                 $rb['score_productivity'], 2
-    //             ),
-    //         ];
-    //     }
-    //     // dd ($nilaiAkhir);
-    //     $data = [
-    //         'role' => session()->get('role'),
-    //         'title' => 'Final Assesment',
-    //         'active1' => '',
-    //         'active2' => '',
-    //         'active3' => '',
-    //         'active4' => '',
-    //         'active5' => '',
-    //         'active6' => '',
-    //         'active7' => '',
-    //         'active8' => '',
-    //         'active9' => 'active',
-    //         'main_factory' => $main_factory,
-    //         'id_batch' => $id_batch,
-    //         'reportbatch' => $nilaiAkhir,
-    //         'batch_name' => $batch_name
-    //     ];
-    //     // dd ($data['reportbatch']);
-    //     return view('penilaian/finalAssesment', $data);
-    // }
 
     public function finalAssesment($id_batch, $main_factory)
     {
@@ -1517,6 +1302,7 @@ class PerformanceAssessmentsController extends BaseController
             // Simpan setiap periode ke dalam key 'detail'
             $nilaiPerKaryawan[$empKey]['detail'][] = [
                 'id_periode'            => $rb['id_periode'],
+                'id_factory'           => $rb['id_factory'],
                 'periode_name'          => $rb['periode_name'],
                 'score_presence'        => round($rb['score_presence'], 2),
                 'score_performance_job' => round($rb['score_performance_job'], 2),
@@ -1536,7 +1322,8 @@ class PerformanceAssessmentsController extends BaseController
         $jsonDetail = [];
         foreach ($nilaiPerKaryawan as $key => &$karyawan) {
             $totalNilai    = 0;
-            $jumlahPeriode = count($karyawan['detail']);
+            // $jumlahPeriode = count($karyawan['detail']);
+            $jumlahPeriode = 3;
 
             foreach ($karyawan['detail'] as $det) {
                 $totalNilai += $det['nilai_akhir'];
@@ -1558,7 +1345,7 @@ class PerformanceAssessmentsController extends BaseController
             }
         }
         unset($karyawan); // lepaskan reference
-
+        // dd ($nilaiPerKaryawan);
         // Kirim data ke view, termasuk jsonDetail
         $data = [
             'role'         => session()->get('role'),
@@ -1581,6 +1368,7 @@ class PerformanceAssessmentsController extends BaseController
 
         return view('penilaian/finalAssesment', $data);
     }
+
 
     public function exportFinalAssessment()
     {
@@ -1610,27 +1398,27 @@ class PerformanceAssessmentsController extends BaseController
             $bulanUnik[$monthNum] = true;
         }
         $bulanUnik = array_keys($bulanUnik);
-        sort($bulanUnik, SORT_NUMERIC); // Urutkan ascending
+        sort($bulanUnik, SORT_NUMERIC);
 
         /**
          * 2. Mapping bulan → kolom Excel (H=8, I=9, dst.)
          */
         $mapBulan2Col  = [];
-        $currentColIdx = 8; // 8 → kolom “H”
+        $currentColIdx = 8; // kolom ke-8 = “H”
         foreach ($bulanUnik as $bln) {
             $mapBulan2Col[$bln] = $currentColIdx;
             $currentColIdx++;
         }
+        // Kolom terakhir (setelah semua bulan) untuk "NILAI AKHIR"
+        $lastColLetter = Coordinate::stringFromColumnIndex($currentColIdx);
 
         /**
          * 3. Build array grouping per karyawan
          */
         $dataForExport = [];
         foreach ($reportbatch as $rb) {
-            // Kunci composite: "kode-nama"
             $key = $rb['employee_code'] . '-' . $rb['employee_name'];
 
-            // Hitung nilai akhir baris ini
             $nilaiAkhir = round(
                 (float) ($rb['score_presence']        ?? 0)
                     + (float) ($rb['score_performance_job'] ?? 0)
@@ -1639,20 +1427,18 @@ class PerformanceAssessmentsController extends BaseController
                 2
             );
 
-            // Inisialisasi data karyawan jika belum ada
             if (!isset($dataForExport[$key])) {
                 $dataForExport[$key] = [
-                    'employee_code'        => $rb['employee_code'],
-                    'employee_name'        => $rb['employee_name'],
-                    'shift'                => $rb['shift']               ?? '',
-                    'gender'               => $rb['gender']              ?? '',
-                    'date_of_joining'      => $rb['date_of_joining']     ?? '',
-                    'main_job_role_name'   => $rb['main_job_role_name']  ?? '',
-                    'detail'               => [],
+                    'employee_code'       => $rb['employee_code'],
+                    'employee_name'       => $rb['employee_name'],
+                    'shift'               => $rb['shift']                ?? '',
+                    'gender'              => $rb['gender']               ?? '',
+                    'date_of_joining'     => $rb['date_of_joining']      ?? '',
+                    'main_job_role_name'  => $rb['main_job_role_name']   ?? '',
+                    'detail'              => [],
                 ];
             }
 
-            // Simpan nilai per‐bulan (berdasarkan end_date)
             $blnInt = intval(date('m', strtotime($rb['end_date'])));
             $dataForExport[$key]['detail'][$blnInt] = [
                 'nilai_akhir' => $nilaiAkhir,
@@ -1708,40 +1494,33 @@ class PerformanceAssessmentsController extends BaseController
             'KK11C',
             'KK11NS'
         ];
-        // Buat map: kode_kartu → index urutan
         $indexMap = array_flip($sortOrders);
 
-        // Ambil semua key composite ("kode-nama") dari dataForExport
         $orderedKeys = array_keys($dataForExport);
-
-        // Urutkan orderedKeys berdasarkan posisi employee_code dalam indexMap
         usort($orderedKeys, function ($aKey, $bKey) use ($dataForExport, $indexMap) {
             $codeA = $dataForExport[$aKey]['employee_code'];
             $codeB = $dataForExport[$bKey]['employee_code'];
 
-            // Extract prefix (letters only) from employee code
             preg_match('/^[A-Z]+/', $codeA, $matchA);
             preg_match('/^[A-Z]+/', $codeB, $matchB);
             $prefixA = $matchA[0] ?? '';
             $prefixB = $matchB[0] ?? '';
 
-            $idxA  = $indexMap[$prefixA] ?? PHP_INT_MAX;
-            $idxB  = $indexMap[$prefixB] ?? PHP_INT_MAX;
+            $idxA = $indexMap[$prefixA] ?? PHP_INT_MAX;
+            $idxB = $indexMap[$prefixB] ?? PHP_INT_MAX;
 
-            // Jika posisi sama (atau sama-sama tidak ada), fallback pakai urutan alfabet
             if ($idxA === $idxB) {
                 return strcmp($codeA, $codeB);
             }
             return $idxA <=> $idxB;
         });
 
-
         /**
          * 4. Group orderedKeys berdasarkan main_job_role_name
          */
         $groupedByRole = [];
         foreach ($orderedKeys as $compositeKey) {
-            $role = $dataForExport[$compositeKey]['main_job_role_name'] ?: 'NAMA_ROLL_TIDAK_DITENTUKAN';
+            $role = $dataForExport[$compositeKey]['main_job_role_name'] ?: 'UNKNOWN_ROLE';
             if (!isset($groupedByRole[$role])) {
                 $groupedByRole[$role] = [];
             }
@@ -1749,25 +1528,58 @@ class PerformanceAssessmentsController extends BaseController
         }
 
         /**
-         * 5. Buat spreadsheet & satu sheet per main_job_role_name
+         * 5. Grupkan juga berdasarkan grade (A, B, C, D)
+         *    A: >=90, B: >=80, C: >=70, D: <70
+         */
+        $gradeGroups = [
+            'Grade A' => [],
+            'Grade B' => [],
+            'Grade C' => [],
+            'Grade D' => [],
+        ];
+        foreach ($orderedKeys as $compositeKey) {
+            // Hitung rata-rata nilai akhir
+            $totalNilai = array_sum(array_column($dataForExport[$compositeKey]['detail'], 'nilai_akhir'));
+            // $countBulan  = count($dataForExport[$compositeKey]['detail']);
+            $countBulan = count($mapBulan2Col); // Jumlah bulan yang diharapkan
+            $avgNilai    = $countBulan > 0 ? ($totalNilai / $countBulan) : 0;
+
+            if ($avgNilai >= 90) {
+                $gradeGroups['Grade A'][] = $compositeKey;
+            } elseif ($avgNilai >= 85) {
+                $gradeGroups['Grade B'][] = $compositeKey;
+            } elseif ($avgNilai >= 75) {
+                $gradeGroups['Grade C'][] = $compositeKey;
+            } else {
+                $gradeGroups['Grade D'][] = $compositeKey;
+            }
+        }
+
+        /**
+         * 6. Buat spreadsheet & sheet per main_job_role_name, lalu sheet per Grade
          */
         $spreadsheet = new Spreadsheet();
-        $spreadsheet->removeSheetByIndex(0); // Hapus sheet default
+        // Hapus sheet default (sheet kosong) jika ada
+        if ($spreadsheet->getSheetCount() > 0) {
+            $spreadsheet->removeSheetByIndex(0);
+        }
 
         $sheetIndex = 0;
+
+        // 6a. Sheet untuk setiap main_job_role_name
         foreach ($groupedByRole as $roleName => $keysInRole) {
-            // Buat sheet baru
             $sheet = $spreadsheet->createSheet($sheetIndex);
-            // Batasi nama sheet menjadi maksimal 31 karakter (ketentuan Excel)
-            $safeTitle = substr(str_replace(['/', '\\', '?', '*', '[', ']'], '_', $roleName), 0, 31);
-            $sheet->setTitle($safeTitle);
+            $roleTitle = substr(str_replace(['/', '\\', '?', '*', '[', ']'], '_', $roleName), 0, 31);
+            $sheet->setTitle($roleTitle);
 
             // === HEADER UTAMA (Baris 1) ===
-            $lastColLetter = Coordinate::stringFromColumnIndex($currentColIdx);
             $sheet->mergeCells("A1:{$lastColLetter}1");
-            $sheet->setCellValue('A1', 'REPORT PENILAIAN '
-                . strtoupper($main_factory) . ' - ' . strtoupper($nameBatch)
-                . ' (' . strtoupper($roleName) . ')');
+            $sheet->setCellValue(
+                'A1',
+                'REPORT PENILAIAN ' . strtoupper($main_factory)
+                    . ' - ' . strtoupper($nameBatch)
+                    . ' (' . strtoupper($roleName) . ')'
+            );
             $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(16);
             $sheet->getStyle('A1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
             $sheet->getStyle('A1')->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
@@ -1795,10 +1607,7 @@ class PerformanceAssessmentsController extends BaseController
 
             foreach ($mapBulan2Col as $blnInt => $colIdx) {
                 $colLetter = Coordinate::stringFromColumnIndex($colIdx);
-                $sheet->setCellValue("{$colLetter}4", strtoupper(date(
-                    'M Y',
-                    mktime(0, 0, 0, $blnInt, 1)
-                )));
+                $sheet->setCellValue("{$colLetter}4", strtoupper(date('M Y', mktime(0, 0, 0, $blnInt, 1))));
             }
 
             $sheet->mergeCells("{$lastColLetter}3:{$lastColLetter}4");
@@ -1818,7 +1627,7 @@ class PerformanceAssessmentsController extends BaseController
                 ],
             ]);
 
-            // === LEBAR KOLOM ===
+            // Lebar kolom
             $sheet->getColumnDimension('A')->setWidth(5);
             $sheet->getColumnDimension('B')->setWidth(15);
             $sheet->getColumnDimension('C')->setWidth(25);
@@ -1830,12 +1639,11 @@ class PerformanceAssessmentsController extends BaseController
                 $sheet->getColumnDimension(Coordinate::stringFromColumnIndex($colIdx))->setWidth(15);
             }
 
-            // Format “TGL. MASUK KERJA”
+            // Format tanggal dan nilai akhir
             $lastRowRole = 5 + count($keysInRole) - 1;
             $sheet->getStyle("F5:F{$lastRowRole}")
                 ->getNumberFormat()
                 ->setFormatCode(NumberFormat::FORMAT_DATE_DDMMYYYY);
-            // Format “NILAI AKHIR”
             $sheet->getStyle("{$lastColLetter}5:{$lastColLetter}{$lastRowRole}")
                 ->getNumberFormat()
                 ->setFormatCode(NumberFormat::FORMAT_NUMBER_00);
@@ -1845,31 +1653,25 @@ class PerformanceAssessmentsController extends BaseController
             foreach ($keysInRole as $compositeKey) {
                 $empData = $dataForExport[$compositeKey];
 
-                // Kolom A: NO
+                // NO
                 $sheet->setCellValue("A{$rowIndex}", $rowIndex - 4);
-
-                // Kolom B: KODE KARTU
+                // KODE KARTU
                 $sheet->setCellValue("B{$rowIndex}", $empData['employee_code']);
-
-                // Kolom C: NAMA KARYAWAN
+                // NAMA KARYAWAN
                 $sheet->setCellValue("C{$rowIndex}", $empData['employee_name']);
-
-                // Kolom D: SHIFT
+                // SHIFT
                 $sheet->setCellValue("D{$rowIndex}", $empData['shift']);
-
-                // Kolom E: L/P
+                // L/P
                 $sheet->setCellValue("E{$rowIndex}", $empData['gender']);
-
-                // Kolom F: TGL. MASUK KERJA
+                // TGL. MASUK KERJA
                 if (!empty($empData['date_of_joining'])) {
                     $excelDate = \PhpOffice\PhpSpreadsheet\Shared\Date::stringToExcel($empData['date_of_joining']);
                     $sheet->setCellValue("F{$rowIndex}", $excelDate);
                 }
-
-                // Kolom G: BAGIAN
+                // BAGIAN
                 $sheet->setCellValue("G{$rowIndex}", $empData['main_job_role_name']);
 
-                // Kolom H dst.: nilai_akhir per bulan
+                // Bulan nilai akhir
                 foreach ($mapBulan2Col as $blnInt => $colIdx) {
                     $colLetter = Coordinate::stringFromColumnIndex($colIdx);
                     if (isset($empData['detail'][$blnInt])) {
@@ -1878,20 +1680,21 @@ class PerformanceAssessmentsController extends BaseController
                             ->getNumberFormat()
                             ->setFormatCode(NumberFormat::FORMAT_NUMBER_00);
                     } else {
-                        $sheet->setCellValue("{$colLetter}{$rowIndex}", '');
+                        $sheet->setCellValue("{$colLetter}{$rowIndex}", 0);
                     }
                 }
 
-                // Kolom terakhir: rata‐rata nilai akhir
+                // NILAI AKHIR (rata-rata)
                 $totalNilai = array_sum(array_column($empData['detail'], 'nilai_akhir'));
-                $countBulan  = count($empData['detail']);
+                // $countBulan  = count($empData['detail']);
+                $countBulan = count($mapBulan2Col); // Jumlah bulan yang diharapkan
                 $avgNilai    = $countBulan > 0 ? round($totalNilai / $countBulan, 2) : 0;
                 $sheet->setCellValue("{$lastColLetter}{$rowIndex}", $avgNilai);
                 $sheet->getStyle("{$lastColLetter}{$rowIndex}")
                     ->getNumberFormat()
                     ->setFormatCode(NumberFormat::FORMAT_NUMBER_00);
 
-                // Border & alignment per baris
+                // Border & alignment
                 $sheet->getStyle("A{$rowIndex}:{$lastColLetter}{$rowIndex}")->applyFromArray([
                     'borders' => [
                         'allBorders' => [
@@ -1911,6 +1714,258 @@ class PerformanceAssessmentsController extends BaseController
             $sheetIndex++;
         }
 
+        // 6b. Sheet untuk setiap Grade (A, B, C, D)
+        foreach ($gradeGroups as $gradeName => $keysInGrade) {
+            $sheet = $spreadsheet->createSheet($sheetIndex);
+            $safeTitle = substr(str_replace(['/', '\\', '?', '*', '[', ']'], '_', $gradeName), 0, 31);
+            $sheet->setTitle($safeTitle);
+
+            // === HEADER UTAMA (Baris 1) ===
+            $sheet->mergeCells("A1:{$lastColLetter}1");
+            $sheet->setCellValue(
+                'A1',
+                'REPORT PENILAIAN ' . strtoupper($main_factory)
+                    . ' - ' . strtoupper($nameBatch)
+                    . ' (' . $gradeName . ')'
+            );
+            $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(16);
+            $sheet->getStyle('A1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle('A1')->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
+
+            // === HEADER KOLOM (Baris 3–4) ===
+            $sheet->mergeCells('A3:A4');
+            $sheet->setCellValue('A3', 'NO');
+            $sheet->mergeCells('B3:B4');
+            $sheet->setCellValue('B3', 'KODE KARTU');
+            $sheet->mergeCells('C3:C4');
+            $sheet->setCellValue('C3', 'NAMA KARYAWAN');
+            $sheet->mergeCells('D3:D4');
+            $sheet->setCellValue('D3', 'SHIFT');
+            $sheet->mergeCells('E3:E4');
+            $sheet->setCellValue('E3', 'L/P');
+            $sheet->mergeCells('F3:F4');
+            $sheet->setCellValue('F3', 'TGL. MASUK KERJA');
+            $sheet->mergeCells('G3:G4');
+            $sheet->setCellValue('G3', 'BAGIAN');
+
+            $sheet->mergeCells("{$startBulanCol}3:{$endBulanCol}3");
+            $sheet->setCellValue('H3', 'BULAN');
+            foreach ($mapBulan2Col as $blnInt => $colIdx) {
+                $colLetter = Coordinate::stringFromColumnIndex($colIdx);
+                $sheet->setCellValue("{$colLetter}4", strtoupper(date('M Y', mktime(0, 0, 0, $blnInt, 1))));
+            }
+
+            $sheet->mergeCells("{$lastColLetter}3:{$lastColLetter}4");
+            $sheet->setCellValue("{$lastColLetter}3", 'NILAI AKHIR');
+
+            // Style header 3–4
+            $sheet->getStyle("A3:{$lastColLetter}4")->getFont()->setBold(true);
+            $sheet->getStyle("A3:{$lastColLetter}4")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle("A3:{$lastColLetter}4")->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
+            $sheet->getStyle("A3:{$lastColLetter}4")->getAlignment()->setWrapText(true);
+            $sheet->getStyle("A3:{$lastColLetter}4")->applyFromArray([
+                'borders' => [
+                    'allBorders' => [
+                        'borderStyle' => Border::BORDER_THIN,
+                        'color'       => ['argb' => 'FF000000'],
+                    ],
+                ],
+            ]);
+
+            // Lebar kolom
+            $sheet->getColumnDimension('A')->setWidth(5);
+            $sheet->getColumnDimension('B')->setWidth(15);
+            $sheet->getColumnDimension('C')->setWidth(25);
+            $sheet->getColumnDimension('D')->setWidth(10);
+            $sheet->getColumnDimension('E')->setWidth(5);
+            $sheet->getColumnDimension('F')->setWidth(15);
+            $sheet->getColumnDimension('G')->setWidth(15);
+            foreach ($mapBulan2Col as $colIdx) {
+                $sheet->getColumnDimension(Coordinate::stringFromColumnIndex($colIdx))->setWidth(15);
+            }
+
+            // Format tanggal dan nilai akhir
+            $lastRowGrade = 5 + count($keysInGrade) - 1;
+            $sheet->getStyle("F5:F{$lastRowGrade}")
+                ->getNumberFormat()
+                ->setFormatCode(NumberFormat::FORMAT_DATE_DDMMYYYY);
+            $sheet->getStyle("{$lastColLetter}5:{$lastColLetter}{$lastRowGrade}")
+                ->getNumberFormat()
+                ->setFormatCode(NumberFormat::FORMAT_NUMBER_00);
+
+            // === ISI DATA (Baris 5 dst.) ===
+            $rowIndex = 5;
+            foreach ($keysInGrade as $compositeKey) {
+                $empData = $dataForExport[$compositeKey];
+
+                // NO
+                $sheet->setCellValue("A{$rowIndex}", $rowIndex - 4);
+                // KODE KARTU
+                $sheet->setCellValue("B{$rowIndex}", $empData['employee_code']);
+                // NAMA KARYAWAN
+                $sheet->setCellValue("C{$rowIndex}", $empData['employee_name']);
+                // SHIFT
+                $sheet->setCellValue("D{$rowIndex}", $empData['shift']);
+                // L/P
+                $sheet->setCellValue("E{$rowIndex}", $empData['gender']);
+                // TGL. MASUK KERJA
+                if (!empty($empData['date_of_joining'])) {
+                    $excelDate = \PhpOffice\PhpSpreadsheet\Shared\Date::stringToExcel($empData['date_of_joining']);
+                    $sheet->setCellValue("F{$rowIndex}", $excelDate);
+                }
+                // BAGIAN
+                $sheet->setCellValue("G{$rowIndex}", $empData['main_job_role_name']);
+
+                // Bulan nilai akhir
+                foreach ($mapBulan2Col as $blnInt => $colIdx) {
+                    $colLetter = Coordinate::stringFromColumnIndex($colIdx);
+                    if (isset($empData['detail'][$blnInt])) {
+                        $sheet->setCellValue("{$colLetter}{$rowIndex}", $empData['detail'][$blnInt]['nilai_akhir']);
+                        $sheet->getStyle("{$colLetter}{$rowIndex}")
+                            ->getNumberFormat()
+                            ->setFormatCode(NumberFormat::FORMAT_NUMBER_00);
+                    } else {
+                        $sheet->setCellValue("{$colLetter}{$rowIndex}", 0);
+                    }
+                }
+
+                // NILAI AKHIR (rata-rata)
+                $totalNilai = array_sum(array_column($empData['detail'], 'nilai_akhir'));
+                // $countBulan  = count($empData['detail']);
+                $countBulan = count($mapBulan2Col); // Jumlah bulan yang diharapkan
+                $avgNilai    = $countBulan > 0 ? round($totalNilai / $countBulan, 2) : 0;
+                $sheet->setCellValue("{$lastColLetter}{$rowIndex}", $avgNilai);
+                $sheet->getStyle("{$lastColLetter}{$rowIndex}")
+                    ->getNumberFormat()
+                    ->setFormatCode(NumberFormat::FORMAT_NUMBER_00);
+
+                // Border & alignment
+                $sheet->getStyle("A{$rowIndex}:{$lastColLetter}{$rowIndex}")->applyFromArray([
+                    'borders' => [
+                        'allBorders' => [
+                            'borderStyle' => Border::BORDER_THIN,
+                            'color'       => ['argb' => 'FF000000'],
+                        ],
+                    ],
+                ]);
+                $sheet->getStyle("A{$rowIndex}:{$lastColLetter}{$rowIndex}")
+                    ->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                $sheet->getStyle("A{$rowIndex}:{$lastColLetter}{$rowIndex}")
+                    ->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
+
+                $rowIndex++;
+            }
+
+            $sheetIndex++;
+        }
+
+        /**
+         * 7. Tambahkan sheet “Report Grade”
+         */
+        $sheetReport = $spreadsheet->createSheet($sheetIndex);
+        $sheetIndex++;
+
+        // Set nama sheet dan judul
+        $sheetReport->setTitle('Report Grade');
+
+        // Judul Utama (A1 sampai D1)
+        $sheetReport->mergeCells('A1:D1');
+        $sheetReport->setCellValue('A1', 'LAPORAN PREMI SKILL MATRIX');
+        $sheetReport->getStyle('A1')->getFont()->setBold(true)->setSize(14);
+        $sheetReport->getStyle('A1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+        // Subtitle (batch + tahun) di A2:D2
+        $sheetReport->mergeCells('A2:D2');
+        $sheetReport->setCellValue('A2', 'AREA ' . $main_factory . ' - '  . strtoupper($nameBatch));
+        $sheetReport->getStyle('A2')->getFont()->setBold(true);
+        $sheetReport->getStyle('A2')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+        // Header Tabel di Baris 4
+        $sheetReport->setCellValue('A4', 'Grade');
+        $sheetReport->setCellValue('B4', 'Premi');
+        $sheetReport->setCellValue('C4', 'Jumlah Orang');
+        $sheetReport->setCellValue('D4', 'Total');
+        $sheetReport->getStyle('A4:D4')->getFont()->setBold(true);
+        $sheetReport->getStyle('A4:D4')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheetReport->getStyle('A4:D4')->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
+
+        // Isi masing‐masing grade (A, B, C, D) di Baris 5–8
+        //  – Kolom A: "A", "B", "C", "D"
+        //  – Kolom B: Premi per grade (harus disesuaikan)
+        //  – Kolom C: Rumus COUNTA untuk menghitung jumlah orang di sheet “Grade X”
+        //  – Kolom D: Rumus = (nilai di B) × (nilai di C)
+
+        // Baris 5 = Grade A
+        $sheetReport->setCellValue('A5', 'A');
+        // Premi A = 25.000  (format teks “Rp25.000”)
+        $sheetReport->setCellValue('B5', 'Rp25000');
+        // Jumlah Orang: hitung dari sheet “Grade A” kolom B (employee_code), baris 5 dst.
+        $sheetReport->setCellValue('C5', '=COUNTA(\'Grade A\'!B5:B1000)');
+        // Total: =B5 * C5  (tapi B5 masih teks “Rp25.000”, jadi perlu CONVERT ke angka 25000)
+        $sheetReport->setCellValue('D5', '=SUBSTITUTE(B5,"Rp","")*C5');
+
+        // Baris 6 = Grade B
+        $sheetReport->setCellValue('A6', 'B');
+        // Premi B = 20.000
+        $sheetReport->setCellValue('B6', 'Rp20000');
+        $sheetReport->setCellValue('C6', '=COUNTA(\'Grade B\'!B5:B1000)');
+        $sheetReport->setCellValue('D6', '=SUBSTITUTE(B6,"Rp","")*C6');
+
+        // Baris 7 = Grade C
+        $sheetReport->setCellValue('A7', 'C');
+        // Premi C = 15.000
+        $sheetReport->setCellValue('B7', 'Rp15000');
+        $sheetReport->setCellValue('C7', '=COUNTA(\'Grade C\'!B5:B1000)');
+        $sheetReport->setCellValue('D7', '=SUBSTITUTE(B7,"Rp","")*C7');
+
+        // Baris 8 = Grade D
+        $sheetReport->setCellValue('A8', 'D');
+        // Premi D = 0
+        $sheetReport->setCellValue('B8', 'Rp0');
+        $sheetReport->setCellValue('C8', '=COUNTA(\'Grade D\'!B5:B1000)');
+        $sheetReport->setCellValue('D8', '=SUBSTITUTE(B8,"Rp","")*C8');
+
+        // Format kolom B (“Premi”) sebagai teks, rata kanan
+        $sheetReport->getStyle('B5:B8')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+        // Format kolom C (“Jumlah Orang”) sebagai integer, rata tengah
+        $sheetReport->getStyle('C5:C8')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        // Format kolom D (“Total”) sebagai number dengan ribuan, 0 desimal
+        $sheetReport->getStyle('D5:D8')
+            ->getNumberFormat()
+            ->setFormatCode(NumberFormat::FORMAT_NUMBER_COMMA_SEPARATED1);
+        $sheetReport->getStyle('D5:D8')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+
+        // Baris 9 = “TOTAL”
+        $sheetReport->setCellValue('A9', 'TOTAL');
+        // Jumlah Total Orang = SUM(C5:C8)
+        $sheetReport->setCellValue('C9', '=SUM(C5:C8)');
+        // Total Premi Keseluruhan = SUM(D5:D8)
+        $sheetReport->setCellValue('D9', '=SUM(D5:D8)');
+        // Format baris TOTAL
+        $sheetReport->getStyle('A9:D9')->getFont()->setBold(true);
+        $sheetReport->getStyle('A9:D9')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+        $sheetReport->getStyle('A9:D9')->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
+        $sheetReport->getStyle('D9')->getNumberFormat()->setFormatCode(NumberFormat::FORMAT_NUMBER_COMMA_SEPARATED1);
+
+        // Style untuk baris TOTAL (bold)
+        $sheetReport->getStyle('A9:D9')->getFont()->setBold(true);
+        $sheetReport->getStyle('C9:D9')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+        // Set border untuk seluruh tabel (A4:D9)
+        $sheetReport->getStyle('A4:D9')->applyFromArray([
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => Border::BORDER_THIN,
+                    'color'       => ['argb' => 'FF000000'],
+                ],
+            ],
+        ]);
+
+        // Lebar kolom agar pas
+        $sheetReport->getColumnDimension('A')->setWidth(10);
+        $sheetReport->getColumnDimension('B')->setWidth(15);
+        $sheetReport->getColumnDimension('C')->setWidth(15);
+        $sheetReport->getColumnDimension('D')->setWidth(18);
         // Simpan & output Excel
         $writer = new Xlsx($spreadsheet);
         $fileName = 'Report_' . $nameBatch . '_' . $main_factory . '_' . date('Y_m_d') . '.xlsx';
@@ -1918,6 +1973,99 @@ class PerformanceAssessmentsController extends BaseController
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         header('Content-Disposition: attachment; filename="' . $fileName . '"');
         header('Cache-Control: max-age=0');
+        $writer->save('php://output');
+        exit;
+    }
+
+    public function printFinalAssessment()
+    {
+        $id_batch     = $this->request->getPost('id_batch');
+        $main_factory = $this->request->getPost('main_factory');
+
+        // Ambil nama batch
+        $batch       = $this->batchModel
+            ->select('batch_name')
+            ->where('id_batch', $id_batch)
+            ->first();
+        $batch_name  = $batch['batch_name'] ?? '';
+
+        // Ambil data final assessment
+        $reportbatch = $this->finalAssssmentModel
+            ->getFinalAssessmentByBatch($id_batch, $main_factory);
+        // dd ($reportbatch);
+        if (empty($reportbatch)) {
+            session()->setFlashdata('error', 'Tidak ada data final assessment untuk periode ini.');
+            return redirect()->back();
+        }
+
+        // 1. Kumpulkan data per karyawan
+        $nilaiPerKaryawan = [];
+        foreach ($reportbatch as $rb) {
+            $key = $rb['employee_code'] . '|' . $rb['employee_name'] . '|' . $rb['id_periode'];
+
+            if (!isset($nilaiPerKaryawan[$key])) {
+                $nilaiPerKaryawan[$key] = [
+                    'employee_code'             => $rb['employee_code'],
+                    'employee_name'             => $rb['employee_name'],
+                    'shift'                     => $rb['shift'] ?? '',
+                    'main_job_role_name'        => $rb['main_job_role_name'] ?? '',
+                    'factory_name'              => $rb['factory_name'] ?? '',
+                    'score_presence'            => $rb['score_presence'] ?? 0,
+                    'score_performance_job'     => $rb['score_performance_job'] ?? 0,
+                    'score_performance_6s'      => $rb['score_performance_6s'] ?? 0,
+                    'score_productivity'        => $rb['score_productivity'] ?? 0,
+                    'periode_name'              => $rb['periode_name'] ?? '',
+                    'batch_name'                => $rb['batch_name'] ?? $batch_name,
+                ];
+            }
+        }
+
+        // 2. Buat Spreadsheet dan header kolom
+        $spreadsheet = new Spreadsheet();
+        $sheet       = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Final Assessment');
+
+        $headers = [
+            'A1' => 'Employee Code',
+            'B1' => 'Employee Name',
+            'C1' => 'Shift',
+            'D1' => 'Main Job Role',
+            'E1' => 'Factory',
+            'F1' => 'Score Presence',
+            'G1' => 'Score Performance Job',
+            'H1' => 'Score Performance 6S',
+            'I1' => 'Score Productivity',
+            'J1' => 'Periode Name',
+            'K1' => 'Batch Name',
+        ];
+        foreach ($headers as $cell => $text) {
+            $sheet->setCellValue($cell, $text);
+        }
+
+        // 3. Isi data mulai row 2
+        $rowNum = 2;
+        foreach ($nilaiPerKaryawan as $data) {
+            $sheet->setCellValue('A' . $rowNum, $data['employee_code']);
+            $sheet->setCellValue('B' . $rowNum, $data['employee_name']);
+            $sheet->setCellValue('C' . $rowNum, $data['shift']);
+            $sheet->setCellValue('D' . $rowNum, $data['main_job_role_name']);
+            $sheet->setCellValue('E' . $rowNum, $data['factory_name']);
+            $sheet->setCellValue('F' . $rowNum, $data['score_presence']);
+            $sheet->setCellValue('G' . $rowNum, $data['score_performance_job']);
+            $sheet->setCellValue('H' . $rowNum, $data['score_performance_6s']);
+            $sheet->setCellValue('I' . $rowNum, $data['score_productivity']);
+            $sheet->setCellValue('J' . $rowNum, $data['periode_name']);
+            $sheet->setCellValue('K' . $rowNum, $data['batch_name']);
+            $rowNum++;
+        }
+
+        // 4. Kirim header download dan keluarkan file
+        $filename = 'Final_Assessment_' . date('Ymd_His') . '.xlsx';
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header("Content-Disposition: attachment;filename=\"$filename\"");
+        header('Cache-Control: max-age=0');
+
+        $writer = new Xlsx($spreadsheet);
         $writer->save('php://output');
         exit;
     }

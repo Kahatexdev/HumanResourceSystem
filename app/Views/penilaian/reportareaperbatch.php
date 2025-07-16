@@ -21,22 +21,24 @@
                         </div>
                         <div class="col-4 text-end">
                             <!-- button fetch data -->
-                            <form action="<?= base_url($role . '/fetchDataFinalAssesment') ?>" method="POST" id="formFetchData">
-                                <div class="form-group mb-0 d-flex justify-content-end align-items-end gap-2">
-                                    <div>
-                                        <input type="hidden" name="main_factory" value="<?= $main_factory ?>">
-                                        <select class="form-select form-select-sm" id="id_batch" name="id_batch" required>
-                                            <option value="">Pilih Batch Penilaian</option>
-                                            <?php foreach ($reportbatch as $batch) : ?>
-                                                <option value="<?= $batch['id_batch'] ?>"><?= $batch['batch_name'] ?></option>
-                                            <?php endforeach; ?>
-                                        </select>
+                            <?php if (session('role') === 'Monitoring') : ?>
+                                <form action="<?= base_url($role . '/fetchDataFinalAssesment') ?>" method="POST" id="formFetchData">
+                                    <div class="form-group mb-0 d-flex justify-content-end align-items-end gap-2">
+                                        <div>
+                                            <input type="hidden" name="main_factory" value="<?= $main_factory ?>">
+                                            <select class="form-select form-select-sm" id="id_batch" name="id_batch" required>
+                                                <option value="">Pilih Batch Penilaian</option>
+                                                <?php foreach ($reportbatch as $batch) : ?>
+                                                    <option value="<?= $batch['id_batch'] ?>"><?= $batch['batch_name'] ?></option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                        </div>
+                                        <div class="align-self-end">
+                                            <button type="submit" class="btn bg-gradient-info btn-sm mb-1">Fetch Data</button>
+                                        </div>
                                     </div>
-                                    <div class="align-self-end">
-                                        <button type="submit" class="btn bg-gradient-info btn-sm mb-1">Fetch Data</button>
-                                    </div>
-                                </div>
-                            </form>
+                                </form>
+                            <?php endif; ?>
                         </div>
                     </div>
                 </div>
@@ -47,7 +49,7 @@
     <div class="row">
         <?php foreach ($reportbatch as $ar) : ?>
             <div class="col-xl-3 col-sm-6 mb-xl-0 mb-4 mt-2">
-                <a href="<?= base_url($role . '/finalAssesment/' . $ar['id_batch'] . '/' . $ar['main_factory']) ?>">
+                <a href="<?= base_url($role . '/finalAssesment/' . $ar['id_batch'] . '/' . $ar['main_factory'] ?? 'all') ?>">
                     <div class="card">
                         <div class="card-body p-3">
                             <div class="row">

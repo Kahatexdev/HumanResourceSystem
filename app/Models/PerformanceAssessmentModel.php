@@ -71,9 +71,12 @@ class PerformanceAssessmentModel extends Model
         // Menambahkan kondisi id_periode langsung di join penilaian agar record mandor tetap muncul walau belum ada penilaian
         $builder->join('performance_assessments', "performance_assessments.id_employee = employees.id_employee 
         AND performance_assessments.id_user = users.id_user 
-        AND performance_assessments.id_periode = '$id_periode'", 'left');
+        AND performance_assessments.id_periode = " . $this->db->escape($id_periode), 'left', false);
 
         $builder->where('users.role', 'Mandor');
+        $builder->where('employees.id_employment_status', 3); // Hanya karyawan baju biru
+        // where in
+        $builder->whereIn('employees.id_job_section', [11,12,13,14,15,16,17,18,19,20,153,154,155]);
         $builder->groupBy('users.id_user');
 
         return $builder->get()->getResultArray();
@@ -137,6 +140,7 @@ class PerformanceAssessmentModel extends Model
         $builder->join('performance_assessments as p', "p.id_employee = k.id_employee AND p.id_periode = \"$periode\"", 'left');
         $builder->whereIn('job.job_section_name', ['OPERATOR', 'OPERATOR (8D)', 'OPERATOR (8J)', 'OPERATOR (KK9)', 'OPERATOR MEKANIK DOUBLE', 'MONTIR', 'MONTIR (A1)', 'MONTIR (8J)', 'MONTIR (DAKONG)', 'MONTIR (LONATI SINGLE)', 'MONTIR (LONATI DOUBLE)', 'ROSSO', 'SEWING']);
         $builder->where('factory.factory_name', $area);
+        $builder->where('k.id_employment_status', 3); // Hanya karyawan baju biru
         $builder->groupBy('k.id_employee');
         $builder->groupBy('p.id_periode');
 
@@ -178,7 +182,7 @@ class PerformanceAssessmentModel extends Model
     }
     public function getBatchName()
     {
-        return $this->select('batches.id_batch, batches.batch_name, factories.main_factory')
+        return $this->select('batches.id_batch, batches.batch_name')
             ->join('periodes', 'periodes.id_periode = performance_assessments.id_periode')
             ->join('batches', 'batches.id_batch = periodes.id_batch')
             ->join('factories', 'factories.id_factory = performance_assessments.id_factory')
@@ -188,20 +192,20 @@ class PerformanceAssessmentModel extends Model
 
     public function getPenilaianByEmployeeAndFactory($idEmployee, $idFactory)
     {
-        return $this->db->table('performance_assessments pa')
+        return $this->db->table('new_performance_assessments pa')
             ->select("
-            MAX(CASE WHEN MONTH(p.end_date) = 1 THEN CAST(COALESCE(pa.nilai, 0) AS UNSIGNED) END) AS nilai_jan,
-            MAX(CASE WHEN MONTH(p.end_date) = 2 THEN CAST(COALESCE(pa.nilai, 0) AS UNSIGNED) END) AS nilai_feb,
-            MAX(CASE WHEN MONTH(p.end_date) = 3 THEN CAST(COALESCE(pa.nilai, 0) AS UNSIGNED) END) AS nilai_mar,
-            MAX(CASE WHEN MONTH(p.end_date) = 4 THEN CAST(COALESCE(pa.nilai, 0) AS UNSIGNED) END) AS nilai_apr,
-            MAX(CASE WHEN MONTH(p.end_date) = 5 THEN CAST(COALESCE(pa.nilai, 0) AS UNSIGNED) END) AS nilai_mei,
-            MAX(CASE WHEN MONTH(p.end_date) = 6 THEN CAST(COALESCE(pa.nilai, 0) AS UNSIGNED) END) AS nilai_jun,
-            MAX(CASE WHEN MONTH(p.end_date) = 7 THEN CAST(COALESCE(pa.nilai, 0) AS UNSIGNED) END) AS nilai_jul,
-            MAX(CASE WHEN MONTH(p.end_date) = 8 THEN CAST(COALESCE(pa.nilai, 0) AS UNSIGNED) END) AS nilai_agu,
-            MAX(CASE WHEN MONTH(p.end_date) = 9 THEN CAST(COALESCE(pa.nilai, 0) AS UNSIGNED) END) AS nilai_sep,
-            MAX(CASE WHEN MONTH(p.end_date) = 10 THEN CAST(COALESCE(pa.nilai, 0) AS UNSIGNED) END) AS nilai_okt,
-            MAX(CASE WHEN MONTH(p.end_date) = 11 THEN CAST(COALESCE(pa.nilai, 0) AS UNSIGNED) END) AS nilai_nov,
-            MAX(CASE WHEN MONTH(p.end_date) = 12 THEN CAST(COALESCE(pa.nilai, 0) AS UNSIGNED) END) AS nilai_des
+            MAX(CASE WHEN MONTH(p.end_date) = 1 THEN CAST(COALESCE(pa.performance_score, 0) AS UNSIGNED) END) AS nilai_jan,
+            MAX(CASE WHEN MONTH(p.end_date) = 2 THEN CAST(COALESCE(pa.performance_score, 0) AS UNSIGNED) END) AS nilai_feb,
+            MAX(CASE WHEN MONTH(p.end_date) = 3 THEN CAST(COALESCE(pa.performance_score, 0) AS UNSIGNED) END) AS nilai_mar,
+            MAX(CASE WHEN MONTH(p.end_date) = 4 THEN CAST(COALESCE(pa.performance_score, 0) AS UNSIGNED) END) AS nilai_apr,
+            MAX(CASE WHEN MONTH(p.end_date) = 5 THEN CAST(COALESCE(pa.performance_score, 0) AS UNSIGNED) END) AS nilai_mei,
+            MAX(CASE WHEN MONTH(p.end_date) = 6 THEN CAST(COALESCE(pa.performance_score, 0) AS UNSIGNED) END) AS nilai_jun,
+            MAX(CASE WHEN MONTH(p.end_date) = 7 THEN CAST(COALESCE(pa.performance_score, 0) AS UNSIGNED) END) AS nilai_jul,
+            MAX(CASE WHEN MONTH(p.end_date) = 8 THEN CAST(COALESCE(pa.performance_score, 0) AS UNSIGNED) END) AS nilai_agu,
+            MAX(CASE WHEN MONTH(p.end_date) = 9 THEN CAST(COALESCE(pa.performance_score, 0) AS UNSIGNED) END) AS nilai_sep,
+            MAX(CASE WHEN MONTH(p.end_date) = 10 THEN CAST(COALESCE(pa.performance_score, 0) AS UNSIGNED) END) AS nilai_okt,
+            MAX(CASE WHEN MONTH(p.end_date) = 11 THEN CAST(COALESCE(pa.performance_score, 0) AS UNSIGNED) END) AS nilai_nov,
+            MAX(CASE WHEN MONTH(p.end_date) = 12 THEN CAST(COALESCE(pa.performance_score, 0) AS UNSIGNED) END) AS nilai_des
         ")
             ->join('periodes p', 'p.id_periode = pa.id_periode')
             ->where('pa.id_employee', $idEmployee)

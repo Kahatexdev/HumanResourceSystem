@@ -21,6 +21,7 @@ use App\Models\FactoriesModel;
 use App\Models\HistoryEmployeeModel;
 use App\Models\EmployeeAssessmentModel;
 use App\Models\PerformanceAssessmentModel;
+use App\Models\NewPAModel;
 
 class MonitoringController extends BaseController
 {
@@ -42,6 +43,7 @@ class MonitoringController extends BaseController
     protected $historyEmployeeModel;
     protected $eaModel;
     protected $paModel;
+    protected $newPAModel;
 
     public function __construct()
     {
@@ -62,6 +64,7 @@ class MonitoringController extends BaseController
         $this->historyEmployeeModel = new HistoryEmployeeModel();
         $this->eaModel = new EmployeeAssessmentModel();
         $this->paModel = new PerformanceAssessmentModel();
+        $this->newPAModel = new NewPAModel();
         $this->role = session()->get('role');
     }
 
@@ -96,8 +99,9 @@ class MonitoringController extends BaseController
         }
         // dd($cekPenilaian);
 
-        // $RatarataGrade = $this->penilaianmodel->getRataRataGrade(); // Lanjut nanti kalo grade akhir udah ada
-        $RatarataGrade = 0;
+        $RatarataGrade = $this->newPAModel->getRataRataGrade(); // Lanjut nanti kalo grade akhir udah ada
+        // dd ($RatarataGrade);
+        // $RatarataGrade = 0;
 
         $dataPindah = $this->historyEmployeeModel->getPindahGroupedByDate();
         // Siapkan data untuk grafik line
@@ -126,7 +130,7 @@ class MonitoringController extends BaseController
             'active3' => '',
             'TtlKaryawan' => $TtlKaryawan,
             'PerpindahanBulanIni' => $PerpindahanBulanIni,
-            'RataRataGrade' => $RatarataGrade,
+            'RatarataGrade' => $RatarataGrade['rata_rata'],
             // 'RataRataGrade' => $RatarataGrade['average_grade_letter'],
             'SkillGap' => $SkillGap,
             'karyawanByBagian' => $dataKaryawan,
@@ -158,15 +162,15 @@ class MonitoringController extends BaseController
             'KK2A',
             'KK2B',
             'KK2C',
-            'KK5',
+            'KK5G',
             'KK7K',
             'KK7L',
             'KK8D',
             'KK8F',
             'KK8J',
-            'KK9',
+            'KK9D',
             'KK10',
-            'KK11',
+            'KK11M'
         ];
 
         $getArea = array_filter($getArea, function ($area) use ($sort) {
@@ -221,15 +225,15 @@ class MonitoringController extends BaseController
             'KK2A',
             'KK2B',
             'KK2C',
-            'KK5',
+            'KK5G',
             'KK7K',
             'KK7L',
             'KK8D',
             'KK8F',
             'KK8J',
-            'KK9',
+            'KK9D',
             'KK10',
-            'KK11',
+            'KK11M'
         ];
 
         // Urutkan data menggunakan usort

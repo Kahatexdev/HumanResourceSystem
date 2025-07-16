@@ -49,34 +49,55 @@
         </div>
     </div> -->
     <div class="row my-4">
-        <div class="col-12 mb-4">
-            <div class="card">
-                <div class="card-body p-3">
-                    <div class="row align-items-center">
-                        <div class="col-md-6 mb-3 mb-md-0">
-                            <p class="text-sm mb-0 text-capitalize font-weight-bold">Human Resource System</p>
-                            <h5 class="font-weight-bolder mb-0">Summary Bs Mesin Per Area</h5>
-                        </div>
-                        <div class="col-md-6">
-                            <form action="<?= base_url($role . '/fetchDataBsmc') ?>" method="get">
-                                <div class="row g-2">
-                                    <div class="col-12 col-sm-8">
-                                        <!-- <label for="tgl_input" class="form-label">Tanggal Input:</label> -->
-                                        <input type="date" id="tgl_input" name="tgl_input" class="form-control" required>
-                                    </div>
-                                    <div class="col-12 col-sm-4 d-flex align-items-end">
-                                        <button type="submit" class="btn bg-gradient-info w-100">
-                                            <i class="fas fa-server text-lg opacity-10 me-2"></i> Fetch Data
-                                        </button>
-                                    </div>
-                                </div>
-                            </form>
-                        </div>
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-gradient-info text-white d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="mb-0 text-uppercase small fw-bold">Human Resource System</p>
+                        <h5 class="mb-0 fw-bolder">Summary Bs Mesin Per Area</h5>
                     </div>
+                    <i class="fas fa-chart-bar fa-2x opacity-75"></i>
+                </div>
+                <div class="card-body">
+                    <form action="<?= base_url($role . '/fetchDataBsmc') ?>" method="get">
+                        <div class="row gx-3 gy-2 align-items-end">
+                            <div class="col-12 col-md-4">
+                                <label for="tgl_from" class="form-label">Tanggal Dari</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="far fa-calendar-alt"></i></span>
+                                    <input
+                                        type="date"
+                                        id="tgl_from"
+                                        name="tgl_from"
+                                        class="form-control"
+                                        required>
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label for="tgl_to" class="form-label">Tanggal Sampai</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="far fa-calendar-alt"></i></span>
+                                    <input
+                                        type="date"
+                                        id="tgl_to"
+                                        name="tgl_to"
+                                        class="form-control"
+                                        required>
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <button type="submit" class="btn bg-gradient-info w-100">
+                                    <i class="fas fa-server me-2"></i>
+                                    Fetch Data
+                                </button>
+                            </div>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
     </div>
+
     <div class=" row mt-2">
         <?php foreach ($getArea as $key => $ar) : ?>
             <div class="col-xl-3 col-sm-6 mb-xl-0 mb-4 mt-2">

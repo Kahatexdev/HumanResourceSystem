@@ -84,4 +84,15 @@ class ApiController extends BaseController
 
         return $this->respond($filteredArea, 200);
     }
+
+    public function getEmployeeByName($name)
+    {
+        $data = $this->employeeModel->getEmployeeByName($name);
+
+        if ($data) {
+            return $this->respond($data, 200);
+        } else {
+            return $this->failNotFound('No Data Found with name ' . $name);
+        }
+    }
 }

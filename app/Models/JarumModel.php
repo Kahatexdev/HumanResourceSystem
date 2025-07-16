@@ -79,7 +79,7 @@ class JarumModel extends Model
             ->join('factories', 'factories.id_factory = sum_jarum.id_factory')
             ->join('history_employees h', 'h.id_employee = sum_jarum.id_employee', 'left')
             // ->join('history_pindah_karyawan h', 'h.id_employee = sum_jarum.id_employee', 'left')
-            ->Like('job_sections.job_section_name', '%MONTIR%')
+            ->like('job_sections.job_section_name', 'MONTIR')
             ->where('periodes.id_batch', $id_batch)
             // Group kondisi: id_factory saat ini OR data id_factory lama sebelum tanggal pindah
             ->groupStart()
@@ -87,12 +87,7 @@ class JarumModel extends Model
             ->where('sum_jarum.id_factory', $id_factory)
             // 2) OR data dari id_factory asal, tapi hanya yg tgl_input < tanggal_pindah
             ->orWhere(
-            "sum_jarum.id_factory = (
-                    SELECT id_factory_old 
-                    FROM history_employees h
-                    WHERE h.id_employee = sum_jarum.id_employee
-                )
-                AND sum_jarum.tgl_input < h.date_of_change",
+                "(sum_jarum.id_factory = h.id_factory_old AND sum_jarum.tgl_input < h.date_of_change)",
                 null,
                 false
             )
@@ -124,15 +119,22 @@ class JarumModel extends Model
 
     public function getUsedNeedleData($id_batch, $main_factory)
     {
-        return $this->select(' sum_jarum.id_employee,  SUM(sum_jarum.used_needle) AS total_jarum, sum_jarum.id_factory,
+        $builder = $this->select('sum_jarum.id_employee, SUM(sum_jarum.used_needle) AS total_jarum, sum_jarum.id_factory,
             periodes.id_periode, periodes.periode_name, batches.batch_name, employees.employee_code, employees.employee_name')
             ->join('periodes', 'sum_jarum.tgl_input BETWEEN periodes.start_date AND periodes.end_date', 'left')
             ->join('batches', 'batches.id_batch = periodes.id_batch', 'left')
             ->join('employees', 'employees.id_employee = sum_jarum.id_employee', 'left')
             ->join('job_sections', 'job_sections.id_job_section = employees.id_job_section', 'left')
             ->join('factories', 'factories.id_factory = sum_jarum.id_factory')
-            ->where('periodes.id_batch', $id_batch)
-            ->where('factories.main_factory', $main_factory)
+            ->where('periodes.id_batch', $id_batch);
+
+        if ($main_factory == 'all') {
+            // kalau main_factory adalah 'all', tidak perlu filter
+        } else {
+            $builder->where('factories.main_factory', $main_factory);
+        }
+
+        return $builder
             ->groupBy('employees.employee_code, periodes.id_periode') // Grouping berdasarkan kode_kartu dan periode
             ->orderBy('total_jarum', 'ASC')
             ->findAll();

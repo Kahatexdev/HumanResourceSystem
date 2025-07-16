@@ -337,7 +337,7 @@ class EmployeeController extends BaseController
         $shift = $this->request->getPost('shift');
         $jenisKelamin = $this->request->getPost('jenis_kelamin');
         $libur = $this->request->getPost('libur');
-        $liburTambahan = $this->request->getPost('libur_tambahan');
+        $liburTambahan = $this->request->getPost('libur_tambahan') ?: NULL;
         $warnaBaju = $this->request->getPost('warna_baju');
         $tanggalLahir = $this->request->getPost('tgl_lahir');
         $tanggalMasuk = $this->request->getPost('tgl_masuk');
@@ -632,6 +632,10 @@ class EmployeeController extends BaseController
 
     public function exportPerArea($area)
     {
+        if($area === 'ALL') {
+            return redirect()->to(base_url($this->role . '/exportKaryawan'));
+        }
+
         // Definisikan urutan kode kartu berdasarkan area
         $sortOrders = [
             'KK1A' => ['KKMA', 'KKMB', 'KKMC', 'KKMNS', 'KKSA', 'KKSB', 'KKSC', 'KKJHA', 'KKJHB', 'KKJHC'],
