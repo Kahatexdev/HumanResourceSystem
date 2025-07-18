@@ -1345,7 +1345,7 @@ class PerformanceAssessmentsController extends BaseController
             }
         }
         unset($karyawan); // lepaskan reference
-        // dd ($nilaiPerKaryawan);
+        // dd ($nilaiPerKaryawan,$jsonDetail);
         // Kirim data ke view, termasuk jsonDetail
         $data = [
             'role'         => session()->get('role'),

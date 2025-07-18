@@ -196,6 +196,8 @@ class FinalAssssmentModel extends Model
         if ($main_factory !== 'all') {
             $builder->where('f.main_factory', $main_factory);
         }
+        // group by untuk menghindari duplikasi data
+        $builder->groupBy('fa.id_employee, p.id_periode');
 
         return $builder->get()->getResultArray();
     }
