@@ -546,7 +546,7 @@ class BsmcController extends BaseController
                     $idEmp = $emp['id_employee'] ?? null;
                     $fac   = $emp['id_factory']  ?? null;
                     if (!$emp) {
-                        $errors[] = "Karyawan " . strtoupper($i['nama_karyawan']) . " tidak ditemukan di factory $factory";
+                        $errors[] = "Karyawan " . strtoupper($i['nama_karyawan']) . " tidak ditemukan di factory $factory pada tanggal $currentDate.";
                         continue;
                     }
 
