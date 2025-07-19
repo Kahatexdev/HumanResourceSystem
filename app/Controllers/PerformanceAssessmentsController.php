@@ -1168,6 +1168,18 @@ class PerformanceAssessmentsController extends BaseController
             $rs = ['score_rosso'       => $rs_raw['score_rosso']       ?? 0];
             $nb = ['group'             => $nb_raw['group']             ?? 0];
 
+            $mainJobRole = strtoupper($j_raw['main_job_role_name']);
+            // dd ($mainJobRole, $pr, $rs, $nb);
+            if (strpos($mainJobRole, 'OPERATOR') !== false) {
+                $scoreProductivity = $pr['score_productivity'];
+            } elseif (strpos($mainJobRole, 'ROSSO') !== false) {
+                $scoreProductivity = $rs['score_rosso'];
+            } elseif (strpos($mainJobRole, 'MONTIR') !== false) {
+                $scoreProductivity = $nb['group'];
+            } else {
+                // Default: jumlahkan semua (jaga-jaga)
+                $scoreProductivity = $pr['score_productivity'] + $rs['score_rosso'] + $nb['group'];
+            }
             // Gabungkan ke final
             $final[$key] = [
                 'id_employee'           => $p['id_employee'],
@@ -1177,9 +1189,12 @@ class PerformanceAssessmentsController extends BaseController
                 'score_presence'        => $p['score_absensi'],
                 'score_performance_job' => $j['score_jobdesc'],
                 'score_performance_6s'  => $j['scoreJobdesc6s'],
-                'score_productivity'    => $pr['score_productivity'] + $rs['score_rosso'] + $nb['group'],
+                // Tentukan score_productivity sesuai main_job_role_name
+                
+                'score_productivity' => $scoreProductivity,
             ];
         }
+        // dd ($final, $incompleteData);
         // log_message('debug', 'Final assessment data: ' . print_r($final, true));
         // Jika final kosong, langsung redirect dengan error
         if (empty($final)) {

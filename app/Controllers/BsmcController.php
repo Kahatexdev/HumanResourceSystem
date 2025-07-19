@@ -524,26 +524,29 @@ class BsmcController extends BaseController
                     continue;
                 }
 
+               
                 $employeeData = [];
-                foreach ($rows as $row) {
+                foreach ($rows as $row => $i) {
+                    $em = $this->employeeModel->select('employee_name,id_factory')
+                    ->where('employee_name', strtoupper($i['nama_karyawan']))
+                    ->first();
+                    // dd ($em['id_factory'], $i['nama_karyawan'], $i['qty_produksi'], $i['qty_pcs']);
+
                     $employeeData[] = [
-                        'name' => strtoupper($row['nama_karyawan']),
-                        // 'shift' => $row['shift']
+                        'name' => strtoupper($em['employee_name'] ?? ''),
+                        'area' => $em['id_factory'] ?? null, // Ambil id factory dari karyawan
                     ];
-                }
+                    // dd ($employeeData);
+                    $employeeMap = $this->getEmployeeMap($employeeData);
 
-                // Batch query karyawan
-                $employeeMap = $this->getEmployeeMap($employeeData, $id_factory_current);
-                // dd($$employeeMap);
-
-                foreach ($rows as $row) {
-                    $key = strtoupper($row['nama_karyawan']) . '|' . $id_factory_current;
+                    $key = strtoupper($employeeData[$row]['name']) . '|' . $employeeData[$row]['area'];
+                    // dd ($key, $employeeMap);
                     $emp = $employeeMap[$key] ?? null; // Data karyawan
                     // dd($emp['id_employee'], $emp['id_factory'], $emp['shift'], $id_factory_current);
                     $idEmp = $emp['id_employee'] ?? null;
                     $fac   = $emp['id_factory']  ?? null;
                     if (!$emp) {
-                        $errors[] = "Karyawan ".strtoupper($row['nama_karyawan'])." tidak ditemukan di factory $factory";
+                        $errors[] = "Karyawan " . strtoupper($i['nama_karyawan']) . " tidak ditemukan di factory $factory";
                         continue;
                     }
 
@@ -551,8 +554,8 @@ class BsmcController extends BaseController
                     $record = [
                         'id_employee' => $idEmp,
                         'tgl_input'   => $currentDate,
-                        'produksi'    => $row['qty_produksi'],
-                        'bs_mc'       => round($row['qty_pcs']),
+                        'produksi'    => $i['qty_produksi'],
+                        'bs_mc'       => round($i['qty_pcs']),
                         'id_factory'  => $fac,
                     ];
 
@@ -604,20 +607,24 @@ class BsmcController extends BaseController
     }
 
     // Helper: Ambil mapping karyawan
-    private function getEmployeeMap(array $employeeData, $factoryId)
+    private function getEmployeeMap(array $employeeData)
     {
         $names = array_column($employeeData, 'name');
+        $areaIds = array_column($employeeData, 'area');
         // $shifts = array_column($employeeData, 'shift');
         // dd($factoryId);
 
 
         $builder = $this->db->table('employees')
-            ->select('id_employee, employee_name, shift, id_factory')
-            ->where('id_factory', $factoryId);
+            ->select('id_employee, employee_name, shift, id_factory');
 
         // Tambahkan kondisi hanya jika array tidak kosong
         if (!empty($names)) {
             $builder->whereIn('employee_name', $names);
+        }
+
+        if (!empty($areaIds)) {
+            $builder->whereIn('id_factory', $areaIds);
         }
 
         // if (!empty($shifts)) {
