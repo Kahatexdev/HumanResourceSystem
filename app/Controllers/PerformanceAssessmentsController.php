@@ -1178,7 +1178,7 @@ class PerformanceAssessmentsController extends BaseController
                 $scoreProductivity = $nb['group'];
             } else {
                 // Default: jumlahkan semua (jaga-jaga)
-                $scoreProductivity = $pr['score_productivity'] + $rs['score_rosso'] + $nb['group'];
+                $scoreProductivity = 0;
             }
             // Gabungkan ke final
             $final[$key] = [
