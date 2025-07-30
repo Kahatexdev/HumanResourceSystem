@@ -274,13 +274,14 @@ class PresenceController extends BaseController
         $sheet->setCellValue('B1', 'Kode Kartu');
         $sheet->setCellValue('C1', 'Nama Karyawan');
         $sheet->setCellValue('D1', 'Periode');
-        $sheet->setCellValue('E1', 'Izin');
-        $sheet->setCellValue('F1', 'Sakit');
-        $sheet->setCellValue('G1', 'Mangkir');
-        $sheet->setCellValue('H1', 'Cuti');
-        $sheet->setCellValue('I1', 'Input By');
-        $sheet->setCellValue('J1', 'Created At');
-        $sheet->setCellValue('K1', 'Updated At');
+        $sheet->setCellValue('E1', 'Batch');
+        $sheet->setCellValue('F1', 'Izin');
+        $sheet->setCellValue('G1', 'Sakit');
+        $sheet->setCellValue('H1', 'Mangkir');
+        $sheet->setCellValue('I1', 'Cuti');
+        $sheet->setCellValue('J1', 'Input By');
+        $sheet->setCellValue('K1', 'Created At');
+        $sheet->setCellValue('L1', 'Updated At');
 
         $no = 1;
         $column = 2;
@@ -297,22 +298,24 @@ class PresenceController extends BaseController
         $sheet->getColumnDimension('I')->setWidth(20);
         $sheet->getColumnDimension('J')->setWidth(20);
         $sheet->getColumnDimension('K')->setWidth(20);
+        $sheet->getColumnDimension('L')->setWidth(20);
 
-        $sheet->getStyle('A1:K1')->getFont()->setBold(true);
-        $sheet->getStyle('A1:K1')->getFill()->setFillType('solid')->getStartColor()->setARGB('FFA0A0A0');
-        $sheet->getStyle('A1:K1')->getAlignment()->setHorizontal('center');
+        $sheet->getStyle('A1:L1')->getFont()->setBold(true);
+        $sheet->getStyle('A1:L1')->getFill()->setFillType('solid')->getStartColor()->setARGB('FFA0A0A0');
+        $sheet->getStyle('A1:L1')->getAlignment()->setHorizontal('center');
         foreach ($data as $row) {
             $sheet->setCellValue('A' . $column, $no++);
             $sheet->setCellValue('B' . $column, $row['employee_code'] ?? '');
             $sheet->setCellValue('C' . $column, $row['employee_name']);
             $sheet->setCellValue('D' . $column, $row['periode_name']);
-            $sheet->setCellValue('E' . $column, $row['permit']);
-            $sheet->setCellValue('F' . $column, $row['sick']);
-            $sheet->setCellValue('G' . $column, $row['absent']);
-            $sheet->setCellValue('H' . $column, $row['leave']);
-            $sheet->setCellValue('I' . $column, $row['username']);
-            $sheet->setCellValue('J' . $column, $row['created_at']);
-            $sheet->setCellValue('K' . $column, $row['updated_at']);
+            $sheet->setCellValue('E' . $column, $row['batch_name']);
+            $sheet->setCellValue('F' . $column, $row['permit']);
+            $sheet->setCellValue('G' . $column, $row['sick']);
+            $sheet->setCellValue('H' . $column, $row['absent']);
+            $sheet->setCellValue('I' . $column, $row['leave']);
+            $sheet->setCellValue('J' . $column, $row['username']);
+            $sheet->setCellValue('K' . $column, $row['created_at']);
+            $sheet->setCellValue('L' . $column, $row['updated_at']);
 
             $column++;
         }
