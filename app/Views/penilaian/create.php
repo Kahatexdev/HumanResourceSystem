@@ -242,10 +242,26 @@
         </div>
 
         <div class="mt-4">
-            <button type="submit" class="btn bg-gradient-info btn-sm w-100">
-                <i class="fas fa-save text-sm opacity-10"></i> Simpan
+            <button type="submit" id="submitBtn" class="btn bg-gradient-info w-100">
+            <span id="btnText"><i class="fas fa-save opacity-10"></i> Simpan</span>
+            <span id="btnLoading" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+            <span id="btnWait" class="d-none ms-2">Mohon tunggu...</span>
             </button>
         </div>
+        <div id="overlayLoading" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:9999;background:rgba(255,255,255,0.7);justify-content:center;align-items:center;">
+            <div class="spinner-border text-info" style="width:3rem;height:3rem;" role="status"></div>
+        </div>
+        <script>
+            document.getElementById('evaluationForm').addEventListener('submit', function(e) {
+            var btn = document.getElementById('submitBtn');
+            btn.disabled = true;
+            document.getElementById('btnText').classList.add('d-none');
+            document.getElementById('btnLoading').classList.remove('d-none');
+            document.getElementById('btnWait').classList.remove('d-none');
+            var overlay = document.getElementById('overlayLoading');
+            overlay.style.display = 'flex';
+            });
+        </script>
     </form>
 </div>
 
