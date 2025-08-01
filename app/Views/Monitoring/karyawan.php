@@ -262,10 +262,10 @@
                                                     data-bs-toggle="modal" data-bs-target="#ModalEdit">
                                                     <i class="fas fa-edit text-lg opacity-10" aria-hidden="true"></i>
                                                 </a>
-                                                <button class="btn bg-gradient-danger btn-sm"
+                                                <!-- <button class="btn bg-gradient-danger btn-sm"
                                                     onclick="confirmDelete('<?= $karyawan['id_employee'] ?>')">
                                                     <i class="fas fa-trash text-lg opacity-10" aria-hidden="true"></i>
-                                                </button>
+                                                </button> -->
                                             </td>
                                         </tr>
                                     <?php endforeach ?>
