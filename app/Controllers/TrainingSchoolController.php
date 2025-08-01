@@ -11,6 +11,7 @@ use App\Models\EmploymentStatusModel;
 use App\Models\FactoriesModel;
 use App\Models\HistoryEmployeeModel;
 use App\Models\DayModel;
+use App\Models\FormerEmployeeModel;
 
 class TrainingSchoolController extends BaseController
 {
@@ -22,6 +23,7 @@ class TrainingSchoolController extends BaseController
     protected $historyPindahKaryawanModel;
     protected $factoriesModel;
     protected $days;
+    protected $formerEmployeeModel;
 
     public function __construct()
     {
@@ -32,6 +34,8 @@ class TrainingSchoolController extends BaseController
         $this->historyPindahKaryawanModel = new HistoryEmployeeModel();
         $this->factoriesModel = new FactoriesModel();
         $this->days = new DayModel();
+
+        $this->formerEmployeeModel = new FormerEmployeeModel();
         $this->role = session()->get('role');
     }
     public function index()
@@ -208,5 +212,114 @@ class TrainingSchoolController extends BaseController
         ];
 
         return view('chat/index', $data);
+    }
+
+    public function formerKaryawan()
+    {
+        $karyawan = $this->formerEmployeeModel->getFormerKaryawan();
+
+        $data = [
+            'role' => session()->get('role'),
+            'title' => 'Former Karyawan',
+            'active1' => '',
+            'active2' => '',
+            'active3' => '',
+            'karyawan' => $karyawan
+        ];
+        return view(session()->get('role') . '/formerKaryawan', $data);
+    }
+
+    public function exportFormerKaryawan()
+    {
+        $karyawan = $this->formerEmployeeModel->getFormerKaryawan();
+
+        // Load library PhpSpreadsheet
+        $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+
+        // Set judul sheet
+        $sheet->setTitle('Former Karyawan');
+
+        // Merge dan set judul utama
+        $sheet->mergeCells('A1:H1');
+        $sheet->setCellValue('A1', 'Data Resign Karyawan');
+        $sheet->getStyle('A1')->getFont()->setSize(16)->setBold(true);
+        $sheet->getStyle('A1')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+        // Border untuk judul utama
+        $sheet->getStyle('A1:H1')->getBorders()->getAllBorders()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
+
+        // 1. Set header labels
+        $headers = [
+            'A2' => 'Kode Kartu',
+            'B2' => 'Nama Karyawan',
+            'C2' => 'Shift',
+            'D2' => 'Warna Baju',
+            'E2' => 'Bagian',
+            'F2' => 'Tgl Resign',
+            'G2' => 'Alasan Resign',
+            'H2' => 'Diupdate Oleh',
+        ];
+        foreach ($headers as $cell => $text) {
+            $sheet->setCellValue($cell, $text);
+        }
+
+        // 2. Styling header: bold + background + center + border
+        $headerRange = 'A2:H2';
+        $sheet->getStyle($headerRange)
+            ->getFont()
+            ->setBold(true);
+        $sheet->getStyle($headerRange)
+            ->getFill()
+            ->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
+            ->getStartColor()
+            ->setARGB('FFEFEFEF');
+        $sheet->getStyle($headerRange)
+            ->getAlignment()
+            ->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle($headerRange)
+            ->getBorders()
+            ->getAllBorders()
+            ->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
+        // Freeze header row
+        $sheet->freezePane('A3');
+
+        // 3. Isi data dan styling
+        $row = 3;
+        foreach ($karyawan as $data) {
+            $sheet->setCellValue('A' . $row, $data['employee_code']);
+            $sheet->setCellValue('B' . $row, $data['employee_name']);
+            $sheet->setCellValue('C' . $row, $data['shift']);
+            $sheet->setCellValue('D' . $row, $data['clothes_color']);
+            $sheet->setCellValue('E' . $row, "{$data['job_section_name']} - {$data['main_factory']} - {$data['factory_name']}");
+            $sheet->setCellValue('F' . $row, $data['date_of_leaving']);
+            $sheet->setCellValue('G' . $row, $data['reason_for_leaving']);
+            $sheet->setCellValue('H' . $row, $data['updated_by']);
+
+            // Center alignment + border
+            $sheet->getStyle("A{$row}:H{$row}")
+                ->getAlignment()
+                ->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle("A{$row}:H{$row}")
+                ->getBorders()
+                ->getAllBorders()
+                ->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
+
+            $row++;
+        }
+
+        // 4. Auto-size all columns A–H
+        foreach (range('A', 'H') as $col) {
+            $sheet->getColumnDimension($col)->setAutoSize(true);
+        }
+
+        // 5. Siapkan header HTTP untuk download
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment;filename="former_karyawan.xlsx"');
+        header('Cache-Control: max-age=0');
+
+        // 6. Buat writer dan output
+        $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+        $writer->save('php://output');
+        exit;
     }
 }

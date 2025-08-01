@@ -242,10 +242,16 @@
                                                 </button>
 
                                                 <button class="btn bg-gradient-danger btn-sm"
-                                                    onclick="confirmDelete('<?= $karyawan['id_employee'] ?>')">
-                                                    <!-- icon hapus -->
-                                                    <i class="fas fa-trash text-lg opacity-10" aria-hidden="true"></i>
+                                                    onclick="getEmployeeDataById('<?= $karyawan['id_employee'] ?>')">
+                                                    <i class="fas fa-user-slash text-lg opacity-10" aria-hidden="true" title="Former Employee"></i>
                                                 </button>
+
+                                                <!-- <form action="<?= base_url($role . '/formerEmployee') ?>" method="post">
+                                                    <input type="hidden" name="id_employee" value="<?= $karyawan['id_employee'] ?>">
+                                                    <button type="submit" class="btn bg-gradient-danger btn-sm">
+                                                        <i class="fas fa-user-slash text-lg opacity-10" aria-hidden="true" title="Former Employee"></i>
+                                                    </button>
+                                                </form> -->
                                             </td>
                                         </tr>
                                     <?php endforeach ?>
@@ -383,22 +389,186 @@
         </div>
     </div>
 </div>
+
+<!-- Modal Detail & Former Employee -->
+<div class="modal fade" id="employeeDetailModal" tabindex="-1" aria-labelledby="employeeDetailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+
+            <div class="modal-header bg-gradient-info">
+                <h5 class="modal-title text-white" id="employeeDetailModalLabel">Detail Karyawan</h5>
+                <button type="button" class="btn-close text-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <form
+                id="formerEmployeeForm"
+                action="<?= base_url($role . '/formerEmployee') ?>"
+                method="POST">
+                <div class="modal-body">
+
+                    <!-- Hidden ID Employee -->
+                    <input type="hidden" name="id_employee" id="form_id_employee" />
+
+                    <!-- Detail Karyawan -->
+                    <div class="row mb-3">
+                        <div class="col-sm-6">
+                            <strong>Nama</strong><br>
+                            <span id="card_nama_karyawan"></span>
+                        </div>
+                        <div class="col-sm-6">
+                            <strong>Kode Kartu</strong><br>
+                            <span id="card_kode_kartu"></span>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-sm-6">
+                            <strong>Shift</strong><br>
+                            <span id="card_shift"></span>
+                        </div>
+                        <div class="col-sm-6">
+                            <strong>Jenis Kelamin</strong><br>
+                            <span id="card_jenis_kelamin"></span>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-sm-6">
+                            <strong>Libur Reguler</strong><br>
+                            <span id="card_libur"></span>
+                        </div>
+                        <div class="col-sm-6">
+                            <strong>Libur Tambahan</strong><br>
+                            <span id="card_libur_tambahan"></span>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-sm-6">
+                            <strong>Warna Baju</strong><br>
+                            <span id="card_warna_baju"></span>
+                        </div>
+                        <div class="col-sm-6">
+                            <strong>Status Pekerjaan</strong><br>
+                            <span id="card_status_pekerjaan"></span>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-sm-6">
+                            <strong>Tanggal Lahir</strong><br>
+                            <span id="card_tgl_lahir"></span>
+                        </div>
+                        <div class="col-sm-6">
+                            <strong>Tanggal Masuk</strong><br>
+                            <span id="card_tgl_masuk"></span>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-sm-6">
+                            <strong>Bagian</strong><br>
+                            <span id="card_bagian"></span>
+                        </div>
+                        <div class="col-sm-6">
+                            <strong>Area</strong><br>
+                            <span id="card_area"></span>
+                        </div>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-sm-12">
+                            <strong>Status Aktif</strong><br>
+                            <span id="card_status_aktif"></span>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <!-- Form Keluar -->
+                    <div class="row mb-3">
+                        <div class="col-sm-6">
+                            <label for="form_tgl_out" class="form-label"><strong>Tanggal Keluar</strong></label>
+                            <input
+                                type="date"
+                                class="form-control"
+                                id="form_tgl_out"
+                                name="tgl_out"
+                                required />
+                        </div>
+                        <div class="col-sm-6">
+                            <label for="form_reason" class="form-label"><strong>Alasan Keluar</strong></label>
+                            <textarea
+                                class="form-control"
+                                id="form_reason"
+                                name="reason"
+                                rows="3"
+                                placeholder="Masukkan alasan resign atau pemberhentian"
+                                required></textarea>
+                        </div>
+                    </div>
+
+                </div> <!-- /.modal-body -->
+
+                <div class="modal-footer">
+                    <button
+                        type="button"
+                        class="btn bg-gradient-secondary"
+                        data-bs-dismiss="modal">
+                        Batal
+                    </button>
+                    <button
+                        type="submit"
+                        class="btn bg-gradient-danger">
+                        Simpan & Hapus Karyawan
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <script type="text/javascript">
-    function confirmDelete(id) {
-        Swal.fire({
-            title: 'Apakah Anda yakin?',
-            text: "Data yang dihapus tidak dapat dikembalikan!",
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#d33',
-            cancelButtonColor: '#3085d6',
-            confirmButtonText: 'Ya, hapus!',
-            cancelButtonText: 'Batal',
-        }).then((result) => {
-            if (result.isConfirmed) {
-                window.location.href = "<?= base_url('TrainingSchool/karyawanDelete/') ?>" + id;
+    // Ambil data karyawan by ID dan tampilkan di form edit
+    function getEmployeeDataById(id) {
+        $.ajax({
+            url: "<?= base_url($role . '/getEmployeeDataById') ?>",
+            type: "GET",
+            data: {
+                id: id
+            },
+            dataType: "json",
+            success: function(response) {
+                if (response && response.status === 'success') {
+                    const d = response.data;
+
+                    // Isi konten modal detail
+                    // $('#card_id_employee').text(d.id_employee);
+                    $('#form_id_employee').val(d.id_employee);
+                    $('#card_nama_karyawan').text(d.employee_name);
+                    $('#card_kode_kartu').text(d.employee_code);
+                    $('#card_shift').text(d.shift);
+                    $('#card_jenis_kelamin').text(d.gender === 'P' ? 'Perempuan' : 'Laki-laki');
+                    $('#card_libur').text(d.holiday_name);
+                    $('#card_libur_tambahan').text(d.additional_holiday_name || '-');
+                    $('#card_warna_baju').text(d.clothes_color);
+                    $('#card_status_pekerjaan').text(d.employment_status_name);
+                    $('#card_tgl_lahir').text(d.date_of_birth);
+                    $('#card_tgl_masuk').text(d.date_of_joining);
+                    $('#card_bagian').text(d.job_section_name);
+                    $('#card_area').text(d.main_factory + ' - ' + d.factory_name);
+                    $('#card_status_aktif').text(d.status);
+
+                    // Tampilkan modal detail
+                    $('#employeeDetailModal').modal('show');
+                } else {
+                    Swal.fire('Error', 'Data tidak ditemukan', 'error');
+                }
+            },
+            error: function() {
+                Swal.fire('Error', 'Gagal mengambil data', 'error');
             }
-        })
+        });
     }
 </script>
 <script>
@@ -559,6 +729,31 @@
                 }).appendTo('#ModalEdit form');
             }
         }
+    });
+</script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('formerEmployeeForm');
+
+        form.addEventListener('submit', function(e) {
+            e.preventDefault(); // cegah submit otomatis
+
+            Swal.fire({
+                title: 'Anda Yakin?',
+                text: 'Karyawan ini akan diresign dan data aslinya akan dihapus!',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Ya, resign & hapus',
+                cancelButtonText: 'Batal',
+                reverseButtons: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Jika user setuju, submit form
+                    form.submit();
+                }
+                // Jika dibatalkan, tidak terjadi apa-apa
+            });
+        });
     });
 </script>
 <?php $this->endSection(); ?>

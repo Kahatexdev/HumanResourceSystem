@@ -296,6 +296,10 @@ $routes->group('/TrainingSchool', ['filter' => 'TrainingSchool'], function ($rou
     $routes->get('karyawanEdit/(:num)', 'EmployeeController::edit/$1');
     $routes->post('karyawanUpdate/(:num)', 'EmployeeController::update/$1');
     $routes->get('karyawanDelete/(:num)', 'EmployeeController::delete/$1');
+    $routes->get('getEmployeeDataById', 'EmployeeController::getEmployeeDataById');
+    $routes->get('formerKaryawan', 'TrainingSchoolController::formerKaryawan');
+    $routes->post('formerEmployee', 'EmployeeController::formerEmployee');
+    $routes->get('exportFormerKaryawan', 'TrainingSchoolController::exportFormerKaryawan');
 
     $routes->get('historyPindahKaryawan', 'TrainingSchoolController::historyPindahKaryawan');
     $routes->get('reportHistoryPindahKaryawan', 'HistoryEmployeeController::reportExcel');

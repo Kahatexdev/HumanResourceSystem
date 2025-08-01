@@ -16,6 +16,7 @@ use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use App\Models\FactoriesModel;
 use App\Models\DayModel;
+use App\Models\FormerEmployeeModel;
 
 class EmployeeController extends BaseController
 {
@@ -27,6 +28,7 @@ class EmployeeController extends BaseController
     protected $historyEmployeeModel;
     protected $factoryModel;
     protected $dayModel;
+    protected $formerEmployeeModel;
 
     public function __construct()
     {
@@ -37,6 +39,7 @@ class EmployeeController extends BaseController
         $this->historyEmployeeModel = new HistoryEmployeeModel();
         $this->factoryModel = new FactoriesModel();
         $this->dayModel = new DayModel();
+        $this->formerEmployeeModel = new FormerEmployeeModel();
 
         $this->role = session()->get('role');
     }
@@ -833,4 +836,84 @@ class EmployeeController extends BaseController
         $writer->save('php://output');
         exit;
     }  //
+
+    public function getEmployeeDataById()
+    {
+        $idEmp = $this->request->getGet('id');
+        $employee = $this->employeeModel->getEmployeeDataById($idEmp);
+
+        // return json response
+        if ($employee) {
+            return $this->response->setJSON([
+                'status' => 'success',
+                'data' => $employee
+            ]);
+        } else {
+            return $this->response->setJSON([
+                'status' => 'error',
+                'message' => 'Data karyawan tidak ditemukan.'
+            ]);
+        }
+    }
+    public function formerEmployee()
+    {
+        $idEmp   = $this->request->getPost('id_employee');
+        $tglOut  = $this->request->getPost('tgl_out');
+        $reason  = $this->request->getPost('reason');
+        $idUser  = session()->get('id_user');
+        \log_message('info', 'Former Employee: idEmp={idEmp}, tglOut={tglOut}, reason={reason}, idUser={idUser}', [
+            'idEmp' => $idEmp,
+            'tglOut' => $tglOut,
+            'reason' => $reason,
+            'idUser' => $idUser
+        ]);
+        // 1) Fetch existing employee
+        $employee = $this->employeeModel->getEmployeeDataById($idEmp);
+        if (!$employee) {
+            return redirect()
+                ->to(base_url("{$this->role}/dataKaryawan"))
+                ->with('error', 'Data karyawan tidak ditemukan.');
+        }
+
+        // 2) Prepare former‐employee payload
+        $formerData = [
+            'employee_name'        => $employee['employee_name'],
+            'employee_code'        => $employee['employee_code'],
+            'shift'                => $employee['shift'],
+            'gender'               => $employee['gender'],
+            'job_section_name'     => $employee['job_section_name'],
+            'factory_name'         => $employee['factory_name'] ?? '-',
+            'main_factory'         => $employee['main_factory'] ?? '-',
+            'employment_status_name' => $employee['employment_status_name'] ?? '-',
+            'clothes_color'        => $employee['clothes_color'] ?? '-',
+            'holiday'              => $employee['holiday_name'] ?? '-',
+            'additional_holiday'   => $employee['additional_holiday_name'] ?? '-',
+            'date_of_birth'        => $employee['date_of_birth'],
+            'date_of_joining'      => $employee['date_of_joining'],
+            'date_of_leaving'      => $tglOut,
+            'reason_for_leaving'   => $reason,
+            'id_user'              => $idUser,
+
+        ];
+
+        // 3) Atomic save & delete via transaction
+        $db = \Config\Database::connect();
+        $db->transStart();
+
+        $inserted = $this->formerEmployeeModel->insert($formerData);
+        $deleted  = $this->employeeModel->delete($idEmp);
+
+        $db->transComplete();
+
+        if ($db->transStatus() && $inserted && $deleted) {
+            return redirect()
+                ->to(base_url("{$this->role}/dataKaryawan/ALL"))
+                ->with('success', 'Data karyawan berhasil dipindahkan ke tabel mantan karyawan.');
+        }
+
+        // If we get here, something went wrong
+        return redirect()
+            ->to(base_url("{$this->role}/dataKaryawan/ALL"))
+            ->with('error', 'Gagal memproses data karyawan. Silakan coba lagi.');
+    }
 }
