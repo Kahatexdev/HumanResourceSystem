@@ -158,6 +158,10 @@ $routes->group('/Monitoring', ['filter' => 'Monitoring'], function ($routes) {
     $routes->post('karyawanUpdate/(:num)', 'EmployeeController::update/$1');
     $routes->get('karyawanDelete/(:num)', 'EmployeeController::delete/$1');
     $routes->get('exportKaryawan/', 'EmployeeController::exportAll');
+    $routes->get('exportFormerKaryawan', 'MonitoringController::exportFormerKaryawan');
+    $routes->get('formerKaryawan', 'MonitoringController::formerKaryawan');
+
+
     // batch
     $routes->get('dataBatch', 'SudoController::batch');
     $routes->get('batchCreate', 'BatchController::create');
