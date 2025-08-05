@@ -2,6 +2,15 @@
 <?php $this->section('content'); ?>
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 <div class="container-fluid">
+    <?php if (session()->getFlashdata('error')): ?>
+        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+            <ul>
+                <?php foreach (session()->getFlashdata('error') as $error): ?>
+                    <li><?= esc($error) ?></li>
+                <?php endforeach; ?>
+            </ul>
+        </div>
+    <?php endif; ?>
     <div class="row my-4">
         <div class="col-xl-12 col-sm-12 mb-xl-0 mb-2">
             <div class="card">
@@ -341,14 +350,6 @@
                 icon: 'success',
                 title: 'Success!',
                 html: '<?= session()->getFlashdata('success') ?>',
-            });
-        <?php endif; ?>
-
-        <?php if (session()->getFlashdata('error')) : ?>
-            Swal.fire({
-                icon: 'error',
-                title: 'Error!',
-                html: '<?= session()->getFlashdata('error') ?>',
             });
         <?php endif; ?>
     });

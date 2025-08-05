@@ -149,118 +149,141 @@ class PresenceController extends BaseController
     public function upload()
     {
         $file = $this->request->getFile('file');
+        $id_periode = $this->request->getPost('id_periode');
 
-        // Check if the file is valid and has not been moved
-        if ($file && $file->isValid() && !$file->hasMoved()) {
-            $fileType = $file->getClientMimeType();
-
-            // Validate the file type
-            if (!in_array($fileType, ['application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'])) {
-                return redirect()->to(base_url('Monitoring/karyawanImport'))->with('error', 'Invalid file type. Please upload an Excel file.');
-            }
-
-            // Load the spreadsheet
-            $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($file->getTempName());
-            $dataSheet = $spreadsheet->getActiveSheet();
-            $startRow = 3; // Assuming the first row is for headers
-
-            // Models
-            $absenModel = new \App\Models\PresenceModel();
-            $karyawanModel = new \App\Models\EmployeeModel();
-
-            // Counters for success and errors
-            $successCount = 0;
-            $errorCount = 0;
-            $errorMessages = [];
-
-            // Iterate through each row of the spreadsheet
-            for ($row = $startRow; $row <= $dataSheet->getHighestRow(); $row++) {
-                $isValid = true;
-                $errorMessage = "Row {$row}: ";
-
-                // Get cell values
-                $kodeKartu = $dataSheet->getCell('A' . $row)->getValue();
-                $namaKaryawan = $dataSheet->getCell('D' . $row)->getValue();
-                $sakit = $dataSheet->getCell('I' . $row)->getValue();
-                $izin = $dataSheet->getCell('J' . $row)->getValue();
-                $cuti = $dataSheet->getCell('K' . $row)->getValue();
-                $mangkir = $dataSheet->getCell('L' . $row)->getValue();
-                $idUser = session()->get('id_user');
-
-
-                // dd ($kodeKartu, $namaKaryawan, $id_periode, $sakit, $izin, $cuti, $mangkir, $idUser);
-                // Validate data
-                // Validasi tangal 
-                $id_periode = $this->request->getPost('id_periode');
-                if (empty($id_periode)) {
-                    $isValid = false;
-                    $errorMessage .= "Periode is required. ";
-                }
-                if (empty($namaKaryawan)) {
-                    $isValid = false;
-                    $errorMessage .= "Nama Karyawan is required. ";
-                }
-                if (empty($kodeKartu)) {
-                    $isValid = false;
-                    $errorMessage .= "Kode Kartu is required. ";
-                }
-
-                // If valid, proceed to save
-                if ($isValid) {
-                    // Fetch the karyawan data
-                    $karyawan = $karyawanModel->where('employee_name', $namaKaryawan)->first();
-                    if ($karyawan) {
-                        // Prepare the data for saving
-                        $data = [
-                            'id_employee' => $karyawan['id_employee'],
-                            'id_periode' => $id_periode,
-                            'sick' => $sakit,
-                            'permit' => $izin,
-                            'leave' => $cuti,
-                            'absent' => $mangkir,
-                            'id_user' => $idUser
-                        ];
-
-                        // kalau ada data karyawan dan tanggal absen sama maka tidak bisa diinputkan
-                        $absen = $absenModel->where('id_employee', $karyawan['id_employee'])
-                            ->where('id_periode', $id_periode)
-                            ->first();
-                        if ($absen) {
-                            $isValid = false;
-                            $errorMessage .= "Data absen sudah ada. ";
-                        } else {
-                            // Save the data
-                            $absenModel->insert($data);
-                            $successCount++;
-                        }
-                    } else {
-                        $isValid = false;
-                        $errorMessage .= "Karyawan tidak ditemukan. ";
-                    }
-                }
-
-                // If invalid, add to error count and log the error message
-                if (!$isValid) {
-                    $errorCount++;
-                    $errorMessages[] = $errorMessage;
-                }
-            }
-
-            // Redirect with success and error messages
-            $message = "Data absen berhasil diupload. Total data: {$successCount}.";
-            if ($errorCount > 0) {
-                $message .= " Terdapat {$errorCount} data yang gagal diupload.";
-                $message .= "<ul>";
-                foreach ($errorMessages as $msg) {
-                    $message .= "<li>{$msg}</li>";
-                }
-                $message .= "</ul>";
-            }
-            return redirect()->to(base_url('Monitoring/dataAbsen'))->with('success', $message);
-        } else {
-            return redirect()->to(base_url('Monitoring/dataAbsen'))->with('error', 'Invalid file. Please upload an Excel file.');
+        // Validasi File
+        if (!$file || !$file->isValid() || $file->hasMoved()) {
+            return redirect()->to(base_url('Monitoring/karyawanImport'))
+                ->with('error', 'Invalid file upload.');
         }
+
+        $fileType = $file->getClientMimeType();
+        $allowedTypes = [
+            'application/vnd.ms-excel',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        ];
+        if (!in_array($fileType, $allowedTypes)) {
+            return redirect()->to(base_url('Monitoring/karyawanImport'))
+                ->with('error', 'Invalid file type. Please upload an Excel file.');
+        }
+
+        // Validasi Periode
+        if (empty($id_periode)) {
+            return redirect()->to(base_url('Monitoring/karyawanImport'))
+                ->with('error', 'Periode harus dipilih.');
+        }
+
+        // Load spreadsheet
+        try {
+            $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($file->getTempName());
+        } catch (\PhpOffice\PhpSpreadsheet\Reader\Exception $e) {
+            return redirect()->to(base_url('Monitoring/karyawanImport'))
+                ->with('error', 'Gagal membaca file Excel: ' . $e->getMessage());
+        }
+
+        $sheet = $spreadsheet->getActiveSheet();
+        $startRow = 3; // Asumsi header di baris 1-2
+
+        // Models
+        $absenModel    = new \App\Models\PresenceModel();
+        $karyawanModel = new \App\Models\EmployeeModel();
+
+        // Counters & error list
+        $successCount  = 0;
+        $errorMessages = [];
+
+        // Loop baris per baris
+        for ($row = $startRow; $row <= $sheet->getHighestRow(); $row++) {
+            // Baca cell dan trim string
+            $kodeKartu    = trim((string) $sheet->getCell('A' . $row)->getFormattedValue());
+            $namaKaryawan = trim((string) $sheet->getCell('D' . $row)->getValue());
+            if (empty($kodeKartu) || empty($namaKaryawan)) {
+                continue; // Skip jika kode kartu atau nama kosong
+            }
+            $sakit        = trim((string) $sheet->getCell('I' . $row)->getValue());
+            $izin         = trim((string) $sheet->getCell('J' . $row)->getValue());
+            $cuti         = trim((string) $sheet->getCell('K' . $row)->getValue());
+            $mangkir      = trim((string) $sheet->getCell('L' . $row)->getValue());
+            $idUser       = session()->get('id_user');
+
+            // Skip baris kosong
+            if (
+                $kodeKartu === '' &&
+                $namaKaryawan === '' &&
+                $sakit === '' &&
+                $izin === '' &&
+                $cuti === '' &&
+                $mangkir === ''
+            ) {
+                continue;
+            }
+
+            $rowErrors = [];
+
+            // Validasi wajib
+            // if ($kodeKartu === '')    $rowErrors[] = 'Kode Kartu kosong';
+            // if ($namaKaryawan === '') $rowErrors[] = 'Nama Karyawan kosong';
+
+            if (!empty($rowErrors)) {
+                $errorMessages[] = "Row {$row}: " . implode(', ', $rowErrors);
+                continue;
+            }
+
+            // Cari karyawan
+            $karyawan = $karyawanModel
+                ->where('employee_code', $kodeKartu)
+                ->where('employee_name', $namaKaryawan)
+                ->first();
+
+            if (!$karyawan) {
+                $errorMessages[] = "Row {$row}: Karyawan tidak ditemukan (Kode: {$kodeKartu}).";
+                continue;
+            }
+
+            // Cek duplikasi absen
+            $existing = $absenModel
+                ->where('id_employee', $karyawan['id_employee'])
+                ->where('id_periode', $id_periode)
+                ->first();
+
+            if ($existing) {
+                $errorMessages[] = "Row {$row}: Data absen sudah ada untuk periode ini.";
+                continue;
+            }
+
+            // Insert data absen
+            $absenModel->insert([
+                'id_employee' => $karyawan['id_employee'],
+                'id_periode'  => $id_periode,
+                'sick'        => (int) $sakit,
+                'permit'      => (int) $izin,
+                'leave'       => (int) $cuti,
+                'absent'      => (int) $mangkir,
+                'id_user'     => $idUser,
+            ]);
+            $successCount++;
+        }
+
+        // Siapkan flash message
+        if ($successCount > 0) {
+            $flashType = 'success';
+            $flashMsg  = "Data absen berhasil diupload. Total data sukses: {$successCount}.";
+        } else {
+            $flashType = 'error';
+            $flashMsg  = "Tidak ada data yang berhasil diupload.";
+        }
+
+        if (count($errorMessages) > 0) {
+            $flashMsg .= " Terdapat " . count($errorMessages) . " data yang gagal.";
+        }
+
+        // Redirect dengan flash dan daftar error
+        return redirect()->to(base_url('Monitoring/dataAbsen'))
+            ->with($flashType, $flashMsg)
+            ->with('error', $errorMessages);
     }
+
+
 
     public function absenReport()
     {
