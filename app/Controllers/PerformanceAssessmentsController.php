@@ -1559,7 +1559,7 @@ class PerformanceAssessmentsController extends BaseController
             $countBulan = count($mapBulan2Col); // Jumlah bulan yang diharapkan
             $avgNilai    = $countBulan > 0 ? ($totalNilai / $countBulan) : 0;
 
-            if ($avgNilai >= 90) {
+            if ($avgNilai >= 95) {
                 $gradeGroups['Grade A'][] = $compositeKey;
             } elseif ($avgNilai >= 85) {
                 $gradeGroups['Grade B'][] = $compositeKey;
