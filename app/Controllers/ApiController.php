@@ -76,7 +76,7 @@ class ApiController extends BaseController
         $data = $this->employeeModel->getKaryawanByAreaApi($area);
 
         $filteredArea = array_filter($data, function ($item) use ($namaKar) {
-            return $item['nama_karyawan'] === $namaKar;
+            return $item['employee_name'] === $namaKar;
         });
 
         // Re-index array supaya tidak acak
