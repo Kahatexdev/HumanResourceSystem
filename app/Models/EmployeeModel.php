@@ -285,4 +285,9 @@ class EmployeeModel extends Model
             ->get()
             ->getFirstRow('array');
     }
+
+    public function findById($id)
+    {
+        return $this->getEmployeeDataById($id);
+    }
 }
