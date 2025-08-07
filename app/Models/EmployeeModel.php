@@ -303,6 +303,6 @@ class EmployeeModel extends Model
             ->where('employees.id_employee', $id)
             ->groupBy('employees.id_employee')
             ->get()
-            ->getResultArray();
+            ->getFirstRow('array');
     }
 }
