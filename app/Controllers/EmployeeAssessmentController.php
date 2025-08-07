@@ -52,13 +52,15 @@ class EmployeeAssessmentController extends BaseController
     public function getKaryawan()
     {
         $filters = [
+            'id_periode' => $this->request->getGet('id_periode'),
             'job_section_name' => $this->request->getGet('nama_bagian'),
             'main_factory'  => $this->request->getGet('area_utama'),
             'factory_name'        => $this->request->getGet('area'),
         ];
-
+        // dd ($filters);
         // Panggil model dengan filter
         $karyawan  = $this->employeeModel->getEmployeeDataS($filters);
+        // dd ($karyawan);
 
         return $this->response->setJSON([
             'data' => $karyawan,

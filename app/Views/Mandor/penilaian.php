@@ -1,6 +1,24 @@
 <?php $this->extend('layout/template'); ?>
 <?php $this->section('content'); ?>
 <link href="<?= base_url('assets/css/select2.min.css') ?>" rel="stylesheet" />
+<style>
+    /* 1) Warna background dan teks untuk tag pilihan (di atas select) */
+    .select2-container--default .select2-selection__choice {
+        background-color: #0d6efd !important;
+        /* biru gelap */
+        color: #fff !important;
+        /* teks putih */
+    }
+
+    /* 2) Warna opsi yang "aktif/terpilih" dalam dropdown */
+    .select2-container--default .select2-results__option[aria-selected="true"] {
+        background-color: #cfe2ff !important;
+        /* biru muda */
+        color: #084298 !important;
+        /* teks biru tua */
+    }
+</style>
+
 <div class="container-fluid py-4">
     <div class="row mt-4">
         <div class="col-xl-12 col-sm-12 mb-xl-0 mb-4 mt-2">
@@ -68,12 +86,15 @@
 <script src="<?= base_url('assets/js/select2.min.js') ?>"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        const idPeriode = document.getElementById('id_periode');
         const namaBagian = document.getElementById('nama_bagian');
         const areaUtama = document.getElementById('area_utama');
         const areaSelect = document.getElementById('area');
         const karyawanSel = document.getElementById('karyawan');
 
         areaSelect.addEventListener('change', function() {
+            // Ambil nilai dari dropdown
+            const idPer = idPeriode.value;
             const namaBag = namaBagian.value;
             const areaUt = areaUtama.value;
             const area = this.value;
@@ -81,9 +102,10 @@
             // Reset dropdown
             karyawanSel.innerHTML = '<option value="">Pilih Karyawan</option>';
 
-            if (namaBag && areaUt && area) {
+            if (idPer && namaBag && areaUt && area) {
                 fetch(`<?= base_url($role . '/getKaryawan') ?>` +
-                        `?nama_bagian=${encodeURIComponent(namaBag)}` +
+                        `?id_periode=${encodeURIComponent(idPer)}` +
+                        `&nama_bagian=${encodeURIComponent(namaBag)}` +
                         `&area_utama=${encodeURIComponent(areaUt)}` +
                         `&area=${encodeURIComponent(area)}`)
                     .then(res => res.json())
@@ -104,13 +126,9 @@
         });
     });
 
-    $(document).ready(function() {
-        // Aktifkan library select2 untuk multiple select
-        $('#karyawan').select2({
-            placeholder: "Pilih Karyawan",
-            allowClear: true
-        });
-
+    $('#karyawan').select2({
+        placeholder: "Pilih Karyawan",
+        allowClear: true,
     });
 </script>
 <script>

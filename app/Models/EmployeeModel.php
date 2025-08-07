@@ -93,8 +93,18 @@ class EmployeeModel extends Model
                 'days',
                 "days.id_day = employees.holiday OR days.id_day = employees.additional_holiday",
                 'left'
-            );
+            )
+            ->join('assessments', 'assessments.id_employee = employees.id_employee', 'left');
 
+        if (! empty($filters['id_periode'])) {
+            // Ambil semua id_employee yang sudah ada assessment di periode ini
+            $subQuery = $this->db->table('assessments')
+            ->select('id_employee')
+            ->where('id_periode', $filters['id_periode']);
+
+            // Exclude id_employee yang sudah ada assessment di periode ini
+            $builder->whereNotIn('employees.id_employee', $subQuery);
+        }
         if (! empty($filters['job_section_name'])) {
             $builder->where('job_sections.job_section_name', $filters['job_section_name']);
         }
