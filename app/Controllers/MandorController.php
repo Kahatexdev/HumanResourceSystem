@@ -86,7 +86,8 @@ class MandorController extends BaseController
             ->first();
             // dd ($periodeId);
         if (!$periodeId) {
-            return redirect()->back()->with('error', 'Periode aktif tidak ditemukan untuk tanggal hari ini.');
+            // Jika tidak ada periode aktif, bisa redirect atau tampilkan pesan error
+            return redirect()->to('/Mandor/dashboard')->with('error', 'Tidak ada periode aktif saat ini.');
         }
 
         // Ambil hanya yang BELUM dinilai
