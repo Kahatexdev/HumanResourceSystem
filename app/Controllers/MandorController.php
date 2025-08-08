@@ -62,6 +62,11 @@ class MandorController extends BaseController
     {
         $session = session();
 
+        // Pastikan user sudah login (opsional, aktifkan kalau butuh)
+        // if (!$session->get('isLoggedIn')) {
+        //     return redirect()->to('/login')->with('error', 'Silakan login terlebih dahulu.');
+        // }
+
         // Normalisasi nama folder view berdasarkan role agar tidak case-sensitive
         $roleFolder = ucfirst(strtolower($session->get('role')));
 
@@ -70,7 +75,7 @@ class MandorController extends BaseController
 
         // Cari periode aktif (bisa null jika tidak ada)
         $periode = $this->periodeModel
-            ->select('id_periode')
+            ->select('id_periode, start_date, end_date')
             ->where('status', 'active')
             ->where('start_date <=', date('Y-m-d'))
             ->where('end_date >=', date('Y-m-d'))
@@ -78,19 +83,46 @@ class MandorController extends BaseController
 
         $periodeId = $periode ? $periode['id_periode'] : null;
 
-        // Jika tidak ada periode aktif -> jangan redirect ke route yang sama (hindari loop)
+        $noPeriode = false;
+        $periodeMessage = null;
+        $employees = [];
+
         if (!$periodeId) {
-            // Siapkan pesan supaya user tahu kenapa datanya kosong
-            $session->setFlashdata('warning', 'Tidak ada periode aktif saat ini. Data penilaian belum tersedia.');
-            $employees = []; // kosongkan list karyawan supaya view tetap aman
+            // --- Opsi A: tidak ada periode aktif -> tampilkan pesan, jangan panggil model yang butuh periode
+            $noPeriode = true;
+            $periodeMessage = 'Tidak ada periode aktif saat ini. Data penilaian belum tersedia.';
+
+            // Jika mau flashdata (tampil sekali), juga bisa:
+            $session->setFlashdata('warning', $periodeMessage);
+
+            // employees tetap array kosong agar view aman
+            $employees = [];
         } else {
             // Ambil daftar karyawan yang belum/sudah dinilai (method model disesuaikan)
             $employees = $this->performanceAssessmentModel->getEmployeeEvaluationStatus($periodeId, $area, true);
-            // Pastikan $employees selalu array agar view aman
             if (!is_array($employees)) {
                 $employees = [];
             }
         }
+
+        // --- Opsi B (opsional): fallback ke periode terakhir jika kamu ingin tetap menampilkan data
+        // Uncomment block ini jika ingin menggunakan fallback otomatis ke periode terakhir (jika tidak ada aktif)
+        /*
+    if ($noPeriode) {
+        $lastPeriode = $this->periodeModel
+            ->select('id_periode, start_date, end_date')
+            ->orderBy('end_date', 'DESC')
+            ->first();
+
+        if ($lastPeriode) {
+            $periodeId = $lastPeriode['id_periode'];
+            $employees = $this->performanceAssessmentModel->getEmployeeEvaluationStatus($periodeId, $area, true) ?? [];
+            $periodeMessage .= ' Menampilkan data dari periode terakhir (' . $lastPeriode['start_date'] . ' s/d ' . $lastPeriode['end_date'] . ').';
+            $noPeriode = false; // karena sekarang ada data fallback
+            $session->setFlashdata('info', $periodeMessage);
+        }
+    }
+    */
 
         return view($roleFolder . '/dashboard', [
             'employees' => $employees,
@@ -98,8 +130,11 @@ class MandorController extends BaseController
             'area' => $area,
             'role' => $session->get('role'),
             'title' => 'Dashboard',
+            'noPeriode' => $noPeriode,
+            'periodeMessage' => $periodeMessage
         ]);
     }
+
 
 
     public function listArea()

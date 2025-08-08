@@ -4,6 +4,14 @@
 <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.24/css/dataTables.bootstrap5.min.css">
 
 <div class="container-fluid py-4">
+    <?php if (session()->getFlashdata('warning')): ?>
+        <div class="alert alert-warning"><?= session()->getFlashdata('warning') ?></div>
+    <?php endif; ?>
+
+    <?php if (!empty($noPeriode) && $noPeriode): ?>
+        <div class="alert alert-info"><?= esc($periodeMessage ?? 'Tidak ada periode aktif.') ?></div>
+    <?php endif; ?>
+
     <!-- Header -->
     <div class="card mb-4">
         <div class="card-header text-white">
