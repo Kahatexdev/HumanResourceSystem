@@ -116,6 +116,12 @@ if (!empty($employees) && is_array($employees)) {
             </div>
         </div>
     </div>
+
+<?php else : ?>
+    <!-- Jika tidak ada karyawan belum dinilai, tidak perlu modal -->
+    <div class="alert alert-info" role="alert">
+        Semua karyawan sudah dinilai.
+    </div>
 <?php endif; ?>
 
 <!-- Scripting: load jQuery dulu, lalu DataTables, lalu Bootstrap JS (bundle) -->
