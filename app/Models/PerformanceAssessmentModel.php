@@ -122,30 +122,87 @@ class PerformanceAssessmentModel extends Model
             ->getResultArray();
     }
 
-    public function getEmployeeEvaluationStatus($periode, $area)
+    /**
+     * Versi LEFT JOIN (mudah dibaca). Jika $onlyBelum = true, akan mengembalikan hanya karyawan BELUM dinilai.
+     */
+    public function getEmployeeEvaluationStatus($periodeId, $area, $onlyBelum = true)
     {
         $builder = $this->db->table('employees as k');
         $builder->select("
-        k.id_employee,
-        k.employee_code,
-        k.employee_name,
-        k.shift,
-        job.job_section_name,
-        factory.main_factory,
-        factory.factory_name,
-        IF(p.id_performance_assessment  IS NULL, 'Belum Dinilai', 'Sudah Dinilai') AS status
-    ", false);
+            k.id_employee,
+            k.employee_code,
+            k.employee_name,
+            k.shift,
+            job.job_section_name,
+            factory.main_factory,
+            factory.factory_name,
+            IF(p.id_performance_assessment IS NULL, 'Belum Dinilai', 'Sudah Dinilai') AS status
+        ", false);
+
         $builder->join('job_sections as job', 'job.id_job_section = k.id_job_section', 'left');
         $builder->join('factories as factory', 'factory.id_factory = k.id_factory', 'left');
-        $builder->join('performance_assessments as p', "p.id_employee = k.id_employee AND p.id_periode = \"$periode\"", 'left');
-        $builder->whereIn('job.job_section_name', ['OPERATOR', 'OPERATOR (8D)', 'OPERATOR (8J)', 'OPERATOR (KK9)', 'OPERATOR MEKANIK DOUBLE', 'MONTIR', 'MONTIR (A1)', 'MONTIR (8J)', 'MONTIR (DAKONG)', 'MONTIR (LONATI SINGLE)', 'MONTIR (LONATI DOUBLE)', 'ROSSO', 'SEWING']);
+
+        // JOIN dengan escape untuk mencegah injection
+        $builder->join(
+            'performance_assessments as p',
+            'p.id_employee = k.id_employee AND p.id_periode = ' . $this->db->escape($periodeId),
+            'left'
+        );
+
+        $builder->whereIn('job.job_section_name', [
+            'OPERATOR',
+            'OPERATOR (8D)',
+            'OPERATOR (8J)',
+            'OPERATOR (KK9)',
+            'OPERATOR MEKANIK DOUBLE',
+            'MONTIR',
+            'MONTIR (A1)',
+            'MONTIR (8J)',
+            'MONTIR (DAKONG)',
+            'MONTIR (LONATI SINGLE)',
+            'MONTIR (LONATI DOUBLE)',
+            'ROSSO',
+            'SEWING'
+        ]);
+
         $builder->where('factory.factory_name', $area);
-        $builder->where('k.id_employment_status', 3); // Hanya karyawan baju biru
-        $builder->groupBy('k.id_employee');
-        $builder->groupBy('p.id_periode');
+        $builder->where('k.id_employment_status', 3); // karyawan baju biru
+
+        if ($onlyBelum) {
+            // literal SQL IS NULL — gunakan false agar CI tidak men-escape string
+            $builder->where('p.id_performance_assessment IS NULL', null, false);
+        }
+
+        $builder->groupBy('k.id_employee'); // cukup group by employee
+        $builder->orderBy('k.employee_name', 'ASC');
 
         return $builder->get()->getResultArray();
     }
+
+    // public function getEmployeeEvaluationStatus($periode, $area)
+    // {
+    //     $builder = $this->db->table('employees as k');
+    //     $builder->select("
+    //     k.id_employee,
+    //     k.employee_code,
+    //     k.employee_name,
+    //     k.shift,
+    //     job.job_section_name,
+    //     factory.main_factory,
+    //     factory.factory_name,
+    //     IF(p.id_performance_assessment  IS NULL, 'Belum Dinilai', 'Sudah Dinilai') AS status
+    // ", false);
+    //     $builder->join('job_sections as job', 'job.id_job_section = k.id_job_section', 'left');
+    //     $builder->join('factories as factory', 'factory.id_factory = k.id_factory', 'left');
+    //     $builder->join('performance_assessments as p', "p.id_employee = k.id_employee AND p.id_periode = \"$periode\"", 'left');
+    //     $builder->whereIn('job.job_section_name', ['OPERATOR', 'OPERATOR (8D)', 'OPERATOR (8J)', 'OPERATOR (KK9)', 'OPERATOR MEKANIK DOUBLE', 'MONTIR', 'MONTIR (A1)', 'MONTIR (8J)', 'MONTIR (DAKONG)', 'MONTIR (LONATI SINGLE)', 'MONTIR (LONATI DOUBLE)', 'ROSSO', 'SEWING']);
+    //     $builder->where('factory.factory_name', $area);
+    //     $builder->where('k.id_employment_status', 3); // Hanya karyawan baju biru
+    //     $builder->groupBy('k.id_employee');
+    //     $builder->groupBy('p.id_periode');
+
+    //     return $builder->get()->getResultArray();
+    // }
 
     public function getAssessmentsByMainFactory($main_factory)
     {

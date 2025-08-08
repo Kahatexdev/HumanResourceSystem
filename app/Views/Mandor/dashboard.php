@@ -1,34 +1,13 @@
 <?php $this->extend('layout/template'); ?>
 <?php $this->section('content'); ?>
 
-<!-- Add DataTables CSS -->
 <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.24/css/dataTables.bootstrap5.min.css">
 
 <div class="container-fluid py-4">
     <!-- Header -->
     <div class="card mb-4">
         <div class="card-header text-white">
-            <h4 class="mb-0">Status Penilaian Karyawan - Area <?= $area ?></h4>
-        </div>
-    </div>
-
-    <!-- Select Option untuk Periode -->
-    <div class="card mb-4">
-        <div class="card-body">
-            <div class="form-group">
-                <label for="periodeSelect">Pilih Periode</label>
-                <select id="periodeSelect" class="form-control">
-                    <?php if (!empty($periode)) : ?>
-                        <?php foreach ($periode as $p) : ?>
-                            <option value="<?= $p['id_periode']; ?>">
-                                <?= $p['batch_name']; ?> - Periode <?= $p['periode_name']; ?> (<?= date('d/M/Y', strtotime($p['start_date'])); ?> - <?= date('d/M/Y', strtotime($p['end_date'])); ?>)
-                            </option>
-                        <?php endforeach; ?>
-                    <?php else : ?>
-                        <option value="">Pilih Periode</option>
-                    <?php endif; ?>
-                </select>
-            </div>
+            <h4 class="mb-0">KARYAWAN YANG BELUM DINILAI - Area <?= esc($area) ?></h4>
         </div>
     </div>
 
@@ -48,10 +27,31 @@
                             <th>Status Evaluasi</th>
                         </tr>
                     </thead>
-                    <tbody id="evaluationBody">
-                        <tr>
-                            <td colspan="7" class="text-center">Memuat data...</td>
-                        </tr>
+                    <tbody>
+                        <?php if (!empty($employees) && is_array($employees)) : ?>
+                            <?php $no = 1; ?>
+                            <?php foreach ($employees as $row) : ?>
+                                <tr>
+                                    <td class="text-center"><?= $no++ ?></td>
+                                    <td><?= esc($row['employee_code']) ?></td>
+                                    <td><?= esc($row['employee_name']) ?></td>
+                                    <td><?= esc($row['shift']) ?></td>
+                                    <td><?= esc($row['job_section_name']) ?></td>
+                                    <td><?= esc($row['factory_name'] ?? $area) ?></td>
+                                    <td class="text-center">
+                                        <?php if (isset($row['status']) && $row['status'] === 'Sudah Dinilai') : ?>
+                                            <span class="badge bg-success">Sudah Dinilai</span>
+                                        <?php else : ?>
+                                            <span class="badge bg-danger">Belum Dinilai</span>
+                                        <?php endif; ?>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php else : ?>
+                            <tr>
+                                <td colspan="7" class="text-center">Tidak ada data evaluasi karyawan</td>
+                            </tr>
+                        <?php endif; ?>
                     </tbody>
                 </table>
             </div>
@@ -59,87 +59,100 @@
     </div>
 </div>
 
-<!-- Add DataTables JS -->
+<?php
+// Filter karyawan yang BELUM dinilai
+$notEvaluated = [];
+if (!empty($employees) && is_array($employees)) {
+    foreach ($employees as $emp) {
+        // jika kolom status tidak ada atau bukan 'Sudah Dinilai' maka dianggap belum
+        if (!isset($emp['status']) || $emp['status'] !== 'Sudah Dinilai') {
+            $notEvaluated[] = $emp;
+        }
+    }
+}
+?>
+
+<!-- Modal hanya dirender jika ada karyawan belum dinilai -->
+<?php if (!empty($notEvaluated)) : ?>
+    <div class="modal fade" id="alertModal" tabindex="-1" aria-labelledby="alertModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable"> <!-- scrollable jika banyak -->
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="alertModalLabel">Karyawan Belum Dinilai (<?= count($notEvaluated) ?>)</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Berikut adalah daftar karyawan yang belum dinilai:</p>
+                    <div class="table-responsive" style="max-height:350px; overflow:auto;">
+                        <table class="table table-striped table-sm">
+                            <thead>
+                                <tr>
+                                    <th style="width:1%">#</th>
+                                    <th style="width:20%">Kode Kartu</th>
+                                    <th>Nama Karyawan</th>
+                                    <th>Bagian</th>
+                                    <th>Shift</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php $i = 1; ?>
+                                <?php foreach ($notEvaluated as $employee) : ?>
+                                    <tr>
+                                        <td><?= $i++ ?></td>
+                                        <td><?= esc($employee['employee_code']) ?></td>
+                                        <td><?= esc($employee['employee_name']) ?></td>
+                                        <td><?= esc($employee['job_section_name'] ?? '-') ?></td>
+                                        <td><?= esc($employee['shift'] ?? '-') ?></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="mt-2"><small class="text-muted">Tutup modal jika sudah dilihat atau ingin menilai manual lewat menu penilaian.</small></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                </div>
+            </div>
+        </div>
+    </div>
+<?php endif; ?>
+
+<!-- Scripting: load jQuery dulu, lalu DataTables, lalu Bootstrap JS (bundle) -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<!-- DataTables (requires jQuery) -->
 <script src="https://cdn.datatables.net/1.10.24/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.10.24/js/dataTables.bootstrap5.min.js"></script>
 
+<!-- Bootstrap 5 bundle (Popper+Bootstrap JS) -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
 <script>
     $(document).ready(function() {
-        let dataTable = null;
-
-        function loadEvaluationData() {
-            const id_periode = $('#periodeSelect').val();
-            const area = "<?= $area ?>";
-
-            $.ajax({
-                url: "<?= base_url($role . '/evaluasiKaryawan') ?>/" + id_periode + "/" + area,
-                method: "GET",
-                dataType: "json",
-                success: function(data) {
-                    let html = "";
-                    let no = 1;
-
-                    if (data.length > 0) {
-                        data.forEach(function(row) {
-                            html += `
-                                <tr>
-                                    <td class="text-center">${no}</td>
-                                    <td>${row.employee_code}</td>
-                                    <td>${row.employee_name}</td>
-                                    <td>${row.shift}</td>
-                                    <td>${row.job_section_name}</td>
-                                    <td>${row.factory_name}</td>
-                                    <td class="text-center">
-                                        ${row.status === 'Sudah Dinilai' 
-                                            ? '<span class="badge bg-info">Sudah Dinilai</span>' 
-                                            : '<span class="badge bg-danger">Belum Dinilai</span>'}
-                                    </td>
-                                </tr>
-                            `;
-                            no++;
-                        });
-                    } else {
-                        html = `<tr><td colspan="7" class="text-center">Tidak ada data evaluasi karyawan</td></tr>`;
-                    }
-
-                    // Destroy existing DataTable
-                    if (dataTable !== null) {
-                        dataTable.destroy();
-                    }
-
-                    // Update table body
-                    $('#evaluationBody').html(html);
-
-                    // Initialize DataTable
-                    dataTable = $('#evaluationTable').DataTable({
-                        paging: true,
-                        pageLength: 10,
-                        lengthChange: true,
-                        searching: true,
-                        ordering: true,
-                        info: true,
-                        responsive: true,
-                        language: {
-                            url: '//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json'
-                        }
-                    });
-                },
-                error: function(xhr, status, error) {
-                    console.error("AJAX error: " + status + " - " + error);
-                    $('#evaluationBody').html(
-                        `<tr><td colspan="7" class="text-center">Gagal memuat data</td></tr>`
-                    );
-                }
-            });
-        }
-
-        // Initial load
-        loadEvaluationData();
-
-        // Reload on periode change
-        $('#periodeSelect').change(function() {
-            loadEvaluationData();
+        // Inisialisasi DataTable sekali saja
+        $('#evaluationTable').DataTable({
+            paging: true,
+            pageLength: 10,
+            lengthChange: true,
+            searching: true,
+            ordering: true,
+            info: true,
+            responsive: true,
+            language: {
+                url: '//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json'
+            }
         });
+
+        // Tampilkan modal alert hanya jika ada elemen #alertModal (yang berarti ada karyawan belum dinilai)
+        var alertModalEl = document.getElementById('alertModal');
+        if (alertModalEl) {
+            var myModal = new bootstrap.Modal(alertModalEl, {
+                backdrop: 'static', // opsional: 'static' agar tidak tertutup klik luar, hapus jika ingin bisa ditutup klik luar
+                keyboard: true
+            });
+            myModal.show();
+        }
     });
 </script>
 

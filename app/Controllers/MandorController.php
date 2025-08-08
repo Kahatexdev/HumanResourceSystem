@@ -60,22 +60,45 @@ class MandorController extends BaseController
 
     public function dashboard()
     {
-        $periode = $this->periodeModel->getPeriode();
-        $data = [
-            'role' => $this->role,
-            'area' => session()->get('area'),
+        // $periode = $this->periodeModel->getPeriode();
+        // $data = [
+        //     'role' => $this->role,
+        //     'area' => session()->get('area'),
+        //     'title' => 'Dashboard',
+        //     'active1' => '',
+        //     'active2' => '',
+        //     'active3' => '',
+        //     'active4' => '',
+        //     'active5' => '',
+        //     'active6' => '',
+        //     'active7' => '',
+        //     'active8' => '',
+        //     'periode' => $periode
+        // ];
+        // return view(session()->get('role') . '/dashboard', $data);
+        $session = session();
+        $area = $session->get('area'); // sesuaikan key session-mu (mis: 'factory_name' / 'area')
+        // dd ($area);
+        $periodeId = $this->periodeModel->select('id_periode')
+            ->where('status', 'active')
+            ->where('start_date <=', date('Y-m-d'))
+            ->where('end_date >=', date('Y-m-d'))
+            ->first();
+            // dd ($periodeId);
+        if (!$periodeId) {
+            return redirect()->back()->with('error', 'Periode aktif tidak ditemukan untuk tanggal hari ini.');
+        }
+
+        // Ambil hanya yang BELUM dinilai
+        $employees = $this->performanceAssessmentModel->getEmployeeEvaluationStatus($periodeId['id_periode'], $area, true);
+        // dd ($employees);
+        return view($session->get('role') . '/dashboard', [
+            'employees' => $employees,
+            'periodeId' => $periodeId['id_periode'],
+            'area' => $area,
+            'role' => $session->get('role'),
             'title' => 'Dashboard',
-            'active1' => '',
-            'active2' => '',
-            'active3' => '',
-            'active4' => '',
-            'active5' => '',
-            'active6' => '',
-            'active7' => '',
-            'active8' => '',
-            'periode' => $periode
-        ];
-        return view(session()->get('role') . '/dashboard', $data);
+        ]);
     }
 
     public function listArea()
