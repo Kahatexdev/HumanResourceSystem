@@ -60,47 +60,47 @@ class MandorController extends BaseController
 
     public function dashboard()
     {
-        // $periode = $this->periodeModel->getPeriode();
-        // $data = [
-        //     'role' => $this->role,
-        //     'area' => session()->get('area'),
-        //     'title' => 'Dashboard',
-        //     'active1' => '',
-        //     'active2' => '',
-        //     'active3' => '',
-        //     'active4' => '',
-        //     'active5' => '',
-        //     'active6' => '',
-        //     'active7' => '',
-        //     'active8' => '',
-        //     'periode' => $periode
-        // ];
-        // return view(session()->get('role') . '/dashboard', $data);
         $session = session();
-        $area = $session->get('area'); // sesuaikan key session-mu (mis: 'factory_name' / 'area')
-        // dd ($area);
-        $periodeId = $this->periodeModel->select('id_periode')
+
+        // Normalisasi nama folder view berdasarkan role agar tidak case-sensitive
+        $roleFolder = ucfirst(strtolower($session->get('role')));
+
+        // Ambil area dari session (sesuaikan key jika kamu pakai kunci lain)
+        $area = $session->get('area') ?? 'Unknown';
+
+        // Cari periode aktif (bisa null jika tidak ada)
+        $periode = $this->periodeModel
+            ->select('id_periode')
             ->where('status', 'active')
             ->where('start_date <=', date('Y-m-d'))
             ->where('end_date >=', date('Y-m-d'))
             ->first();
-            // dd ($periodeId);
+
+        $periodeId = $periode ? $periode['id_periode'] : null;
+
+        // Jika tidak ada periode aktif -> jangan redirect ke route yang sama (hindari loop)
         if (!$periodeId) {
-            // Jika tidak ada periode aktif, bisa redirect atau tampilkan pesan error
-            return redirect()->to('/Mandor/dashboard')->with('error', 'Tidak ada periode aktif saat ini.');
+            // Siapkan pesan supaya user tahu kenapa datanya kosong
+            $session->setFlashdata('warning', 'Tidak ada periode aktif saat ini. Data penilaian belum tersedia.');
+            $employees = []; // kosongkan list karyawan supaya view tetap aman
+        } else {
+            // Ambil daftar karyawan yang belum/sudah dinilai (method model disesuaikan)
+            $employees = $this->performanceAssessmentModel->getEmployeeEvaluationStatus($periodeId, $area, true);
+            // Pastikan $employees selalu array agar view aman
+            if (!is_array($employees)) {
+                $employees = [];
+            }
         }
 
-        // Ambil hanya yang BELUM dinilai
-        $employees = $this->performanceAssessmentModel->getEmployeeEvaluationStatus($periodeId['id_periode'], $area, true);
-        // dd ($employees);
-        return view($session->get('role') . '/dashboard', [
+        return view($roleFolder . '/dashboard', [
             'employees' => $employees,
-            'periodeId' => $periodeId['id_periode'],
+            'periodeId' => $periodeId,
             'area' => $area,
             'role' => $session->get('role'),
             'title' => 'Dashboard',
         ]);
     }
+
 
     public function listArea()
     {
