@@ -131,7 +131,8 @@ class MandorController extends BaseController
             'role' => $session->get('role'),
             'title' => 'Dashboard',
             'noPeriode' => $noPeriode,
-            'periodeMessage' => $periodeMessage
+            'periodeMessage' => $periodeMessage,
+            'periode' => $periode
         ]);
     }
 
