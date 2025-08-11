@@ -120,6 +120,25 @@
         border-bottom-left-radius: 10px;
         border-bottom-right-radius: 10px;
     }
+
+    /* styling kecil untuk radio button group */
+    .btn-group .btn {
+        min-width: 38px;
+        padding: 6px 8px;
+        border-radius: 8px;
+        margin-right: 4px;
+        font-weight: 600;
+    }
+
+    .btn-group .btn:focus {
+        box-shadow: 0 0 0 0.15rem rgba(78, 115, 223, 0.25);
+    }
+
+    /* Kalau mau beda warna untuk 0, contohnya sekedar lebih pudar */
+    .btn-group .btn[for$="_0"] {
+        opacity: 0.85;
+        font-weight: 700;
+    }
 </style>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/soft-ui-dashboard/2.1.0/css/soft-ui-dashboard.min.css"
     rel="stylesheet" />
@@ -215,7 +234,22 @@
                                             <tr>
                                                 <td class="text-wrap"><?= htmlspecialchars($deskripsi, ENT_QUOTES, 'UTF-8') ?></td>
                                                 <td>
-                                                    <input type="number" class="form-control nilai-input" data-karyawan-id="<?= $k['id_employee'] ?>" data-jobdesc="<?= htmlspecialchars($deskripsi, ENT_QUOTES, 'UTF-8') ?>" name="nilai[<?= $k['id_employee'] ?>][<?= $deskripsi ?>]" placeholder="Nilai" min="0" max="6" required>
+                                                    <div class="btn-group btn-group-sm" role="group" aria-label="Pilihan Nilai">
+                                                        <?php for ($v = 0; $v <= 6; $v++) :
+                                                            $radioId = 'nilai_' . $k['id_employee'] . '_' . md5($deskripsi) . '_' . $v;
+                                                        ?>
+                                                            <input
+                                                                type="radio"
+                                                                class="btn-check nilai-radio"
+                                                                name="nilai[<?= $k['id_employee'] ?>][<?= htmlspecialchars($deskripsi, ENT_QUOTES, 'UTF-8') ?>]"
+                                                                id="<?= $radioId ?>"
+                                                                value="<?= $v ?>"
+                                                                autocomplete="off"
+                                                                <?php if ($v === 0) echo 'required'; // cukup salah satu radio perlu required 
+                                                                ?>>
+                                                            <label class="btn btn-outline-dark" for="<?= $radioId ?>"><?= $v ?></label>
+                                                        <?php endfor; ?>
+                                                    </div>
                                                 </td>
                                             </tr>
                                         <?php endforeach; ?>
@@ -243,9 +277,9 @@
 
         <div class="mt-4">
             <button type="submit" id="submitBtn" class="btn bg-gradient-info w-100">
-            <span id="btnText"><i class="fas fa-save opacity-10"></i> Simpan</span>
-            <span id="btnLoading" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
-            <span id="btnWait" class="d-none ms-2">Mohon tunggu...</span>
+                <span id="btnText"><i class="fas fa-save opacity-10"></i> Simpan</span>
+                <span id="btnLoading" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                <span id="btnWait" class="d-none ms-2">Mohon tunggu...</span>
             </button>
         </div>
         <div id="overlayLoading" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:9999;background:rgba(255,255,255,0.7);justify-content:center;align-items:center;">
@@ -253,13 +287,13 @@
         </div>
         <script>
             document.getElementById('evaluationForm').addEventListener('submit', function(e) {
-            var btn = document.getElementById('submitBtn');
-            btn.disabled = true;
-            document.getElementById('btnText').classList.add('d-none');
-            document.getElementById('btnLoading').classList.remove('d-none');
-            document.getElementById('btnWait').classList.remove('d-none');
-            var overlay = document.getElementById('overlayLoading');
-            overlay.style.display = 'flex';
+                var btn = document.getElementById('submitBtn');
+                btn.disabled = true;
+                document.getElementById('btnText').classList.add('d-none');
+                document.getElementById('btnLoading').classList.remove('d-none');
+                document.getElementById('btnWait').classList.remove('d-none');
+                var overlay = document.getElementById('overlayLoading');
+                overlay.style.display = 'flex';
             });
         </script>
     </form>
@@ -366,6 +400,23 @@
         myModal.show();
     });
 </script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.nilai-radio').forEach(function(radio) {
+            radio.addEventListener('change', function(e) {
+                // id radio: nilai_<employeeId>_<md5>_<v>
+                var idParts = e.target.id.split('_');
+                var employeeId = idParts[1];
+                var hidden = document.querySelector('input[name="index_nilai[' + employeeId + ']"]');
+                if (hidden) {
+                    hidden.value = e.target.value;
+                }
+            });
+        });
+    });
+</script>
+
 
 <?php $this->endSection(); ?>
 

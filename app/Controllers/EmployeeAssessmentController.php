@@ -153,6 +153,7 @@ class EmployeeAssessmentController extends BaseController
     {
         // 1) Ambil semua POST
         $post         = $this->request->getPost();
+        // dd($post);  
         $nilaiPerEmp  = $post['nilai']             ?? [];     // ['5'=>['asd asd'=>'5',...], '6'=>[...], …]
         $idPeriode    = $post['id_periode']        ?? null;
         $idMainRole   = $post['id_main_job_role']  ?? null;
