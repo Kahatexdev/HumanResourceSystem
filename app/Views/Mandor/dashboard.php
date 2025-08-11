@@ -168,14 +168,152 @@
         font-weight: 500;
         padding: 8px 16px;
     }
+
+    /* Modal overall */
+    #reminderModal .modal-dialog {
+        max-width: 520px;
+        margin: 1.75rem auto;
+    }
+
+    #reminderModal .modal-content {
+        border-radius: 18px;
+        overflow: hidden;
+        box-shadow: 0 20px 60px rgba(8, 30, 52, 0.35);
+        border: 0;
+    }
+
+    /* Header dengan gradient */
+    #reminderModal .modal-header {
+        background: linear-gradient(90deg, rgba(52, 152, 219, 1) 0%, rgba(41, 128, 185, 1) 100%);
+        color: #fff;
+        border-bottom: 0;
+        padding: 18px 22px;
+        align-items: center;
+    }
+
+    /* Header title */
+    #reminderModal .modal-title {
+        font-size: 1.15rem;
+        font-weight: 700;
+        letter-spacing: 0.6px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    /* Header icon */
+    #reminderModal .modal-title .icon {
+        background: rgba(255, 255, 255, 0.15);
+        width: 40px;
+        height: 40px;
+        display: inline-flex;
+        border-radius: 10px;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        color: #fff;
+        box-shadow: 0 6px 18px rgba(19, 63, 102, 0.25);
+    }
+
+    /* Body */
+    #reminderModal .modal-body {
+        padding: 20px 22px;
+        background: linear-gradient(180deg, #fbfdff 0%, #f7f9fc 100%);
+        color: #123;
+        font-size: 0.98rem;
+        line-height: 1.45;
+    }
+
+    /* Emphasize important text */
+    #reminderModal .modal-body .important {
+        display: inline-block;
+        background: rgba(255, 193, 7, 0.12);
+        color: #b97a00;
+        padding: 6px 10px;
+        border-radius: 8px;
+        font-weight: 600;
+        margin-top: 6px;
+    }
+
+    /* Footer */
+    #reminderModal .modal-footer {
+        padding: 14px 18px;
+        border-top: 0;
+        background: #fff;
+        justify-content: space-between;
+    }
+
+    /* Buttons: rounded and subtle shadow */
+    #reminderModal .btn-custom {
+        border-radius: 10px;
+        padding: 9px 16px;
+        font-weight: 600;
+        box-shadow: 0 8px 20px rgba(18, 52, 86, 0.06);
+    }
+
+    /* Primary acknowledge: vibrant */
+    #reminderModal .btn-primary {
+        background: linear-gradient(90deg, #2d9cdb 0%, #2380c7 100%);
+        border: 0;
+        color: #fff;
+        transition: transform .12s ease, box-shadow .12s ease;
+    }
+
+    /* Small hover/active micro-interaction */
+    #reminderModal .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 14px 30px rgba(35, 128, 199, 0.18);
+    }
+
+    #reminderModal .btn-secondary {
+        background: transparent;
+        border: 1px solid rgba(18, 52, 86, 0.06);
+        color: #123;
+    }
+
+    /* Close button (white small X on header) */
+    #reminderModal .btn-close {
+        filter: brightness(1.4);
+        opacity: 0.9;
+    }
+
+    /* Add subtle pulse to header icon when within 3 days */
+    #reminderModal.pulse .icon {
+        animation: pulse 1.8s infinite;
+    }
+
+    /* Responsive */
+    @media (max-width: 576px) {
+        #reminderModal .modal-dialog {
+            max-width: 92%;
+        }
+
+        #reminderModal .modal-title {
+            font-size: 1rem;
+        }
+    }
+
+    /* Keep consistent pulse keyframes (already in your CSS but redefine if needed) */
+    @keyframes pulse {
+        0% {
+            transform: scale(1);
+            opacity: 1;
+        }
+
+        50% {
+            transform: scale(1.06);
+            opacity: 0.85;
+        }
+
+        100% {
+            transform: scale(1);
+            opacity: 1;
+        }
+    }
 </style>
 <div class="container-fluid py-4">
     <?php if (session()->getFlashdata('warning')): ?>
-        <div class="alert alert-warning"><?= session()->getFlashdata('warning') ?></div>
-    <?php endif; ?>
-
-    <?php if (!empty($noPeriode) && $noPeriode): ?>
-        <div class="alert alert-info"><?= esc($periodeMessage ?? 'Tidak ada periode aktif.') ?></div>
+        <div class="alert alert-warning text-bold text-dark"><?= session()->getFlashdata('warning') ?></div>
     <?php endif; ?>
 
     <!-- Pengingat Waktu Penilaian -->
@@ -209,148 +347,34 @@
     <div id="statusAlert" class="alert alert-info d-flex align-items-center" role="alert">
         <div id="statusMessage"></div>
     </div>
+</div>
 
-    <!-- Test Alert -->
-    <!-- <div class="settings-panel">
-        <h5><i class="fas fa-cog me-2"></i>Pengaturan Waktu Penilaian</h5>
-        <div class="row">
-            <div class="col-md-3">
-                <label for="targetDate" class="form-label">Tanggal Target:</label>
-                <input type="date" class="form-control" id="targetDate">
-            </div>
-            <div class="col-md-3">
-                <label for="targetTime" class="form-label">Waktu Target:</label>
-                <input type="time" class="form-control" id="targetTime">
-            </div>
-            <div class="col-md-3">
-                <label for="reminderTitle" class="form-label">Judul:</label>
-                <input type="text" class="form-control" id="reminderTitle" value="WAKTU PENILAIAN">
-            </div>
-            <div class="col-md-3 d-flex align-items-end">
-                <button class="btn btn-primary btn-custom me-2" onclick="setCountdown()">
-                    <i class="fas fa-play me-1"></i>Mulai
-                </button>
-                <button class="btn btn-secondary btn-custom" onclick="resetCountdown()">
-                    <i class="fas fa-refresh me-1"></i>Reset
-                </button>
-            </div>
-        </div>
-    </div> -->
 
-    <!-- Header -->
-    <div class="card mb-4">
-        <div class="card-header text-white">
-            <h4 class="mb-0">KARYAWAN YANG BELUM DINILAI - Area <?= esc($area) ?></h4>
-        </div>
-    </div>
-
-    <!-- Tabel Evaluasi Karyawan -->
-    <div class="card">
-        <div class="card-body">
-            <div class="table-responsive">
-                <table id="evaluationTable" class="table table-striped table-bordered" style="width:100%">
-                    <thead>
-                        <tr class="text-center">
-                            <th>No</th>
-                            <th>Kode Kartu</th>
-                            <th>Nama Karyawan</th>
-                            <th>Shift</th>
-                            <th>Bagian</th>
-                            <th>Area</th>
-                            <th>Status Evaluasi</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php if (!empty($employees) && is_array($employees)) : ?>
-                            <?php $no = 1; ?>
-                            <?php foreach ($employees as $row) : ?>
-                                <tr>
-                                    <td class="text-center"><?= $no++ ?></td>
-                                    <td><?= esc($row['employee_code']) ?></td>
-                                    <td><?= esc($row['employee_name']) ?></td>
-                                    <td><?= esc($row['shift']) ?></td>
-                                    <td><?= esc($row['job_section_name']) ?></td>
-                                    <td><?= esc($row['factory_name'] ?? $area) ?></td>
-                                    <td class="text-center">
-                                        <?php if (isset($row['status']) && $row['status'] === 'Sudah Dinilai') : ?>
-                                            <span class="badge bg-success">Sudah Dinilai</span>
-                                        <?php else : ?>
-                                            <span class="badge bg-danger">Belum Dinilai</span>
-                                        <?php endif; ?>
-                                    </td>
-                                </tr>
-                            <?php endforeach; ?>
-                        <?php else : ?>
-                            <tr>
-                                <td colspan="7" class="text-center">Tidak ada data evaluasi karyawan</td>
-                            </tr>
-                        <?php endif; ?>
-                    </tbody>
-                </table>
+<!-- HTML modal: ganti modal lama dengan ini -->
+<div class="modal fade" id="reminderModal" tabindex="-1" aria-labelledby="reminderModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" role="document" aria-modal="true">
+            <div class="modal-header">
+                <div class="modal-title" id="reminderModalLabel">
+                    <span class="icon" aria-hidden="true"><i class="fas fa-bell"></i></span>
+                    Pengingat Penilaian
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+            </div>
+            <div class="modal-body">
+                <p>
+                    Tersisa waktu <strong id="reminderDaysText">3 hari</strong> atau kurang untuk menyelesaikan proses penilaian.
+                    Mohon kepada <strong>Mandor</strong> untuk segera melakukan penilaian karyawan sebelum periode berakhir.
+                </p>
+                <p class="important">Catatan: popup ini hanya muncul sekali per periode.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-custom" data-bs-dismiss="modal">Tutup</button>
+                <button type="button" id="reminderAcknowledge" class="btn btn-primary btn-custom">Saya Mengerti</button>
             </div>
         </div>
     </div>
 </div>
-
-<?php
-// Filter karyawan yang BELUM dinilai
-$notEvaluated = [];
-if (!empty($employees) && is_array($employees)) {
-    foreach ($employees as $emp) {
-        // jika kolom status tidak ada atau bukan 'Sudah Dinilai' maka dianggap belum
-        if (!isset($emp['status']) || $emp['status'] !== 'Sudah Dinilai') {
-            $notEvaluated[] = $emp;
-        }
-    }
-}
-?>
-
-<!-- Modal hanya dirender jika ada karyawan belum dinilai -->
-<?php if (!empty($notEvaluated)) : ?>
-    <div class="modal fade" id="alertModal" tabindex="-1" aria-labelledby="alertModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg modal-dialog-scrollable"> <!-- scrollable jika banyak -->
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="alertModalLabel">Karyawan Belum Dinilai (<?= count($notEvaluated) ?>)</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <p>Berikut adalah daftar karyawan yang belum dinilai:</p>
-                    <div class="table-responsive" style="max-height:350px; overflow:auto;">
-                        <table class="table table-striped table-sm">
-                            <thead>
-                                <tr>
-                                    <th style="width:1%">#</th>
-                                    <th style="width:20%">Kode Kartu</th>
-                                    <th>Nama Karyawan</th>
-                                    <th>Bagian</th>
-                                    <th>Shift</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php $i = 1; ?>
-                                <?php foreach ($notEvaluated as $employee) : ?>
-                                    <tr>
-                                        <td><?= $i++ ?></td>
-                                        <td><?= esc($employee['employee_code']) ?></td>
-                                        <td><?= esc($employee['employee_name']) ?></td>
-                                        <td><?= esc($employee['job_section_name'] ?? '-') ?></td>
-                                        <td><?= esc($employee['shift'] ?? '-') ?></td>
-                                    </tr>
-                                <?php endforeach; ?>
-                            </tbody>
-                        </table>
-                    </div>
-                    <p class="mt-2"><small class="text-muted">Tutup modal jika sudah dilihat atau ingin menilai manual lewat menu penilaian.</small></p>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
-                </div>
-            </div>
-        </div>
-    </div>
-<?php endif; ?>
-
 <!-- Scripting: load jQuery dulu, lalu DataTables, lalu Bootstrap JS (bundle) -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
@@ -360,53 +384,25 @@ if (!empty($employees) && is_array($employees)) {
 
 <!-- Bootstrap 5 bundle (Popper+Bootstrap JS) -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-
-<script>
-    $(document).ready(function() {
-        // Inisialisasi DataTable sekali saja
-        $('#evaluationTable').DataTable({
-            paging: true,
-            pageLength: 10,
-            lengthChange: true,
-            searching: true,
-            ordering: true,
-            info: true,
-            responsive: true,
-            language: {
-                url: '//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json'
-            }
-        });
-
-        // Tampilkan modal alert hanya jika ada elemen #alertModal (yang berarti ada karyawan belum dinilai)
-        var alertModalEl = document.getElementById('alertModal');
-        if (alertModalEl) {
-            var myModal = new bootstrap.Modal(alertModalEl, {
-                backdrop: 'static', // opsional: 'static' agar tidak tertutup klik luar, hapus jika ingin bisa ditutup klik luar
-                keyboard: true
-            });
-            myModal.show();
-        }
-    });
-</script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Ambil end_date dari DB (hidden input). Contoh: "2025-08-31" atau "2025-08-31 23:59:59"
         const periodeEndDateInput = document.getElementById('periodeEndDate');
-        const defaultWarningMs = 24 * 60 * 60 * 1000; // 24 jam => threshold peringatan (ubah jika perlu)
 
-        // Interval handle supaya bisa direset
+        // Ambang peringatan default (24 jam) tetap dipakai untuk "hampir habis"
+        const defaultWarningMs = 24 * 60 * 60 * 1000; // 86.400.000 ms
+
+        // Khusus aturan 3 hari: 3 * 24 * 60 * 60 * 1000 = 259.200.000 ms
+        const threeDaysMs = 3 * 24 * 60 * 60 * 1000; // = 259200000
+
         let countdownInterval = null;
 
-        // Ubah alert state (info / warning / danger) dan message + icon
         function setAlertState(state, message) {
             const alertEl = document.getElementById('statusAlert');
             const statusMsgEl = document.getElementById('statusMessage');
 
-            // Hapus semua kelas
             alertEl.classList.remove('alert-info', 'alert-warning', 'alert-danger');
-
-            // Pilih icon sesuai state
             let iconHtml = '<i class="fas fa-info-circle me-2"></i> ';
+
             if (state === 'info') {
                 alertEl.classList.add('alert-info');
                 iconHtml = '<i class="fas fa-info-circle me-2"></i> ';
@@ -418,11 +414,9 @@ if (!empty($employees) && is_array($employees)) {
                 iconHtml = '<i class="fas fa-times-circle me-2"></i> ';
             }
 
-            // Masukkan isi dengan icon + message
             statusMsgEl.innerHTML = iconHtml + message;
         }
 
-        // Utility: tampilkan nilai waktu di UI
         function updateTimerDisplay(days, hours, minutes, seconds) {
             document.getElementById('days').innerText = days;
             document.getElementById('hours').innerText = hours;
@@ -430,21 +424,41 @@ if (!empty($employees) && is_array($employees)) {
             document.getElementById('seconds').innerText = seconds;
         }
 
-        // Mulai countdown dari targetTime (ms epoch). title optional untuk status.
-        function startCountdown(targetTimeMs, warningThresholdMs = defaultWarningMs, title = 'WAKTU PENILAIAN') {
-            // Clear interval sebelumnya jika ada
+        // Tampilkan modal pengingat (hanya sekali per periode menggunakan localStorage)
+        function showReminderOnce(periodeKey) {
+            try {
+                const storageKey = 'penilaian_reminder_shown_' + periodeKey;
+                if (!localStorage.getItem(storageKey)) {
+                    // Tampilkan modal Bootstrap
+                    const rm = new bootstrap.Modal(document.getElementById('reminderModal'));
+                    rm.show();
+
+                    // ketika user acknowledge, catat ke localStorage supaya tidak muncul lagi
+                    document.getElementById('reminderAcknowledge').addEventListener('click', function() {
+                        localStorage.setItem(storageKey, '1');
+                        rm.hide();
+                    });
+
+                    // juga catat jika modal ditutup dengan tombol X atau backdrop
+                    document.getElementById('reminderModal').addEventListener('hidden.bs.modal', function() {
+                        localStorage.setItem(storageKey, '1');
+                    }, {
+                        once: true
+                    });
+                }
+            } catch (e) {
+                console.warn('localStorage tidak tersedia, reminder mungkin akan muncul berulang.', e);
+            }
+        }
+
+        function startCountdown(targetTimeMs, warningThresholdMs = defaultWarningMs, periodeKey = '') {
             if (countdownInterval) clearInterval(countdownInterval);
 
-            // Update judul (kalau mau)
-            const reminderTitleInput = document.getElementById('reminderTitle');
-            if (reminderTitleInput) reminderTitleInput.value = title;
-
             function tick() {
-                const now = new Date().getTime();
+                const now = Date.now();
                 let distance = targetTimeMs - now;
 
                 if (distance <= 0) {
-                    // Waktu habis
                     updateTimerDisplay(0, 0, 0, 0);
                     setAlertState('danger', 'Waktu penilaian sudah berakhir');
                     clearInterval(countdownInterval);
@@ -452,29 +466,30 @@ if (!empty($employees) && is_array($employees)) {
                     return;
                 }
 
-                // Kalkulasi
                 const days = Math.floor(distance / (1000 * 60 * 60 * 24));
                 const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
                 const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
                 const seconds = Math.floor((distance % (1000 * 60)) / 1000);
 
-                // Update tampilan timer
                 updateTimerDisplay(days, hours, minutes, seconds);
 
-                // Ubah alert ketika sudah mendekati habis
-                if (distance <= warningThresholdMs) {
+                // Jika <= 3 hari, tampilkan peringatan khusus dan modal pengingat
+                if (distance <= threeDaysMs) {
+                    setAlertState('warning', `Sisa ${days} hari ${hours} jam — segera ingatkan mandor.`);
+                    if (periodeKey) showReminderOnce(periodeKey);
+                } else if (distance <= warningThresholdMs) {
+                    // threshold 'hampir habis' (misal 24 jam)
                     setAlertState('warning', 'Waktu penilaian hampir berakhir — segera lakukan penilaian');
                 } else {
                     setAlertState('info', 'Waktu penilaian masih tersedia');
                 }
             }
 
-            // Jalankan tick segera dan set interval
             tick();
             countdownInterval = setInterval(tick, 1000);
         }
 
-        // Reset countdown: hentikan dan kembalikan ke state awal
+        // Reset fungsi (sama seperti sebelumnya)
         window.resetCountdown = function() {
             if (countdownInterval) {
                 clearInterval(countdownInterval);
@@ -484,21 +499,18 @@ if (!empty($employees) && is_array($employees)) {
             setAlertState('info', 'Waktu penilaian masih tersedia');
         };
 
-        // Fungsi yang dipanggil tombol "Mulai" (menggunakan nilai manual dari input date/time)
+        // setCountdown manual (tetap kompatibel)
         window.setCountdown = function() {
-            // Ambil input manual jika user klik Mulai
             const dateInput = document.getElementById('targetDate').value;
             const timeInput = document.getElementById('targetTime').value;
-            const titleInput = document.getElementById('reminderTitle').value || 'WAKTU PENILAIAN';
+            const titleInput = document.getElementById('reminderTitle')?.value || 'WAKTU PENILAIAN';
 
             if (!dateInput) {
                 alert('Silakan pilih tanggal target terlebih dahulu.');
                 return;
             }
 
-            // Jika timeInput kosong, set ke 23:59:59 supaya full hari
             const timePart = timeInput ? timeInput : '23:59:59';
-            // Gabungkan jadi ISO local-friendly
             const iso = dateInput + 'T' + timePart;
             const targetMs = new Date(iso).getTime();
 
@@ -507,33 +519,31 @@ if (!empty($employees) && is_array($employees)) {
                 return;
             }
 
-            startCountdown(targetMs, defaultWarningMs, titleInput);
+            // gunakan tanggal sebagai key periode supaya reminder hanya muncul sekali per periode
+            const periodeKey = dateInput.replace(/[^0-9]/g, '');
+            startCountdown(targetMs, defaultWarningMs, periodeKey);
         };
 
-        // Bila DB memberikan periode aktif, start otomatis
+        // Jika DB memberikan periode aktif, start otomatis
         if (periodeEndDateInput && periodeEndDateInput.value) {
-            let raw = periodeEndDateInput.value.trim(); // contoh: "2025-08-31" atau "2025-08-31 23:59:59"
-
-            // Jika hanya format YYYY-MM-DD, tambahkan 23:59:59 (seharusnya end of day)
-            // Jika ada jam sudah termasuk, gunakan apa adanya
+            let raw = periodeEndDateInput.value.trim();
             let targetIso;
             if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
                 targetIso = raw + 'T23:59:59';
             } else {
-                // Ubah spasi jadi 'T' jika perlu untuk compatibilitas new Date()
                 targetIso = raw.replace(' ', 'T');
             }
 
             const targetMs = new Date(targetIso).getTime();
             if (!isNaN(targetMs)) {
-                // Optional: set judul otomatis (bisa ambil nama periode jika mau nambah ke view)
-                const title = document.getElementById('reminderTitle')?.value || 'WAKTU PENILAIAN';
-                startCountdown(targetMs, defaultWarningMs, title);
+                // gunakan end date (YYYYMMDD) sebagai periodeKey
+                const periodeKey = (raw.match(/^\d{4}-\d{2}-\d{2}/) || [raw])[0].replace(/-/g, '');
+                startCountdown(targetMs, defaultWarningMs, periodeKey);
             } else {
                 console.warn('Periode end_date tidak valid:', raw);
+                setAlertState('info', '-');
             }
         } else {
-            // Tidak ada periode aktif: tetap tampilkan state info default
             setAlertState('info', '-');
         }
     });
