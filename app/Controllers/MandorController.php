@@ -130,7 +130,7 @@ class MandorController extends BaseController
                     $grade = 'D';
                     break;
             }
-            $avgGrade = $this->finalAssessmentModel->getAverageGradeById($periodeId, $area);
+            $avgGrade = $this->finalAssessmentModel->getPreviousAverageGrade($periodeId, $area);
 
             // Inisialisasi counter grade
             $gradeCount = [
@@ -158,7 +158,7 @@ class MandorController extends BaseController
             $labels = array_keys($gradeCount);
             $data   = array_values($gradeCount);
 
-            $karGradeD = $this->finalAssessmentModel->getGradeD($periodeId, $area);
+            $karGradeD = $this->finalAssessmentModel->getGradeDPrevious($periodeId, $area);
             // dd ($karGradeD);
         }
 

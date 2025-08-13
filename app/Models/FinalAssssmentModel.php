@@ -267,6 +267,34 @@ class FinalAssssmentModel extends Model
         return $query->getRowArray();
     }
 
+    public function getPreviousAverageGrade($periodeId, $area)
+    {
+        // Cari periode sebelumnya
+        $subQuery = $this->db->table('periodes')
+            ->select('id_periode')
+            ->where('id_periode <', $periodeId)
+            ->orderBy('id_periode', 'DESC')
+            ->limit(1)
+            ->get()
+            ->getRow();
+
+        if (!$subQuery) {
+            return []; // kalau tidak ada periode sebelumnya
+        }
+
+        $previousId = $subQuery->id_periode;
+
+        // Ambil nilai dari periode sebelumnya
+        $builder = $this->db->table($this->table);
+        $builder->select('SUM(score_presence + score_performance_job + score_performance_6s + score_productivity) AS average_grade');
+        $builder->join('factories', 'factories.id_factory = final_assessment.id_factory');
+        $builder->where('id_periode', $previousId);
+        $builder->where('factories.factory_name', $area);
+        $builder->groupBy('id');
+
+        return $builder->get()->getResultArray();
+    }
+
 
     public function getAverageGradeById($periodeId, $area)
     {
@@ -279,6 +307,45 @@ class FinalAssssmentModel extends Model
         $query = $builder->get();
         return $query->getResultArray(); // ambil semua baris
     }
+
+    public function getGradeDPrevious($periodeId, $area)
+    {
+        // Cari periode sebelumnya dari tabel periode
+        $prevPeriode = $this->db->table('periodes')
+            ->select('id_periode')
+            ->where('id_periode <', $periodeId)
+            ->orderBy('id_periode', 'DESC')
+            ->limit(1)
+            ->get()
+            ->getRow();
+
+        if (!$prevPeriode) {
+            return []; // tidak ada periode sebelumnya
+        }
+
+        $prevId = $prevPeriode->id_periode;
+
+        // Query sama seperti getGradeD, tapi pakai $prevId
+        return $this->select('
+            employees.employee_name,
+            employees.employee_code,
+            job_sections.job_section_name,
+            (final_assessment.score_presence 
+                + final_assessment.score_performance_job 
+                + final_assessment.score_performance_6s 
+                + final_assessment.score_productivity) AS total_score
+        ')
+            ->join('employees', 'employees.id_employee = final_assessment.id_employee')
+            ->join('job_sections', 'job_sections.id_job_section = employees.id_job_section')
+            ->join('factories', 'factories.id_factory = final_assessment.id_factory')
+            ->where('final_assessment.id_periode', $prevId)
+            ->where('factories.factory_name', $area)
+            ->having('total_score <', 75)
+            ->groupBy('final_assessment.id_employee')
+            ->orderBy('employees.employee_name', 'ASC')
+            ->findAll();
+    }
+
 
     public function getGradeD($periodeId, $area)
     {
