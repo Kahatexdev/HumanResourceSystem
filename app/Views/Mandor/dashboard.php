@@ -536,7 +536,7 @@
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h5 class="mb-0">
                         <i class="fas fa-chart-line me-2" style="color:var(--primary);"></i>
-                        Rata-Rata Grade
+                        Rata-Rata Grade Periode Sebelumnya
                     </h5>
                 </div>
                 <div class="card mb-3">
@@ -553,7 +553,7 @@
             <div class="chart-container card-animated" style="animation-delay: 0.4s;">
                 <h5 class="mb-3">
                     <i class="fas fa-exclamation-triangle me-2" style="color:var(--warning)"></i>
-                    Grade D
+                    Grade D Periode Sebelumnya
                 </h5>
                 <div class="table-responsive">
                     <table class="table table-sm table-bordered nowrap" id="gradeDTable" style="width:100%">
