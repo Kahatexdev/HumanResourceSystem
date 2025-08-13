@@ -303,4 +303,34 @@ class PerformanceAssessmentModel extends Model
             ->getResultArray();
     }
 
+    public function getMandorEvaluationStatusArea($id_periode,$area)
+    {
+        $builder = $this->db->table('users');
+        $builder->select('
+        users.id_user, 
+        users.username, 
+        users.role,
+        users.area,
+        COUNT(DISTINCT employees.id_employee) AS total_karyawan, 
+        COUNT(DISTINCT performance_assessments.id_performance_assessment) AS total_assessment,
+        performance_assessments.id_periode
+    ');
+        // Join tabel bagian, karyawan, dan penilaian
+        $builder->join('factories', 'factories.factory_name = users.area', 'left');
+        $builder->join('employees', 'employees.id_factory = factories.id_factory', 'left');
+        // Menambahkan kondisi id_periode langsung di join penilaian agar record mandor tetap muncul walau belum ada penilaian
+        $builder->join('performance_assessments', "performance_assessments.id_employee = employees.id_employee 
+        AND performance_assessments.id_user = users.id_user 
+        AND performance_assessments.id_periode = " . $this->db->escape($id_periode), 'left', false);
+
+        $builder->where('users.role', 'Mandor');
+        $builder->where('employees.id_employment_status', 3); // Hanya karyawan baju biru
+        $builder->where('factories.factory_name', $area);
+        // where in
+        $builder->whereIn('employees.id_job_section', [11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 153, 154, 155]);
+        $builder->groupBy('users.id_user');
+
+        return $builder->get()->getResultArray();
+    }
+
 }

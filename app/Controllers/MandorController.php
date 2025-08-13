@@ -17,6 +17,8 @@ use App\Models\FactoriesModel;
 use App\Models\DayModel;
 use App\Models\EmploymentStatusModel;
 use App\Models\HistoryEmployeeModel;
+use App\Models\NewPAModel;
+use App\Models\FinalAssssmentModel;
 
 class MandorController extends BaseController
 {
@@ -33,6 +35,8 @@ class MandorController extends BaseController
     protected $days;
     protected $employmentStatusModel;
     protected $historyEmployeeModel;
+    protected $newPAModel;
+    protected $finalAssessmentModel;
     protected $role;
 
     public function __construct()
@@ -50,6 +54,8 @@ class MandorController extends BaseController
         $this->days = new DayModel();
         $this->employmentStatusModel = new EmploymentStatusModel();
         $this->historyEmployeeModel = new HistoryEmployeeModel();
+        $this->newPAModel = new NewPAModel();
+        $this->finalAssessmentModel = new FinalAssssmentModel();
         $this->role = session()->get('role');
     }
 
@@ -86,7 +92,6 @@ class MandorController extends BaseController
         $noPeriode = false;
         $periodeMessage = null;
         $employees = [];
-
         if (!$periodeId) {
             // --- Opsi A: tidak ada periode aktif -> tampilkan pesan, jangan panggil model yang butuh periode
             $noPeriode = true;
@@ -98,31 +103,64 @@ class MandorController extends BaseController
             // employees tetap array kosong agar view aman
             $employees = [];
         } else {
-            // Ambil daftar karyawan yang belum/sudah dinilai (method model disesuaikan)
-            $employees = $this->performanceAssessmentModel->getEmployeeEvaluationStatus($periodeId, $area, true);
-            if (!is_array($employees)) {
-                $employees = [];
+            $start_date = $periode['start_date'];
+            $end_date = $periode['end_date'];
+            $cekPenilaian = $this->performanceAssessmentModel->getMandorEvaluationStatusArea($periodeId, $area);
+            $totalKaryawan = $cekPenilaian[0]['total_karyawan'] ?? 0;
+            $totalAssesment = $cekPenilaian[0]['total_assessment'] ?? 0;
+            $avgAssessment = 0;
+            $progress = $totalKaryawan > 0 ? ($totalAssesment / $totalKaryawan) * 100 : 0;
+            $avgAssessment = $this->finalAssessmentModel->getAverageGrade($periodeId, $area);
+            // dd ($avgAssessment);
+            switch (true) {
+                case $avgAssessment['average_grade'] >= 93:
+                    // Lakukan sesuatu jika rata-rata di atas 93
+                    $grade = 'A';
+                    break;
+                case $avgAssessment['average_grade'] >= 85:
+                    // Lakukan sesuatu jika rata-rata di atas 85
+                    $grade = 'B';
+                    break;
+                case $avgAssessment['average_grade'] >= 75:
+                    // Lakukan sesuatu jika rata-rata di atas 75
+                    $grade = 'C';
+                    break;
+                default:
+                    // Lakukan sesuatu jika rata-rata 75 atau di bawah
+                    $grade = 'D';
+                    break;
             }
-        }
+            $avgGrade = $this->finalAssessmentModel->getAverageGradeById($periodeId, $area);
 
-        // --- Opsi B (opsional): fallback ke periode terakhir jika kamu ingin tetap menampilkan data
-        // Uncomment block ini jika ingin menggunakan fallback otomatis ke periode terakhir (jika tidak ada aktif)
-        /*
-    if ($noPeriode) {
-        $lastPeriode = $this->periodeModel
-            ->select('id_periode, start_date, end_date')
-            ->orderBy('end_date', 'DESC')
-            ->first();
+            // Inisialisasi counter grade
+            $gradeCount = [
+                'A' => 0,
+                'B' => 0,
+                'C' => 0,
+                'D' => 0
+            ];
 
-        if ($lastPeriode) {
-            $periodeId = $lastPeriode['id_periode'];
-            $employees = $this->performanceAssessmentModel->getEmployeeEvaluationStatus($periodeId, $area, true) ?? [];
-            $periodeMessage .= ' Menampilkan data dari periode terakhir (' . $lastPeriode['start_date'] . ' s/d ' . $lastPeriode['end_date'] . ').';
-            $noPeriode = false; // karena sekarang ada data fallback
-            $session->setFlashdata('info', $periodeMessage);
+            foreach ($avgGrade as $a) {
+                $gradeValue = $a['average_grade'];
+
+                if ($gradeValue >= 93) {
+                    $gradeCount['A']++;
+                } elseif ($gradeValue >= 85) {
+                    $gradeCount['B']++;
+                } elseif ($gradeValue >= 75) {
+                    $gradeCount['C']++;
+                } else {
+                    $gradeCount['D']++;
+                }
+            }
+
+            // Convert ke format labels & data untuk chart
+            $labels = array_keys($gradeCount);
+            $data   = array_values($gradeCount);
+
+            $karGradeD = $this->finalAssessmentModel->getGradeD($periodeId, $area);
+            // dd ($karGradeD);
         }
-    }
-    */
 
         return view($roleFolder . '/dashboard', [
             'employees' => $employees,
@@ -132,7 +170,19 @@ class MandorController extends BaseController
             'title' => 'Dashboard',
             'noPeriode' => $noPeriode,
             'periodeMessage' => $periodeMessage,
-            'periode' => $periode
+            'periode' => $periode,
+            'totalKaryawan' => $totalKaryawan,
+            'totalAssesment' => $totalAssesment,
+            'avgAssessment' => $avgAssessment,
+            'progress' => $progress,
+            'start_date' => $periode ? $periode['start_date'] : null,
+            'end_date' => $periode ? $periode['end_date'] : null,
+            'cekPenilaian' => isset($cekPenilaian) ? $cekPenilaian : null,
+            'grade' => $grade,
+            'avgGrade' => $avgGrade['average_grade'] ?? 0,
+            'labels' => $labels,
+            'data' => $data,
+            'karGradeD' => $karGradeD
         ]);
     }
 

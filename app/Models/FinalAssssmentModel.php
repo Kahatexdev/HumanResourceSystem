@@ -201,4 +201,104 @@ class FinalAssssmentModel extends Model
 
         return $builder->get()->getResultArray();
     }
+
+    public function getScoreCountsByPeriodeUnion($periodeId, $area, $idMainJobRole)
+    {
+        $table = $this->table;
+        $in = implode(',', array_map('intval', $idMainJobRole));
+        $sql = "
+        SELECT 'Absensi' AS metric, AVG(score_presence) AS score, COUNT(*) AS count, mjr.main_job_role_name
+        FROM {$table} 
+        JOIN factories f ON f.id_factory = {$table}.id_factory
+        JOIN main_job_roles mjr ON mjr.id_main_job_role = {$table}.id_main_job_role
+        WHERE id_periode = ? AND f.factory_name = ? AND mjr.id_main_job_role IN ({$in})
+        GROUP BY mjr.main_job_role_name
+        UNION ALL
+        SELECT 'Penilaian' AS metric, AVG(score_performance_job) AS score, COUNT(*) AS count, mjr.main_job_role_name
+        FROM {$table} 
+        JOIN factories f ON f.id_factory = {$table}.id_factory
+        JOIN main_job_roles mjr ON mjr.id_main_job_role = {$table}.id_main_job_role
+        WHERE id_periode = ? AND f.factory_name = ? AND mjr.id_main_job_role IN ({$in})
+        GROUP BY mjr.main_job_role_name
+        UNION ALL
+        SELECT '6S' AS metric, AVG(score_performance_6s) AS score, COUNT(*) AS count, mjr.main_job_role_name
+        FROM {$table} 
+        JOIN factories f ON f.id_factory = {$table}.id_factory
+        JOIN main_job_roles mjr ON mjr.id_main_job_role = {$table}.id_main_job_role
+        WHERE id_periode = ? AND f.factory_name = ? AND mjr.id_main_job_role IN ({$in})
+        GROUP BY mjr.main_job_role_name
+        UNION ALL
+        SELECT 'Productivity' AS metric, AVG(score_productivity) AS score, COUNT(*) AS count, mjr.main_job_role_name
+        FROM {$table} 
+        JOIN factories f ON f.id_factory = {$table}.id_factory
+        JOIN main_job_roles mjr ON mjr.id_main_job_role = {$table}.id_main_job_role
+        WHERE id_periode = ? AND f.factory_name = ? AND mjr.id_main_job_role IN ({$in})
+        GROUP BY mjr.main_job_role_name
+    ";
+
+        $query = $this->db->query($sql, [$periodeId, $area, $periodeId, $area, $periodeId, $area, $periodeId, $area]);
+        $rows = $query->getResultArray();
+
+        $result = [];
+        foreach ($rows as $r) {
+            $metric = $r['main_job_role_name'];
+            $scoreKey = $r['metric'];
+            $result[$metric][$scoreKey] = round($r['score'], 2);
+        }
+
+        return $result;
+    }
+
+    public function getAverageGrade($periodeId, $area)
+    {
+        $subBuilder = $this->db->table($this->table);
+        $subBuilder->select('SUM(score_presence + score_performance_job + score_performance_6s + score_productivity) AS total_score');
+        $subBuilder->join('factories', 'factories.id_factory = final_assessment.id_factory');
+        $subBuilder->where('id_periode', $periodeId);
+        $subBuilder->where('factories.factory_name', $area);
+        $subBuilder->groupBy('id');
+
+        $subQuery = $subBuilder->getCompiledSelect();
+
+        $builder = $this->db->table("($subQuery) as t");
+        $builder->select('AVG(total_score) as average_grade');
+
+        $query = $builder->get();
+        return $query->getRowArray();
+    }
+
+
+    public function getAverageGradeById($periodeId, $area)
+    {
+        $builder = $this->db->table($this->table);
+        $builder->select('SUM(score_presence + score_performance_job + score_performance_6s + score_productivity) AS average_grade');
+        $builder->join('factories', 'factories.id_factory = final_assessment.id_factory');
+        $builder->where('id_periode', $periodeId);
+        $builder->where('factories.factory_name', $area);
+        $builder->groupBy('id');
+        $query = $builder->get();
+        return $query->getResultArray(); // ambil semua baris
+    }
+
+    public function getGradeD($periodeId, $area)
+    {
+        return $this->select('
+            employees.employee_name,
+            employees.employee_code,
+            job_sections.job_section_name,
+            (final_assessment.score_presence 
+                + final_assessment.score_performance_job 
+                + final_assessment.score_performance_6s 
+                + final_assessment.score_productivity) AS total_score
+        ')
+            ->join('employees', 'employees.id_employee = final_assessment.id_employee')
+            ->join('job_sections', 'job_sections.id_job_section = employees.id_job_section')
+            ->join('factories', 'factories.id_factory = final_assessment.id_factory')
+            ->where('final_assessment.id_periode', $periodeId)
+            ->where('factories.factory_name', $area)
+            ->having('total_score <', 75) // pakai having karena total_score adalah hasil kalkulasi
+            ->groupBy('final_assessment.id_employee')
+            ->orderBy('employees.employee_name', 'ASC')
+            ->findAll();
+    }
 }
