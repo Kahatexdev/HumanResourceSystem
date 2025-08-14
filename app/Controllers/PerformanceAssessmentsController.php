@@ -1293,27 +1293,29 @@ class PerformanceAssessmentsController extends BaseController
     {
         $reportbatch = $this->finalAssssmentModel->getFinalAssessmentByBatch($id_batch, $main_factory);
         $productivityPcs  = $this->bsmcModel->getProductivityData($id_batch, $main_factory);
-        // Ubah $productivityPcs jadi associative array keyed by empKey
-        $mapProductivityPcs = [];
-        foreach ($productivityPcs as $p) {
-            $empKey = $p['employee_code'] . '-' . $p['employee_name'] . '-' . $p['id_periode'];
-            $mapProductivityPcs[$empKey] = $p; // sekarang bisa diakses langsung
-        }
-
-        // dd($mapProductivityPcs);
-        // dd($productivityPcs);
         $rossoScoresPcs   = $this->rossoModel->getRossoDataForFinal($id_batch, $main_factory);
-        $mapRossoScoresPcs = [];
-        foreach ($rossoScoresPcs as $r) {
-            $empKey = $r['employee_code'] . '-' . $r['employee_name'] . '-' . $r['id_periode'];
-            $mapRossoScoresPcs[$empKey] = $r; // sekarang bisa diakses langsung
-        }
         // dd($rossoScoresPcs);
         $needleBonusesPcs = $this->jarumModel->getUsedNeedleData($id_batch, $main_factory);
+
+
+        $keyPattern = function ($code, $name, $periode) {
+            return preg_replace('/\s+/', ' ', strtoupper(trim($code) . '-' . trim($name) . '-' . trim($periode)));
+        };
+
+
+        $mapProductivityPcs = [];
+        foreach ($productivityPcs as $p) {
+            $mapProductivityPcs[$keyPattern($p['employee_code'], $p['employee_name'], $p['id_periode'])] = $p;
+        }
+
+        $mapRossoScoresPcs = [];
+        foreach ($rossoScoresPcs as $r) {
+            $mapRossoScoresPcs[$keyPattern($r['employee_code'], $r['employee_name'], $r['id_periode'])] = $r;
+        }
+
         $mapNeedleBonusesPcs = [];
         foreach ($needleBonusesPcs as $n) {
-            $empKey = $n['employee_code'] . '-' . $n['employee_name'] . '-' . $n['id_periode'];
-            $mapNeedleBonusesPcs[$empKey] = $n; // sekarang bisa diakses langsung
+            $mapNeedleBonusesPcs[$keyPattern($n['employee_code'], $n['employee_name'], $n['id_periode'])] = $n;
         }
         // dd($needleBonusesPcs);
         // dd($reportbatch);
@@ -1330,7 +1332,9 @@ class PerformanceAssessmentsController extends BaseController
 
         // 1. Loop pertama: bangun array per karyawan dengan key 'detail'
         foreach ($reportbatch as $rb) {
-            $empKey = $rb['employee_code'] . '-' . $rb['employee_name'] . '-' . $rb['id_periode'];
+            $empKey = $rb['employee_code'] . '-' . $rb['employee_name'];
+            $prodKey = $keyPattern($rb['employee_code'], $rb['employee_name'], $rb['id_periode']);
+
             $nilaiAkhir = round(
                 $rb['score_presence'] +
                     $rb['score_performance_job'] +
@@ -1340,10 +1344,7 @@ class PerformanceAssessmentsController extends BaseController
             );
             // $productivityPcs = $productivityPcs[$empKey]['total_produksi'] ?? 0;
             // $rossoScoresPcs = $rossoScoresPcs[$empKey]['total_rosso'] ?? 0;
-            // $needleBonusesPcs = $needleBonusesPcs[$empKey]['total_jarum'] ?? 0;
-
-
-            // dd($productivityPcs, $rossoScoresPcs, $needleBonusesPcs);
+            // $needleBonusesPcs = $needleBonusesPcs[$empKey]['total_jarum'] ?? 0;  
             $presentage = [
                 'MONTIR' => 0.45,
                 'MONTIR (A1)' => 0.45,
@@ -1372,22 +1373,23 @@ class PerformanceAssessmentsController extends BaseController
             $score_productivity    = round($rb['score_productivity'], 2);
             // Hitung persentase dari score_performance_job
 
-            $prod_main = isset($mapProductivityPcs[$empKey]['total_produksi'])
-                ? round($mapProductivityPcs[$empKey]['total_produksi'] / 3, 2)
+            $prod_main = isset($mapProductivityPcs[$prodKey]['total_produksi'])
+                ? round($mapProductivityPcs[$prodKey]['total_produksi'], 2)
                 : 0;
-            $bs_main = isset($mapProductivityPcs[$empKey]['total_bs'])
-                ? round($mapProductivityPcs[$empKey]['total_bs'] / 3, 2)
-                : 0;
-
-            $prod_rosso = isset($mapRossoScoresPcs[$empKey]['total_produksi'])
-                ? round($mapRossoScoresPcs[$empKey]['total_produksi'] / 3, 2)
-                : 0;
-            $bs_rosso = isset($mapRossoScoresPcs[$empKey]['total_perbaikan'])
-                ? round($mapRossoScoresPcs[$empKey]['total_perbaikan'] / 3, 2)
+            $bs_main = isset($mapProductivityPcs[$prodKey]['total_bs'])
+                ? round($mapProductivityPcs[$prodKey]['total_bs'], 2)
                 : 0;
 
-            $prod_needle = isset($mapNeedleBonusesPcs[$empKey]['total_jarum'])
-                ? round($mapNeedleBonusesPcs[$empKey]['total_jarum'] / 3, 2)
+            $prod_rosso = isset($mapRossoScoresPcs[$prodKey]['total_produksi'])
+                ? round($mapRossoScoresPcs[$prodKey]['total_produksi'], 2)
+                : 0;
+            $bs_rosso = isset($mapRossoScoresPcs[$prodKey]['total_perbaikan'])
+                ? round($mapRossoScoresPcs[$prodKey]['total_perbaikan'], 2)
+                : 0;
+
+
+            $prod_needle = isset($mapNeedleBonusesPcs[$prodKey]['total_jarum'])
+                ? round($mapNeedleBonusesPcs[$prodKey]['total_jarum'], 2)
                 : 0;
             // dd($prod_main, $prod_rosso, $prod_needle);
             // Satukan productivity
@@ -1414,9 +1416,9 @@ class PerformanceAssessmentsController extends BaseController
                 'perf_presence'       => $perf_presence,
                 'perf_job_pct'        => $perf_job_pct,
                 'prod'                => $prod_main,
+                'rosso_prod'          => $prod_rosso,
                 'bs'                  => $bs_main,
-                'prod_rosso'          => $prod_rosso,
-                'bs_rosso'            => $bs_rosso,
+                'rosso_bs'            => $bs_rosso,
                 'prod_needle'         => $prod_needle,
                 'nilai_akhir'           => $nilaiAkhir,
             ];
@@ -1474,10 +1476,10 @@ class PerformanceAssessmentsController extends BaseController
                     'perf_presence'       => $det['perf_presence'],
                     'perf_job_pct'        => $det['perf_job_pct'],
                     'prod' => $det['prod'],
-                    'prod_rosso' => $det['prod_rosso'],
+                    'rosso_prod' => $det['rosso_prod'],
                     'prod_needle' => $det['prod_needle'],
                     'bs'   => $det['bs'],
-                    'bs_rosso' => $det['bs_rosso'],
+                    'rosso_bs' => $det['rosso_bs'],
                 ];
             }
         }

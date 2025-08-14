@@ -126,9 +126,7 @@ class RossoModel extends Model
             ->join('factories', 'factories.id_factory = rosso.id_factory')
             ->where('periodes.id_batch', $id_batch);
 
-        if ($main_factory == 'all') {
-            // kalau main_factory adalah 'all', tidak perlu filter
-        } else {
+        if ($main_factory !== 'all' && !empty($main_factory)) {
             $builder->where('factories.main_factory', $main_factory);
         }
 

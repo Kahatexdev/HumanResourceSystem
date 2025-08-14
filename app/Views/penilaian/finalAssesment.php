@@ -135,9 +135,9 @@
                         d.month + '</td><td>' +
                         d.perf_job_pct + '% </td><td>' +
                         d.perf_presence + '% </td><td>' +
-                        (d.prod || d.prod_rosso) + '</td><td>' +
-                        (d.bs || d.bs_rosso) + '</td>' +
-                        '<td>' + d.prod_needle + '</td>' +
+                        (d.rosso_prod !== undefined ? d.rosso_prod : d.prod) + '</td><td>' +
+                        (d.rosso_bs !== undefined ? d.rosso_bs : d.bs) + '</td><td>' +
+                        (d.rosso_needle || 0) + '</td>' +
                         '</tr>';
                 });
 
