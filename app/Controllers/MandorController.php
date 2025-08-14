@@ -406,4 +406,26 @@ class MandorController extends BaseController
 
         return $this->response->setJSON($penilaian);
     }
+
+    public function raportPerBatch($area)
+    {
+        $batch = $this->batchModel->groupBy('batch_name')->findAll();
+        $mainFactory = $this->factoriesModel->where('factory_name', session()->get('area'))->first();
+
+        $data = [
+            'role' => session()->get('role'),
+            'title' => 'Raport Per Batch',
+            'active1' => '',
+            'active2' => '',
+            'active3' => '',
+            'active4' => '',
+            'active5' => '',
+            'active6' => '',
+            'active7' => '',
+            'batch' => $batch,
+            'mainFactory' => $mainFactory['main_factory'] ?? 'all',
+        ];
+
+        return view(session()->get('role') . '/raportPerBatch', $data);
+    }
 }

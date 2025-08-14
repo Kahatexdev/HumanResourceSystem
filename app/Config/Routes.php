@@ -279,11 +279,13 @@ $routes->group('/Mandor', ['filter' => 'Mandor'], function ($routes) {
     $routes->get('dataKaryawan/(:any)', 'MandorController::detailKaryawanPerArea/$1');
     $routes->get('dataPenilaian', 'MandorController::penilaian');
     $routes->get('raportPenilaian/(:any)', 'MandorController::raportPenilaian/$1');
+    $routes->get('raportPerBatch/(:any)', 'MandorController::raportPerBatch/$1');
     $routes->get('instruksiKerja', 'MandorController::instruksiKerja');
     $routes->get('evaluasiKaryawan/(:any)/(:any)', 'MandorController::getEmployeeEvaluationStatus/$1/$2');
     $routes->get('getKaryawan', 'EmployeeAssessmentController::getKaryawan');
     $routes->post('penilaianCreate', 'EmployeeAssessmentController::create');
     $routes->post('penilaianStore', 'EmployeeAssessmentController::store');
+    $routes->get('finalAssesment/(:any)/(:any)', 'PerformanceAssessmentsController::finalAssesment/$1/$2');
 });
 
 

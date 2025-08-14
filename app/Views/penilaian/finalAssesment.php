@@ -17,22 +17,24 @@
                         </div>
                         <div class="col-4 text-end">
                             <div class="d-flex justify-content-end align-items-end gap-2">
-                                <form action="<?= base_url($role . '/exportFinalAssessment') ?>" method="POST" id="formExport">
-                                    <input type="hidden" name="id_batch" value="<?= $id_batch ?>">
-                                    <input type="hidden" name="main_factory" value="<?= $main_factory ?? 'all' ?>">
-                                    <button type="submit" class="btn bg-gradient-success mb-1">
-                                        <i class="fas fa-file-excel me-1"></i>
-                                        Export Data
-                                    </button>
-                                </form>
-                                <form action="<?= base_url($role . '/printFinalAssessment') ?>" method="POST" id="formPrint">
-                                    <input type="hidden" name="id_batch" value="<?= $id_batch ?>">
-                                    <input type="hidden" name="main_factory" value="<?= $main_factory ?? 'all' ?>">
-                                    <button type="submit" class="btn bg-gradient-primary mb-1">
-                                        <i class="fas fa-print me-1"></i>
-                                        Aspek Penilaian
-                                    </button>
-                                </form>
+                                <?php if (session()->get('role') == 'Monitoring'): ?>
+                                    <form action="<?= base_url($role . '/exportFinalAssessment') ?>" method="POST" id="formExport">
+                                        <input type="hidden" name="id_batch" value="<?= $id_batch ?>">
+                                        <input type="hidden" name="main_factory" value="<?= $main_factory ?? 'all' ?>">
+                                        <button type="submit" class="btn bg-gradient-success mb-1">
+                                            <i class="fas fa-file-excel me-1"></i>
+                                            Export Data
+                                        </button>
+                                    </form>
+                                    <form action="<?= base_url($role . '/printFinalAssessment') ?>" method="POST" id="formPrint">
+                                        <input type="hidden" name="id_batch" value="<?= $id_batch ?>">
+                                        <input type="hidden" name="main_factory" value="<?= $main_factory ?? 'all' ?>">
+                                        <button type="submit" class="btn bg-gradient-primary mb-1">
+                                            <i class="fas fa-print me-1"></i>
+                                            Aspek Penilaian
+                                        </button>
+                                    </form>
+                                <?php endif; ?>
                             </div>
                         </div>
                     </div>
@@ -52,8 +54,11 @@
                             <thead>
                                 <tr>
                                     <th class="text-center">Kode Kartu</th>
-                                    <th class="text-center">Nama Karyawan</th>
-                                    <th class="text-center">Nilai Rata-rata</th>
+                                    <th class="text-center">Nama Lengkap</th>
+                                    <th class="text-center">L/P</th>
+                                    <th class="text-center">TGL. Masuk Kerja</th>
+                                    <th class="text-center">Bagian</th>
+                                    <th class="text-center">Grade</th>
                                     <th class="text-center">Aksi</th>
                                 </tr>
                             </thead>
@@ -62,7 +67,10 @@
                                     <tr data-employee-id="<?= $emp['id_employee'] ?>">
                                         <td><?= $emp['employee_code'] ?></td>
                                         <td><?= $emp['employee_name'] ?></td>
-                                        <td><?= $emp['rata_rata'] ?></td>
+                                        <td><?= $emp['gender'] ?></td>
+                                        <td><?= $emp['date_of_joining'] ?></td>
+                                        <td><?= $emp['main_job_role_name'] ?></td>
+                                        <td><?= $emp['grade'] ?></td>
                                         <td>
                                             <button class="btn btn-sm bg-gradient-info btn-show-detail">
                                                 Lihat Detail
@@ -123,13 +131,24 @@
                 // Bangun HTML sub-tabel berdasarkan detailData[empId]
                 var rowsHtml = '';
                 detailData[empId].forEach(function(d) {
-                    rowsHtml += '<tr><td>Periode ' + d.periode + '</td><td>' + d.nilaiAkhir + '</td></tr>';
+                    rowsHtml += '<tr><td>' +
+                        d.month + '</td><td>' +
+                        d.perf_job_pct + '% </td><td>' +
+                        d.perf_presence + '% </td><td>' +
+                        (d.prod || d.prod_rosso) + '</td><td>' +
+                        (d.bs || d.bs_rosso) + '</td>' +
+                        '<td>' + d.prod_needle + '</td>' +
+                        '</tr>';
                 });
 
                 var detailTable =
                     '<table class="table table-sm mb-0 text-center">' +
                     '<thead class="table-light">' +
-                    '<tr><th style="width:20%;" class="text-center">Periode</th><th class="text-center">Nilai Akhir</th></tr>' +
+                    '<tr><th style="width:10%;" class="text-center" rowspan="2">Periode</th><th class="text-center" rowspan="2">Skill</th><th class="text-center" rowspan="2">Absen</th><th class="text-center" colspan="1">Produksi</th><th class="text-center" colspan="1">BS</th><th class="text-center" colspan="1">Pemakaian Jarum</th></tr>' +
+                    '<tr><th class="text-center">Rata-Rata</th>' +
+                    '<th class="text-center">Rata-Rata</th>' +
+                    '<th class="text-center">Rata-Rata</th>' +
+                    '</tr>' +
                     '</thead>' +
                     '<tbody>' + rowsHtml + '</tbody>' +
                     '</table>';

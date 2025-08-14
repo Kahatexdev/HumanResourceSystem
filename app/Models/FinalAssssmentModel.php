@@ -159,6 +159,7 @@ class FinalAssssmentModel extends Model
             'p.periode_name',
             'p.start_date',
             'p.end_date',
+            "DATE_FORMAT(p.end_date, '%M') AS month",
             'mjr.id_main_job_role',
             'mjr.main_job_role_name',
 

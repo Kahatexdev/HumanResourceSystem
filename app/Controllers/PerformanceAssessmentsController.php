@@ -879,7 +879,7 @@ class PerformanceAssessmentsController extends BaseController
                 $pctHadir       = 0;
             }
 
-            // 2.e) Terapkan bobot absensi (30%)
+            // 2.e) Terapkan bobot absensi (35%)
             $scoreAbsensiRaw    = $pctHadir;
             $scoreAbsensi       = $pctHadir * 0.35;
 
@@ -980,7 +980,7 @@ class PerformanceAssessmentsController extends BaseController
                 $productivityRaw = 0;
             }
 
-            // Terapkan bobot produktivitas (40%)
+            // Terapkan bobot produktivitas (15%)
             $scoreProductivity = $productivityRaw * 0.15;
 
             // Simpan hasilnya
@@ -1018,7 +1018,7 @@ class PerformanceAssessmentsController extends BaseController
                 // Jika total produksi 0, set nilai rosso raw ke 0
                 $nilaiRosso = 0;
             }
-            // Terapkan bobot rosso (40%)
+            // Terapkan bobot rosso (15%)
             $scoreRosso = $nilaiRosso * 0.15;
 
             // Simpan hasilnya
@@ -1292,6 +1292,31 @@ class PerformanceAssessmentsController extends BaseController
     public function finalAssesment($id_batch, $main_factory)
     {
         $reportbatch = $this->finalAssssmentModel->getFinalAssessmentByBatch($id_batch, $main_factory);
+        $productivityPcs  = $this->bsmcModel->getProductivityData($id_batch, $main_factory);
+        // Ubah $productivityPcs jadi associative array keyed by empKey
+        $mapProductivityPcs = [];
+        foreach ($productivityPcs as $p) {
+            $empKey = $p['employee_code'] . '-' . $p['employee_name'] . '-' . $p['id_periode'];
+            $mapProductivityPcs[$empKey] = $p; // sekarang bisa diakses langsung
+        }
+
+        // dd($mapProductivityPcs);
+        // dd($productivityPcs);
+        $rossoScoresPcs   = $this->rossoModel->getRossoDataForFinal($id_batch, $main_factory);
+        $mapRossoScoresPcs = [];
+        foreach ($rossoScoresPcs as $r) {
+            $empKey = $r['employee_code'] . '-' . $r['employee_name'] . '-' . $r['id_periode'];
+            $mapRossoScoresPcs[$empKey] = $r; // sekarang bisa diakses langsung
+        }
+        // dd($rossoScoresPcs);
+        $needleBonusesPcs = $this->jarumModel->getUsedNeedleData($id_batch, $main_factory);
+        $mapNeedleBonusesPcs = [];
+        foreach ($needleBonusesPcs as $n) {
+            $empKey = $n['employee_code'] . '-' . $n['employee_name'] . '-' . $n['id_periode'];
+            $mapNeedleBonusesPcs[$empKey] = $n; // sekarang bisa diakses langsung
+        }
+        // dd($needleBonusesPcs);
+        // dd($reportbatch);
         if (empty($reportbatch)) {
             session()->setFlashdata('error', 'Tidak ada data final assessment untuk periode ini.');
             return redirect()->back();
@@ -1305,7 +1330,7 @@ class PerformanceAssessmentsController extends BaseController
 
         // 1. Loop pertama: bangun array per karyawan dengan key 'detail'
         foreach ($reportbatch as $rb) {
-            $empKey = $rb['employee_code'] . '-' . $rb['employee_name'];
+            $empKey = $rb['employee_code'] . '-' . $rb['employee_name'] . '-' . $rb['id_periode'];
             $nilaiAkhir = round(
                 $rb['score_presence'] +
                     $rb['score_performance_job'] +
@@ -1313,41 +1338,126 @@ class PerformanceAssessmentsController extends BaseController
                     $rb['score_productivity'],
                 2
             );
+            // $productivityPcs = $productivityPcs[$empKey]['total_produksi'] ?? 0;
+            // $rossoScoresPcs = $rossoScoresPcs[$empKey]['total_rosso'] ?? 0;
+            // $needleBonusesPcs = $needleBonusesPcs[$empKey]['total_jarum'] ?? 0;
 
+
+            // dd($productivityPcs, $rossoScoresPcs, $needleBonusesPcs);
+            $presentage = [
+                'MONTIR' => 0.45,
+                'MONTIR (A1)' => 0.45,
+                'MONTIR (8J)' => 0.45,
+                'MONTIR (DAKONG)' => 0.45,
+                'MONTIR (LONATI DOUBLE)' => 0.45,
+                'OPERATOR' => 0.35,
+                'OPERATOR (8D)' => 0.35,
+                'OPERATOR (8J)' => 0.35,
+                'OPERATOR (KK9)' => 0.35,
+                'OPERATOR MEKANIK DOUBLE' => 0.35,
+                'ROSSO' => 0.35,
+                'SEWING' => 0.45,
+            ];
+
+            // ambil role dan bobot presence untuk karyawan ini
+            $roleName = $rb['main_job_role_name'] ?? '';
+            $presenceWeight = $presentage[$roleName] ?? 0.35; // default kalau role tidak ada
+            // dd($presenceWeight);
+            // Bobot maksimum performance job (misalnya sisa dari presence)
+            // $perfJobMax = (1 - $presenceWeight) * 100; // kalau pakai skala poin max 100
+
+            $score_presence        = round($rb['score_presence'], 2);
+            $score_perf_job        = round($rb['score_performance_job'], 2);
+            $score_perf_6s         = round($rb['score_performance_6s'], 2);
+            $score_productivity    = round($rb['score_productivity'], 2);
+            // Hitung persentase dari score_performance_job
+
+            $prod_main = isset($mapProductivityPcs[$empKey]['total_produksi'])
+                ? round($mapProductivityPcs[$empKey]['total_produksi'] / 3, 2)
+                : 0;
+            $bs_main = isset($mapProductivityPcs[$empKey]['total_bs'])
+                ? round($mapProductivityPcs[$empKey]['total_bs'] / 3, 2)
+                : 0;
+
+            $prod_rosso = isset($mapRossoScoresPcs[$empKey]['total_produksi'])
+                ? round($mapRossoScoresPcs[$empKey]['total_produksi'] / 3, 2)
+                : 0;
+            $bs_rosso = isset($mapRossoScoresPcs[$empKey]['total_perbaikan'])
+                ? round($mapRossoScoresPcs[$empKey]['total_perbaikan'] / 3, 2)
+                : 0;
+
+            $prod_needle = isset($mapNeedleBonusesPcs[$empKey]['total_jarum'])
+                ? round($mapNeedleBonusesPcs[$empKey]['total_jarum'] / 3, 2)
+                : 0;
+            // dd($prod_main, $prod_rosso, $prod_needle);
+            // Satukan productivity
+            $total_productivity_pcs = $prod_main + $prod_rosso + $prod_needle;
+            $perf_job_pct = $presenceWeight > 0
+                ? round(($score_perf_job / $presenceWeight), 2)
+                : 0;
+            
+            $perf_presence = $presenceWeight > 0
+                ? round(($score_presence / $presenceWeight), 2)
+                : 0;
+
+            // dd($presenceWeight, $score_perf_job,$perf_job_pct);
             // Simpan setiap periode ke dalam key 'detail'
             $nilaiPerKaryawan[$empKey]['detail'][] = [
                 'id_periode'            => $rb['id_periode'],
                 'id_factory'           => $rb['id_factory'],
                 'periode_name'          => $rb['periode_name'],
+                'month'                => $rb['month'],
                 'score_presence'        => round($rb['score_presence'], 2),
                 'score_performance_job' => round($rb['score_performance_job'], 2),
                 'score_performance_6s'  => round($rb['score_performance_6s'], 2),
                 'score_productivity'    => round($rb['score_productivity'], 2),
+                'perf_presence'       => $perf_presence,
+                'perf_job_pct'        => $perf_job_pct,
+                'prod'                => $prod_main,
+                'bs'                  => $bs_main,
+                'prod_rosso'          => $prod_rosso,
+                'bs_rosso'            => $bs_rosso,
+                'prod_needle'         => $prod_needle,
                 'nilai_akhir'           => $nilaiAkhir,
             ];
-
+            
             // Simpan info umum karyawan (hanya sekali per key empKey)
             $nilaiPerKaryawan[$empKey]['employee_code']      = $rb['employee_code'];
             $nilaiPerKaryawan[$empKey]['employee_name']      = $rb['employee_name'];
             $nilaiPerKaryawan[$empKey]['id_employee']        = $rb['id_employee'];
+            $nilaiPerKaryawan[$empKey]['gender']            = $rb['gender'];
+            $nilaiPerKaryawan[$empKey]['date_of_joining']   = $rb['date_of_joining'];
             $nilaiPerKaryawan[$empKey]['id_main_job_role']   = $rb['id_main_job_role'];
+            $nilaiPerKaryawan[$empKey]['main_job_role_name'] = $rb['main_job_role_name'];
         }
-
+        // dd($nilaiPerKaryawan);
         // 2. Loop kedua: hitung rata-rata dan bangun array JSON detail per id_employee
         $jsonDetail = [];
         foreach ($nilaiPerKaryawan as $key => &$karyawan) {
             $totalNilai    = 0;
             // $jumlahPeriode = count($karyawan['detail']);
             $jumlahPeriode = 3;
-
+            // dd($karyawan);
             foreach ($karyawan['detail'] as $det) {
                 $totalNilai += $det['nilai_akhir'];
+                // set grade
+                if ($det['nilai_akhir'] >= 93) {
+                    $karyawan['grade'] = 'A';
+                } elseif ($det['nilai_akhir'] >= 85) {
+                    $karyawan['grade'] = 'B';
+                } elseif ($det['nilai_akhir'] >= 75) {
+                    $karyawan['grade'] = 'C';
+                } else {
+                    $karyawan['grade'] = 'D';
+                }
             }
-
+            // dd($karyawan);
             // Simpan rata-rata
-            $karyawan['rata_rata'] = $jumlahPeriode > 0
-                ? round($totalNilai / $jumlahPeriode, 2)
-                : 0;
+            // $karyawan['rata_rata'] = $jumlahPeriode > 0
+            //     ? round($totalNilai / $jumlahPeriode, 2)
+            //     : 0;
+
+            
 
             // Bangun JSON detail berdasarkan id_employee
             $idEmp = $karyawan['id_employee'];
@@ -1356,6 +1466,18 @@ class PerformanceAssessmentsController extends BaseController
                 $jsonDetail[$idEmp][] = [
                     'periode'    => $det['periode_name'],
                     'nilaiAkhir' => $det['nilai_akhir'],
+                    'month'      => $det['month'],
+                    'score_presence'        => $det['score_presence'],
+                    'score_performance_job' => $det['score_performance_job'],
+                    'score_performance_6s'  => $det['score_performance_6s'],
+                    'score_productivity'    => $det['score_productivity'],
+                    'perf_presence'       => $det['perf_presence'],
+                    'perf_job_pct'        => $det['perf_job_pct'],
+                    'prod' => $det['prod'],
+                    'prod_rosso' => $det['prod_rosso'],
+                    'prod_needle' => $det['prod_needle'],
+                    'bs'   => $det['bs'],
+                    'bs_rosso' => $det['bs_rosso'],
                 ];
             }
         }
