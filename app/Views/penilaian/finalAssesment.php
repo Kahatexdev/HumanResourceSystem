@@ -130,24 +130,36 @@
             } else {
                 // Bangun HTML sub-tabel berdasarkan detailData[empId]
                 var rowsHtml = '';
+                // detailData[empId].forEach(function(d) {
+                //     console.log("Row detail:", d);
+                // });
+
                 detailData[empId].forEach(function(d) {
                     rowsHtml += '<tr><td>' +
                         d.month + '</td><td>' +
                         d.perf_job_pct + '% </td><td>' +
                         d.perf_presence + '% </td><td>' +
-                        (d.rosso_prod !== undefined ? d.rosso_prod : d.prod) + '</td><td>' +
-                        (d.rosso_bs !== undefined ? d.rosso_bs : d.bs) + '</td><td>' +
-                        (d.rosso_needle || 0) + '</td>' +
+                        // PRODUKSI
+                        ((d.prod !== undefined && d.prod !== null && d.prod != 0) ?
+                            '<span>' + d.prod + '</span>' :
+                            '<span class="fw-bold">' + (d.rosso_prod || 0) + ''
+                        ) + '</td><td>' +
+                        // BS
+                        ((d.bs !== undefined && d.bs !== null && d.bs != 0) ?
+                            '<span>' + d.bs + '</span>' :
+                            '<span class="fw-bold">' + (d.rosso_bs || 0) + ''
+                        ) + '</td><td>' +
+                        (d.prod_needle || 0) + '</td>' +
                         '</tr>';
                 });
 
                 var detailTable =
-                    '<table class="table table-sm mb-0 text-center">' +
+                    '<table class="table table-sm mb-0 text-center table-bordered table-striped">' +
                     '<thead class="table-light">' +
-                    '<tr><th style="width:10%;" class="text-center" rowspan="2">Periode</th><th class="text-center" rowspan="2">Skill</th><th class="text-center" rowspan="2">Absen</th><th class="text-center" colspan="1">Produksi</th><th class="text-center" colspan="1">BS</th><th class="text-center" colspan="1">Pemakaian Jarum</th></tr>' +
-                    '<tr><th class="text-center">Rata-Rata</th>' +
-                    '<th class="text-center">Rata-Rata</th>' +
-                    '<th class="text-center">Rata-Rata</th>' +
+                    '<tr><th style="width:10%;" class="text-center align-middle" rowspan="2">Periode</th><th class="text-center align-middle" rowspan="2">Skill</th><th class="text-center align-middle" rowspan="2">Absen</th><th class="text-center align-middle" colspan="1">Produksi</th><th class="text-center align-middle" colspan="1">BS</th><th class="text-center align-middle" colspan="1">Pemakaian Jarum</th></tr>' +
+                    '<tr><th class="text-center align-middle">Total</th>' +
+                    '<th class="text-center align-middle">Total</th>' +
+                    '<th class="text-center align-middle">Total</th>' +
                     '</tr>' +
                     '</thead>' +
                     '<tbody>' + rowsHtml + '</tbody>' +
