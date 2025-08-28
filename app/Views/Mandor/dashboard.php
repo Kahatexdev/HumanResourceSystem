@@ -611,26 +611,24 @@
     let countdownInterval;
     let autoRefreshInterval;
     let trendChart;
+    let targetDate = null; // target waktu global
+    let prevDayBucket = null; // untuk deteksi crossing threshold
+    let END_DATE_PHP = "<?= $periode['end_date'] ?>"; // untuk namespace localStorage
 
     // Initialize dashboard
     document.addEventListener('DOMContentLoaded', function() {
-        // Ambil end_date dari PHP
-        const endDate = "<?= $periode['end_date'] ?>"; // format Y-m-d
+        // Buat target date jam 23:59:59 pada tanggal end_date (lokal)
+        targetDate = new Date(END_DATE_PHP + "T23:59:59");
 
-        // Buat target date jam 23:59:59 pada tanggal end_date
-        const target = new Date(endDate + "T23:59:59");
         const progress = <?= json_encode($progress) ?>;
         updateProgressCircle(progress);
 
-        startCountdown(target);
+        startCountdown(targetDate);
         createParticles();
-        initializeCountdown();
-        // initializeChart();
         initializeDataTable();
         startAutoRefresh();
         animateNumbers();
 
-        // Show welcome alert
         showAlert('info', 'Dashboard berhasil dimuat. Selamat datang!');
     });
 
@@ -652,17 +650,24 @@
 
     // Countdown functionality
     function initializeCountdown() {
-        startCountdown(targetDate);
+        if (targetDate instanceof Date && !isNaN(targetDate)) {
+            startCountdown(targetDate);
+        }
     }
 
-    function startCountdown(targetDate) {
+
+    function startCountdown(target) {
         if (countdownInterval) clearInterval(countdownInterval);
 
-        countdownInterval = setInterval(() => {
-            const now = new Date().getTime();
-            const distance = targetDate.getTime() - now;
+        // namespace key per periode agar reset otomatis saat end_date berganti
+        const warningKey = `warning_shown_${END_DATE_PHP}`;
+        const urgentKey = `urgent_shown_${END_DATE_PHP}`;
 
-            if (distance < 0) {
+        countdownInterval = setInterval(() => {
+            const now = Date.now();
+            const distance = target.getTime() - now;
+
+            if (distance <= 0) {
                 clearInterval(countdownInterval);
                 updateCountdownDisplay(0, 0, 0, 0);
                 showAlert('danger', 'Waktu penilaian telah berakhir!');
@@ -676,21 +681,30 @@
 
             updateCountdownDisplay(days, hours, minutes, seconds);
 
-            // Alert warnings
-            if (days <= 3 && !localStorage.getItem('warning_shown')) {
+            // --- Alert sekali saat melewati ambang ---
+            // Bucket berbasis hari tersisa: 3,2,1,0
+            const dayBucket = Math.max(0, days);
+
+            // Trigger "≤ 3 hari" hanya saat transisi dari >3 ke ≤3
+            if ((prevDayBucket === null || prevDayBucket > 3) && dayBucket <= 3 && !localStorage.getItem(warningKey)) {
                 showAlert('warning', `Peringatan: Sisa ${days} hari untuk menyelesaikan penilaian!`);
-                localStorage.setItem('warning_shown', 'true');
+                localStorage.setItem(warningKey, '1');
             }
 
-            if (days <= 1 && !localStorage.getItem('urgent_warning_shown')) {
+            // Trigger "≤ 1 hari" hanya saat transisi dari >1 ke ≤1
+            if ((prevDayBucket === null || prevDayBucket > 1) && dayBucket <= 1 && !localStorage.getItem(urgentKey)) {
                 showAlert('danger', 'URGENT: Waktu penilaian hampir habis!');
-                localStorage.setItem('urgent_warning_shown', 'true');
-                if (document.getElementById('soundAlert').checked) {
+                localStorage.setItem(urgentKey, '1');
+                const checkbox = document.getElementById('soundAlert');
+                if (checkbox && checkbox.checked) {
                     playNotificationSound();
                 }
             }
+
+            prevDayBucket = dayBucket;
         }, 1000);
     }
+
 
     function updateCountdownDisplay(days, hours, minutes, seconds) {
         animateNumber('days', days);
@@ -775,16 +789,15 @@
                 <div id="${alertId}" class="alert alert-${type}-custom alert-custom alert-dismissible fade show">
                     <i class="fas fa-${getAlertIcon(type)} me-2"></i>
                     ${message}
-                    <button type="button" class="btn-close" onclick="dismissAlert('${alertId}')"></button>
                 </div>
             `;
 
         alertContainer.innerHTML = alertHtml + alertContainer.innerHTML;
 
         // Auto dismiss after 5 seconds
-        setTimeout(() => {
-            dismissAlert(alertId);
-        }, 5000);
+        // setTimeout(() => {
+        //     dismissAlert(alertId);
+        // }, 5000);
     }
 
     function getAlertIcon(type) {
