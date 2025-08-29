@@ -613,21 +613,27 @@
     let trendChart;
     let targetDate = null; // target waktu global
     let prevDayBucket = null; // untuk deteksi crossing threshold
-    let END_DATE_PHP = "<?= $periode['end_date'] ?>"; // untuk namespace localStorage
+    let END_DATE_PHP = "<?= $end_date ?>"; // sudah aman walau null
+
 
     // Initialize dashboard
     document.addEventListener('DOMContentLoaded', function() {
         // Buat target date jam 23:59:59 pada tanggal end_date (lokal)
-        targetDate = new Date(END_DATE_PHP + "T23:59:59");
+        if (END_DATE_PHP) {
+            targetDate = new Date(END_DATE_PHP + "T23:59:59");
+            startCountdown(targetDate);
+        }
+
 
         const progress = <?= json_encode($progress) ?>;
         updateProgressCircle(progress);
+
 
         startCountdown(targetDate);
         createParticles();
         initializeDataTable();
         startAutoRefresh();
-        animateNumbers();
+        // animateNumbers();
 
         showAlert('info', 'Dashboard berhasil dimuat. Selamat datang!');
     });
@@ -829,23 +835,36 @@
         const text = document.getElementById('progressText');
         if (!circle || !text) return;
 
-        const circumference = 2 * Math.PI * 40; // radius = 40
-        const offset = circumference - (percentage / 100) * circumference;
+        const pct = Math.max(0, Math.min(100, Number(percentage) || 0));
+        const r = 40;
+        const circumference = 2 * Math.PI * r;
 
-        circle.style.strokeDasharray = circumference;
-        circle.style.strokeDashoffset = offset;
+        // tampilkan ring yang benar: dasharray = full circumference
+        circle.style.strokeDasharray = `${circumference} ${circumference}`;
+        const targetOffset = circumference * (1 - pct / 100);
 
-        let current = 0;
-        const increment = percentage / 50;
-        const timer = setInterval(() => {
-            current += increment;
-            if (current >= percentage) {
-                current = percentage;
-                clearInterval(timer);
-            }
-            text.textContent = Math.round(current) + '%';
-        }, 20);
+        // animasi offset & angka
+        const startOffset = Number(circle.style.strokeDashoffset || circumference);
+        const startValue = Number(text.dataset.value || 0);
+        const startTime = performance.now();
+        const duration = 800;
+
+        function tick(now) {
+            const t = Math.min((now - startTime) / duration, 1);
+            const ease = 1 - Math.pow(1 - t, 4);
+
+            const curOffset = startOffset + (targetOffset - startOffset) * ease;
+            circle.style.strokeDashoffset = curOffset;
+
+            const curValue = startValue + (pct - startValue) * ease;
+            text.textContent = curValue.toFixed(2) + '%';
+
+            if (t < 1) requestAnimationFrame(tick);
+            else text.dataset.value = pct;
+        }
+        requestAnimationFrame(tick);
     }
+
 
     // DataTable initialization
     function initializeDataTable() {
@@ -968,10 +987,10 @@
         const notAssessed = total - assessed;
 
         animateCounter(document.getElementById('totalKaryawan'), total);
-        animateCounter(document.getElementById('assessedCount'), assessed);
+        // animateCounter(document.getElementById('assessedCount'), assessed);
         // animateCounter(document.getElementById('pendingCount'), pending);
-        animateCounter(document.getElementById('notAssessedCount'), notAssessed);
-        animateCounter(document.getElementById('averageScore'), (Math.random() * 2 + 7).toFixed(1) * 1);
+        // animateCounter(document.getElementById('notAssessedCount'), notAssessed);
+        // animateCounter(document.getElementById('averageScore'), (Math.random() * 2 + 7).toFixed(1) * 1);
     }
 
     // Number animation

@@ -109,7 +109,12 @@ class MandorController extends BaseController
             $totalKaryawan = $cekPenilaian[0]['total_karyawan'] ?? 0;
             $totalAssesment = $cekPenilaian[0]['total_assessment'] ?? 0;
             $avgAssessment = 0;
-            $progress = $totalKaryawan > 0 ? ($totalAssesment / $totalKaryawan) * 100 : 0;
+            $progress = 0.0;
+            if ($totalKaryawan > 0) {
+                $progress = ($totalAssesment / $totalKaryawan) * 100.0;
+                $progress = max(0.0, min(100.0, $progress)); // clamp 0–100
+            }
+
             $avgAssessment = $this->finalAssessmentModel->getAverageGrade($periodeId, $area);
             // dd ($avgAssessment);
             switch (true) {
@@ -161,7 +166,7 @@ class MandorController extends BaseController
             $karGradeD = $this->finalAssessmentModel->getGradeDPrevious($periodeId, $area);
             // dd ($karGradeD);
         }
-
+        
         return view($roleFolder . '/dashboard', [
             'employees' => $employees,
             'periodeId' => $periodeId,
