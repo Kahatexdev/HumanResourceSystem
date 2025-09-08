@@ -74,18 +74,11 @@ class ApiController extends BaseController
         return $this->respond($data, 200);
     }
 
-    public function getDataForBsMc($area, $namaKar)
+    public function getDataForBsMc($area)
     {
         $data = $this->employeeModel->getKaryawanByAreaApi($area);
 
-        $filteredArea = array_filter($data, function ($item) use ($namaKar) {
-            return $item['nama_karyawan'] === $namaKar;
-        });
-
-        // Re-index array supaya tidak acak
-        $filteredArea = array_values($filteredArea);
-
-        return $this->respond($filteredArea, 200);
+        return $this->respond($data, 200);
     }
 
     public function getEmployeeByName($name)

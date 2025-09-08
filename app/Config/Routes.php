@@ -345,7 +345,7 @@ $routes->group('api', function ($routes) {
 
     $routes->get('area_utama/(:segment)', 'ApiController::getKaryawanByAreaUtama/$1');
     $routes->get('area/(:segment)', 'ApiController::getKaryawanByArea/$1');
-    $routes->get('getdataforbs/(:any)/(:any)', 'ApiController::getDataForBsMc/$1/$2');
+    $routes->get('getdataforbs/(:any)', 'ApiController::getDataForBsMc/$1');
     $routes->get('getEmployeeByName/(:segment)', 'ApiController::getEmployeeByName/$1');
     $routes->get('penilaian/chart-data', 'ApiController::chartData');
 });
