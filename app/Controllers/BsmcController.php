@@ -646,7 +646,7 @@ class BsmcController extends BaseController
                 }
             } // end foreach factory
         } // end foreach date
-        dd($inserts,$updates);
+        // dd($inserts,$updates);
         // ---- 6) Eksekusi batch dengan chunk biar hemat memory ----
         $insCount = count($inserts);
         $updCount = count($updates);
