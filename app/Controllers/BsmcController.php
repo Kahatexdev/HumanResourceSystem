@@ -543,8 +543,9 @@ class BsmcController extends BaseController
                     ];
                     // dd ($employeeData);
                     $employeeMap = $this->getEmployeeMap($employeeData);
+                    $key = ($employeeData[$row]['idEmployee'] ?? '') . '|' . ($employeeData[$row]['name'] ?? '') . '|' . ($employeeData[$row]['area'] ?? '');
 
-                    $key = ($employeeData[$row]['idEmployee'] ?? '') . '|' . (strtoupper($employeeData[$row]['name']) ?? '') . '|' . ($employeeData[$row]['area'] ?? '');
+                    // $key = ($employeeData[$row]['idEmployee'] ?? '') . '|' . (strtoupper($employeeData[$row]['name']) ?? '') . '|' . ($employeeData[$row]['area'] ?? '');
                     // dd ($key, $employeeMap);
                     $emp = $employeeMap[$key] ?? null; // Data karyawan
                     // dd($emp['id_employee'], $emp['id_factory'], $emp['shift'], $id_factory_current);
