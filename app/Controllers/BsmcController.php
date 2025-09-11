@@ -514,37 +514,44 @@ class BsmcController extends BaseController
                 $rowCounter++;
                 $url = "http://172.23.44.14/CapacityApps/public/api/prodBsDaily/{$factory}/{$currentDate}";
                 $response = @file_get_contents($url);
+                // dd($url,$response);
                 if ($response === false) {
                     $errors[] = "No response for {$factory} on {$currentDate}.";
                     continue;
                 }
                 $rows = json_decode($response, true);
+                // dd($rows);
+
                 if (json_last_error() !== JSON_ERROR_NONE) {
                     $errors[] = "Invalid JSON for {$factory} on {$currentDate}: " . json_last_error_msg();
                     continue;
                 }
 
-               
+                // dd($rows);
                 $employeeData = [];
                 foreach ($rows as $row => $i) {
-                    $em = $this->employeeModel->select('employee_name,id_factory')
-                    ->where('employee_name', strtoupper($i['nama_karyawan']))
-                    ->first();
+                    $em = $this->employeeModel->select('*')
+                        ->where('employee_name', strtoupper($i['nama_karyawan']))
+                        ->orWhere('id_employee', $i['id_karyawan'])
+                        ->first();
                     // dd ($em['id_factory'], $i['nama_karyawan'], $i['qty_produksi'], $i['qty_pcs']);
-
+                    // dd($em);
                     $employeeData[] = [
+                        'idEmployee' => $em['id_employee'] ?? null,
                         'name' => strtoupper($em['employee_name'] ?? ''),
                         'area' => $em['id_factory'] ?? null, // Ambil id factory dari karyawan
                     ];
                     // dd ($employeeData);
                     $employeeMap = $this->getEmployeeMap($employeeData);
 
-                    $key = strtoupper($employeeData[$row]['name']) . '|' . $employeeData[$row]['area'];
+                    $key = ($employeeData[$row]['idEmployee'] ?? '') . '|' . (strtoupper($employeeData[$row]['name']) ?? '') . '|' . ($employeeData[$row]['area'] ?? '');
                     // dd ($key, $employeeMap);
                     $emp = $employeeMap[$key] ?? null; // Data karyawan
                     // dd($emp['id_employee'], $emp['id_factory'], $emp['shift'], $id_factory_current);
-                    $idEmp = $emp['id_employee'] ?? null;
-                    $fac   = $emp['id_factory']  ?? null;
+                    $idEmp = $i['id_karyawan'] ?? ($em['id_employee'] ?? null);
+
+                    // dd($idEmp);
+                    $fac = $id_factory_current; // pakai factory dari loop
                     if (!$emp) {
                         $errors[] = "Karyawan " . strtoupper($i['nama_karyawan']) . " tidak ditemukan di factory $factory pada tanggal $currentDate.";
                         continue;
@@ -577,6 +584,7 @@ class BsmcController extends BaseController
                 }
             }
         }
+        // dd($employeeData[], $rows);
         // dd ($inserts, $updates, $errors);
         // Hitung dan eksekusi batch
         $countInserts = count($inserts);
@@ -609,6 +617,7 @@ class BsmcController extends BaseController
     // Helper: Ambil mapping karyawan
     private function getEmployeeMap(array $employeeData)
     {
+        $idEmployee = array_column($employeeData, 'idEmployee');
         $names = array_column($employeeData, 'name');
         $areaIds = array_column($employeeData, 'area');
         // $shifts = array_column($employeeData, 'shift');
@@ -619,6 +628,9 @@ class BsmcController extends BaseController
             ->select('id_employee, employee_name, shift, id_factory');
 
         // Tambahkan kondisi hanya jika array tidak kosong
+        if (!empty($idEmployee)) {
+            $builder->whereIn('id_employee', $idEmployee);
+        }
         if (!empty($names)) {
             $builder->whereIn('employee_name', $names);
         }
@@ -635,7 +647,7 @@ class BsmcController extends BaseController
 
         $map = [];
         foreach ($result as $emp) {
-            $key = $emp['employee_name'] . '|' . $emp['id_factory'];
+            $key = $emp['id_employee'] . '|' . $emp['employee_name'] . '|' . $emp['id_factory'];
             $map[$key] = $emp;
         }
         // dd ($map);
