@@ -549,7 +549,8 @@ class BsmcController extends BaseController
                     // dd ($key, $employeeMap);
                     $emp = $employeeMap[$key] ?? null; // Data karyawan
                     // dd($emp['id_employee'], $emp['id_factory'], $emp['shift'], $id_factory_current);
-                    $idEmp = $i['id_karyawan'] ?? ($em['id_employee'] ?? null);
+                    // $idEmp = $i['id_karyawan'] ?? ($em['id_employee'] ?? null);
+                    $idEmp = $emp['id_employee'] ?? null;   // <— BUKAN $i['id_karyawan']
 
                     // dd($idEmp);
                     $fac = $id_factory_current; // pakai factory dari loop
@@ -586,7 +587,7 @@ class BsmcController extends BaseController
             }
         }
         // dd($employeeData[], $rows);
-        // dd ($inserts, $updates, $errors);
+        dd ($inserts, $updates, $errors);
         // Hitung dan eksekusi batch
         $countInserts = count($inserts);
         $countUpdates = count($updates);
