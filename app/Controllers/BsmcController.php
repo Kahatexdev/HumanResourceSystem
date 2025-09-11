@@ -459,14 +459,11 @@ class BsmcController extends BaseController
 
         return redirect()->back()->with('success', 'Import berhasil!');
     }
-
     public function fetchDataBsmc()
     {
-        // Ambil rentang tanggal dari form atau default ke hari ini
         $tglFrom = $this->request->getGet('tgl_from') ?? date('Y-m-d');
         $tglTo   = $this->request->getGet('tgl_to')   ?? $tglFrom;
 
-        // Buat daftar tanggal dalam rentang
         $period = new \DatePeriod(
             new \DateTime($tglFrom),
             new \DateInterval('P1D'),
@@ -490,116 +487,182 @@ class BsmcController extends BaseController
             'KK11M'
         ];
 
-        $errors  = [];
-        $inserts = [];
-        $updates = [];
-        $bsmcModel  = new \App\Models\BsmcModel();
-        $factoryModel = new \App\Models\FactoryModel(); // Sesuaikan model
+        $errors   = [];
+        $inserts  = [];
+        $updates  = [];
+
+        $bsmcModel    = new \App\Models\BsmcModel();
+        $factoryModel = new \App\Models\FactoryModel();
+
+        // Map factory_name -> id_factory (sekali saja)
         $factoryMap = [];
         foreach ($factoryNames as $name) {
-            $factory = $factoryModel->where('factory_name', $name)->first();
-            if ($factory) $factoryMap[$name] = $factory['id_factory'];
+            $f = $factoryModel->where('factory_name', $name)->first();
+            if ($f) {
+                $factoryMap[$name] = (int)$f['id_factory'];
+            } else {
+                $errors[] = "Factory $name tidak terdaftar!";
+            }
         }
-        $rowCounter = 0;
 
-        // Loop tiap tanggal dan tiap factory
-        foreach ($period as $date) {
-            $currentDate = $date->format('Y-m-d');
-            foreach ($factoryNames as $factory) {
-                $id_factory_current = $factoryMap[$factory] ?? null;
-                if (!$id_factory_current) {
-                    $errors[] = "Factory $factory tidak terdaftar!";
+        // HTTP stream context (timeout) agar tidak hang
+        $ctx = stream_context_create([
+            'http' => ['timeout' => 8],
+        ]);
+
+        foreach ($period as $dateObj) {
+            $currentDate = $dateObj->format('Y-m-d');
+
+            foreach ($factoryNames as $factoryName) {
+                $idFactory = $factoryMap[$factoryName] ?? null;
+                if (!$idFactory) {
+                    // sudah dicatat di errors saat build factoryMap
                     continue;
                 }
-                $rowCounter++;
-                $url = "http://172.23.44.14/CapacityApps/public/api/prodBsDaily/{$factory}/{$currentDate}";
-                $response = @file_get_contents($url);
-                // dd($url,$response);
+
+                $url = "http://172.23.44.14/CapacityApps/public/api/prodBsDaily/{$factoryName}/{$currentDate}";
+                $response = @file_get_contents($url, false, $ctx);
+
                 if ($response === false) {
-                    $errors[] = "No response for {$factory} on {$currentDate}.";
+                    $errors[] = "No response for {$factoryName} on {$currentDate}.";
                     continue;
                 }
+
                 $rows = json_decode($response, true);
-                // dd($rows);
-
                 if (json_last_error() !== JSON_ERROR_NONE) {
-                    $errors[] = "Invalid JSON for {$factory} on {$currentDate}: " . json_last_error_msg();
+                    $errors[] = "Invalid JSON for {$factoryName} on {$currentDate}: " . json_last_error_msg();
+                    continue;
+                }
+                if (empty($rows)) {
+                    // Tidak ada data untuk kombinasi ini—lanjut
                     continue;
                 }
 
-                // dd($rows);
-                $employeeData = [];
-                foreach ($rows as $row => $i) {
-                    $em = $this->employeeModel->select('*')
-                        ->where('employee_name', strtoupper($i['nama_karyawan']))
-                        ->orWhere('id_employee', $i['id_karyawan'])
-                        ->first();
-                    // dd ($em['id_factory'], $i['nama_karyawan'], $i['qty_produksi'], $i['qty_pcs']);
-                    // dd($em);
-                    $employeeData[] = [
-                        'idEmployee' => $em['id_employee'] ?? null,
-                        'name' => strtoupper($em['employee_name'] ?? ''),
-                        'area' => $em['id_factory'] ?? null, // Ambil id factory dari karyawan
-                    ];
-                    // dd ($employeeData);
-                    $employeeMap = $this->getEmployeeMap($employeeData);
-                    $key = ($employeeData[$row]['idEmployee'] ?? '') . '|' . ($employeeData[$row]['name'] ?? '') . '|' . ($employeeData[$row]['area'] ?? '');
+                // ---- 1) Kumpulkan kandidat karyawan (ID & NAME) SEKALI ----
+                $candIds   = [];
+                $candNames = [];
+                foreach ($rows as $r) {
+                    if (!empty($r['id_karyawan'])) {
+                        $candIds[] = (string)$r['id_karyawan'];
+                    }
+                    if (!empty($r['nama_karyawan'])) {
+                        $candNames[] = strtoupper(trim($r['nama_karyawan']));
+                    }
+                }
+                $candIds   = array_values(array_unique(array_filter($candIds)));
+                $candNames = array_values(array_unique(array_filter($candNames)));
 
-                    // $key = ($employeeData[$row]['idEmployee'] ?? '') . '|' . (strtoupper($employeeData[$row]['name']) ?? '') . '|' . ($employeeData[$row]['area'] ?? '');
-                    // dd ($key, $employeeMap);
-                    $emp = $employeeMap[$key] ?? null; // Data karyawan
-                    // dd($emp['id_employee'], $emp['id_factory'], $emp['shift'], $id_factory_current);
-                    // $idEmp = $i['id_karyawan'] ?? ($em['id_employee'] ?? null);
-                    $idEmp = $emp['id_employee'] ?? null;   // <— BUKAN $i['id_karyawan']
+                // ---- 2) Ambil employee map SEKALI (filter by id_factory agar tidak nyasar area lain) ----
+                $empBuilder = $this->db->table('employees')
+                    ->select('id_employee, employee_name, id_factory, shift')
+                    ->where('id_factory', $idFactory);
 
-                    // dd($idEmp);
-                    $fac = $id_factory_current; // pakai factory dari loop
+                if (!empty($candIds)) {
+                    $empBuilder->groupStart()->whereIn('id_employee', $candIds)->groupEnd();
+                }
+                if (!empty($candNames)) {
+                    // Jika ada nama juga, pakai OR block disatukan
+                    $empBuilder->orGroupStart()
+                        ->where('id_factory', $idFactory) // jaga agar OR tetap dalam factory yang sama
+                        ->whereIn('employee_name', $candNames)
+                        ->groupEnd();
+                }
+
+                $empRows = $empBuilder->get()->getResultArray();
+
+                // Buat dua map: by ID, dan by NAME (uppercase) → prioritas ID
+                $empById   = [];
+                $empByName = [];
+                foreach ($empRows as $e) {
+                    $empById[(string)$e['id_employee']] = $e;
+                    $empByName[strtoupper($e['employee_name'])] = $e;
+                }
+
+                // ---- 3) Agregasi per kunci unik (id_employee|tgl|factory) ----
+                // Kadang API bisa kirim duplikat per karyawan; kita sum.
+                $aggregated = []; // key => ['id_employee','tgl_input','id_factory','produksi','bs_mc']
+                foreach ($rows as $r) {
+                    // Match employee: id_karyawan lebih diutamakan; kalau kosong/fail pakai nama
+                    $emp = null;
+                    if (!empty($r['id_karyawan']) && isset($empById[(string)$r['id_karyawan']])) {
+                        $emp = $empById[(string)$r['id_karyawan']];
+                    } else {
+                        $nm = strtoupper(trim($r['nama_karyawan'] ?? ''));
+                        if ($nm !== '' && isset($empByName[$nm])) {
+                            $emp = $empByName[$nm];
+                        }
+                    }
+
                     if (!$emp) {
-                        $errors[] = "Karyawan " . strtoupper($i['nama_karyawan']) . " tidak ditemukan di factory $factory pada tanggal $currentDate.";
+                        $errors[] = "Karyawan " . strtoupper($r['nama_karyawan'] ?? '(null)') . " tidak ditemukan di {$factoryName} pada {$currentDate}.";
                         continue;
                     }
 
-                    // Siapkan record
-                    $record = [
-                        'id_employee' => $idEmp,
-                        'tgl_input'   => $currentDate,
-                        'produksi'    => $i['qty_produksi'],
-                        'bs_mc'       => round($i['qty_pcs']),
-                        'id_factory'  => $fac,
-                    ];
+                    $key = $emp['id_employee'] . '|' . $currentDate . '|' . $idFactory;
 
-                    // dd($record);
-                    // Cek existensi
-                    $exists = $bsmcModel
-                        ->where('id_employee', $idEmp)
-                        ->where('tgl_input',   $currentDate)
-                        ->where('id_factory',  $fac)
-                        ->first();
+                    $prod = (int)($r['qty_produksi'] ?? 0);
+                    $bsmc = (int)round($r['qty_pcs'] ?? 0);
 
-                    if ($exists) {
-                        // update existing
-                        $updates[] = array_merge($record, ['id_bsmc' => $exists['id_bsmc']]);
+                    if (!isset($aggregated[$key])) {
+                        $aggregated[$key] = [
+                            'id_employee' => $emp['id_employee'],
+                            'tgl_input'   => $currentDate,
+                            'produksi'    => 0,
+                            'bs_mc'       => 0,
+                            'id_factory'  => $idFactory,
+                        ];
+                    }
+                    $aggregated[$key]['produksi'] += $prod;
+                    $aggregated[$key]['bs_mc']    += $bsmc;
+                }
+
+                if (empty($aggregated)) {
+                    continue;
+                }
+
+                // ---- 4) Ambil data bsmc yang SUDAH ada untuk kombinasi (tgl, factory, id_employee in set) ----
+                $idsForCheck = array_values(array_unique(array_map(fn($v) => $v['id_employee'], $aggregated)));
+                $existRows   = $this->db->table('sum_bsmc')
+                    ->select('id_bsmc, id_employee, tgl_input, id_factory')
+                    ->where('tgl_input', $currentDate)
+                    ->where('id_factory', $idFactory)
+                    ->whereIn('id_employee', $idsForCheck)
+                    ->get()->getResultArray();
+
+                $existMap = [];
+                foreach ($existRows as $er) {
+                    $k = $er['id_employee'] . '|' . $er['tgl_input'] . '|' . $er['id_factory'];
+                    $existMap[$k] = $er['id_bsmc'];
+                }
+
+                // ---- 5) Split → inserts vs updates (tanpa query per-row) ----
+                foreach ($aggregated as $k => $rec) {
+                    if (isset($existMap[$k])) {
+                        $rec['id_bsmc'] = $existMap[$k];
+                        $updates[] = $rec;
                     } else {
-                        // insert baru
-                        $inserts[] = $record;
+                        $inserts[] = $rec;
                     }
                 }
+            } // end foreach factory
+        } // end foreach date
+        dd($inserts,$updates);
+        // ---- 6) Eksekusi batch dengan chunk biar hemat memory ----
+        $insCount = count($inserts);
+        $updCount = count($updates);
+
+        if ($insCount > 0) {
+            foreach (array_chunk($inserts, 1000) as $chunk) {
+                $bsmcModel->insertBatch($chunk);
             }
         }
-        // dd($employeeData[], $rows);
-        dd ($inserts, $updates, $errors);
-        // Hitung dan eksekusi batch
-        $countInserts = count($inserts);
-        $countUpdates = count($updates);
-
-        if ($countInserts > 0) {
-            $bsmcModel->insertBatch($inserts);
-        }
-        if ($countUpdates > 0) {
-            $bsmcModel->updateBatch($updates, 'id_bsmc');
+        if ($updCount > 0) {
+            foreach (array_chunk($updates, 1000) as $chunk) {
+                $bsmcModel->updateBatch($chunk, 'id_bsmc');
+            }
         }
 
-        if ($countInserts === 0 && $countUpdates === 0) {
+        if ($insCount === 0 && $updCount === 0) {
             return redirect()->back()
                 ->with('error', 'Tidak ada data baru atau yang perlu diperbarui.')
                 ->with('validation_errors', $errors);
@@ -607,53 +670,13 @@ class BsmcController extends BaseController
 
         return redirect()->back()
             ->with('success', sprintf(
-                'Data berhasil diproses dari %s sampai %s: %d insert, %d update.',
+                'Data dari %s sampai %s diproses: %d insert, %d update.',
                 $tglFrom,
                 $tglTo,
-                $countInserts,
-                $countUpdates
+                $insCount,
+                $updCount
             ))
             ->with('validation_errors', $errors);
-    }
-
-    // Helper: Ambil mapping karyawan
-    private function getEmployeeMap(array $employeeData)
-    {
-        $idEmployee = array_column($employeeData, 'idEmployee');
-        $names = array_column($employeeData, 'name');
-        $areaIds = array_column($employeeData, 'area');
-        // $shifts = array_column($employeeData, 'shift');
-        // dd($factoryId);
-
-
-        $builder = $this->db->table('employees')
-            ->select('id_employee, employee_name, shift, id_factory');
-
-        // Tambahkan kondisi hanya jika array tidak kosong
-        if (!empty($idEmployee)) {
-            $builder->whereIn('id_employee', $idEmployee);
-        }
-        if (!empty($names)) {
-            $builder->whereIn('employee_name', $names);
-        }
-
-        if (!empty($areaIds)) {
-            $builder->whereIn('id_factory', $areaIds);
-        }
-
-        // if (!empty($shifts)) {
-        //     $builder->whereIn('shift', $shifts);
-        // }
-
-        $result = $builder->get()->getResultArray();
-
-        $map = [];
-        foreach ($result as $emp) {
-            $key = $emp['id_employee'] . '|' . $emp['employee_name'] . '|' . $emp['id_factory'];
-            $map[$key] = $emp;
-        }
-        // dd ($map);
-        return $map;
     }
 
     public function filterBsmc($area)
