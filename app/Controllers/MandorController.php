@@ -176,18 +176,18 @@ class MandorController extends BaseController
             'noPeriode' => $noPeriode,
             'periodeMessage' => $periodeMessage,
             'periode' => $periode,
-            'totalKaryawan' => $totalKaryawan,
-            'totalAssesment' => $totalAssesment,
-            'avgAssessment' => $avgAssessment,
-            'progress' => $progress,
+            'totalKaryawan' => $totalKaryawan ?? null,
+            'totalAssesment' => $totalAssesment ?? null,
+            'avgAssessment' => $avgAssessment ?? null,
+            'progress' => $progress ?? null,
             'start_date' => $periode ? $periode['start_date'] : null,
             'end_date' => $periode ? $periode['end_date'] : null,
             'cekPenilaian' => isset($cekPenilaian) ? $cekPenilaian : null,
-            'grade' => $grade,
-            'avgGrade' => $avgGrade['average_grade'] ?? 0,
-            'labels' => $labels,
-            'data' => $data,
-            'karGradeD' => $karGradeD
+            'grade' => $grade ?? null,
+            'avgGrade' => $avgGrade['average_grade'] ?? null,
+            'labels' => $labels ?? null,
+            'data' => $data ?? null,
+            'karGradeD' => $karGradeD ?? null
         ]);
     }
 
