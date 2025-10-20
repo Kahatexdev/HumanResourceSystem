@@ -306,6 +306,7 @@ $routes->group('/TrainingSchool', ['filter' => 'TrainingSchool'], function ($rou
     $routes->get('formerKaryawan', 'TrainingSchoolController::formerKaryawan');
     $routes->post('formerEmployee', 'EmployeeController::formerEmployee');
     $routes->get('exportFormerKaryawan', 'TrainingSchoolController::exportFormerKaryawan');
+    $routes->get('formerEmployee/reactiveKaryawan', 'TrainingSchoolController::reactiveKaryawan');
 
     $routes->get('historyPindahKaryawan', 'TrainingSchoolController::historyPindahKaryawan');
     $routes->get('reportHistoryPindahKaryawan', 'HistoryEmployeeController::reportExcel');

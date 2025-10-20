@@ -51,6 +51,7 @@
                                 <th>Tgl Resign</th>
                                 <th>Alasan Resign</th>
                                 <th>Diupdate Oleh</th>
+                                <th>Action</th>
                             </thead>
                             <tbody>
                                 <?php if (!empty($karyawan)) : ?>
@@ -66,6 +67,14 @@
                                             <td><?= $karyawan['date_of_leaving'] ?></td>
                                             <td><?= $karyawan['reason_for_leaving'] ?></td>
                                             <td><?= $karyawan['updated_by'] ?></td>
+                                            <td>
+                                                <a href="<?= base_url($role . '/formerEmployee/reactiveKaryawan?id=' . $karyawan['id_former_employee']) ?>"
+                                                    class="btn bg-gradient-success btn-sm"
+                                                    onclick="return confirm('Yakin ingin mengaktifkan kembali <?= $karyawan['employee_name'] ?>?')">
+                                                    Reactive
+                                                </a>
+
+                                            </td>
                                         </tr>
                                     <?php endforeach ?>
                                 <?php else : ?>

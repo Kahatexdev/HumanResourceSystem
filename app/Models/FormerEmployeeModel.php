@@ -29,6 +29,7 @@ class FormerEmployeeModel extends Model
         'date_of_leaving',
         'reason_for_leaving',
         'id_user',
+        'status',
     ];
 
     protected bool $allowEmptyInserts = false;
@@ -65,6 +66,7 @@ class FormerEmployeeModel extends Model
     {
         return $this->select('former_employee.*, users.username as updated_by')
             ->join('users', 'users.id_user = former_employee.id_user')
+            ->where('former_employee.status', '0')
             ->findAll();
     }
 }

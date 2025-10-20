@@ -322,4 +322,52 @@ class TrainingSchoolController extends BaseController
         $writer->save('php://output');
         exit;
     }
+
+    public function reactiveKaryawan()
+    {
+        $id = $this->request->getGet('id');
+        $today = date('Y-m-d H:i:s');
+        log_message('error', 'ID yang diterima: ' . print_r($id, true));
+
+        // 1️⃣ Ambil data karyawan yang akan direaktifasi
+        $former = $this->formerEmployeeModel->where('id_former_employee', $id)->first();
+        if (!$former) {
+            return redirect()->back()->with('error', 'Data tidak ditemukan');
+        }
+
+        $job = $former['job_section_name'];
+        $factoryName =  $former['factory_name'];
+        $mainFactory = $former['main_factory'];
+        $employmentStatus = $former['employment_status_name'];
+        $clothesColor = $former['clothes_color'];
+        $holiday = $former['holiday'];
+        $additionalHoliday = $former['additional_holiday'];
+
+        // 2️⃣ Update status former_employee jadi aktif (1)
+        $update = $this->formerEmployeeModel->update($id, ['status' => '1']);
+        if ($update) {
+            $idJobSection = $this->jobSectionModel->select('id_job_section')->where('job_section_name', $job)->first()['id_job_section'];
+            $idFactory = $this->factoriesModel->select('id_factory')->where('main_factory', $mainFactory)->where('factory_name', $factoryName)->first()['id_factory'];
+            $idEmploymentStatus = $this->employmentStatusModel->select('id_employment_status')->where('employment_status_name', $employmentStatus)->where('clothes_color', $clothesColor)->first()['id_employment_status'];
+            $idHoliday = $this->days->select('id_day')->where('day_name', $holiday)->first()['id_day'];
+            $idAdditionalHoliday = $this->days->select('id_day')->where('day_name', $additionalHoliday)->first()['id_day'];
+
+            // 3️⃣ Insert kembali ke table employee
+            $this->employeeModel->insert([
+                'employee_name'       => $former['employee_name'],
+                'employee_code'       => $former['employee_code'],
+                'shift'               => $former['shift'],
+                'id_job_section'      => $idJobSection, // jika pakai ID
+                'id_factory'          => $idFactory,
+                'id_employment_status' => $idEmploymentStatus,
+                'holiday'             => $idHoliday,
+                'additional_holiday'  => $idAdditionalHoliday,
+                'date_of_birth'       => $former['date_of_birth'],
+                'date_of_joining'     => $former['date_of_joining'],
+                'status'              => 'Aktif'
+            ]);
+
+            return redirect()->back()->with('success', 'Karyawan berhasil diaktifkan kembali!');
+        }
+    }
 }
