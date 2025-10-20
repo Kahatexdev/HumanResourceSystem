@@ -172,7 +172,7 @@ class JarumController extends BaseController
     {
         $area = $this->factoriesModel->where('factory_name', $area)->first();
         // dd ($area);
-        $summaryJarum = $this->summaryJarum->getSummaryJarum($area['id_factory'], $id_batch);
+        $summaryJarum = $this->summaryJarum->getSummaryJarumv2($area['id_factory'], $id_batch);
         // dd ($summaryJarum);
         $namaBatch = $this->batchModel->where('id_batch', $id_batch)->first();
         $start_dates = array_column($summaryJarum, 'end_date');

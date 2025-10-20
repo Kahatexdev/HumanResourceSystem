@@ -69,32 +69,72 @@ class JarumModel extends Model
             ->get()->getResultArray();
     }
 
-    public function getSummaryJarum($id_factory, $id_batch)
+    // public function getSummaryJarum($id_factory, $id_batch)
+    // {
+    //     return $this->select('sum_jarum.id_sj, sum_jarum.id_employee, sum_jarum.tgl_input, SUM(sum_jarum.used_needle) AS total_jarum, sum_jarum.id_factory,
+    //         sum_jarum.*, periodes.*, job_sections.*, factories.*, employees.*')
+    //         ->join('periodes', 'sum_jarum.tgl_input BETWEEN periodes.start_date AND periodes.end_date', 'inner')
+    //         ->join('employees', 'employees.id_employee = sum_jarum.id_employee', 'inner')
+    //         ->join('job_sections', 'job_sections.id_job_section = employees.id_job_section', 'inner')
+    //         ->join('factories', 'factories.id_factory = sum_jarum.id_factory')
+    //         ->join('history_employees h', 'h.id_employee = sum_jarum.id_employee', 'left')
+    //         // ->join('history_pindah_karyawan h', 'h.id_employee = sum_jarum.id_employee', 'left')
+    //         ->where('periodes.id_batch', $id_batch)
+    //         // Group kondisi: id_factory saat ini OR data id_factory lama sebelum tanggal pindah
+    //         ->like('job_sections.job_section_name', 'MONTIR')
+    //         ->where('sum_jarum.id_factory', $id_factory)
+    //         ->groupStart()
+    //         // 1) Data di id_factory target
+    //         // 2) OR data dari id_factory asal, tapi hanya yg tgl_input < tanggal_pindah
+    //         ->orWhere(
+    //             "(sum_jarum.id_factory = h.id_factory_old AND sum_jarum.tgl_input < h.date_of_change)",
+    //             null,
+    //             false
+    //         )
+    //         ->groupEnd()
+    //         ->groupBy('employees.employee_code, periodes.start_date, periodes.end_date')
+    //         ->findAll();
+    // }
+
+    public function getSummaryJarumv2($id_factory, $id_batch)
     {
-        return $this->select('sum_jarum.id_sj, sum_jarum.id_employee, sum_jarum.tgl_input, SUM(sum_jarum.used_needle) AS total_jarum, sum_jarum.id_factory,
-            sum_jarum.*, periodes.*, job_sections.*, factories.*, employees.*')
+        return $this->select("
+            sum_jarum.id_sj,
+            sum_jarum.id_employee,
+            sum_jarum.tgl_input,
+            SUM(sum_jarum.used_needle) AS total_jarum,
+            sum_jarum.id_factory,
+            sum_jarum.*,
+            periodes.*,
+            job_sections.*,
+            factories.*,
+            employees.*
+        ")
             ->join('periodes', 'sum_jarum.tgl_input BETWEEN periodes.start_date AND periodes.end_date', 'inner')
             ->join('employees', 'employees.id_employee = sum_jarum.id_employee', 'inner')
             ->join('job_sections', 'job_sections.id_job_section = employees.id_job_section', 'inner')
-            ->join('factories', 'factories.id_factory = sum_jarum.id_factory')
+            ->join('factories', 'factories.id_factory = sum_jarum.id_factory', 'inner')
             ->join('history_employees h', 'h.id_employee = sum_jarum.id_employee', 'left')
-            // ->join('history_pindah_karyawan h', 'h.id_employee = sum_jarum.id_employee', 'left')
-            ->like('job_sections.job_section_name', 'MONTIR')
             ->where('periodes.id_batch', $id_batch)
-            // Group kondisi: id_factory saat ini OR data id_factory lama sebelum tanggal pindah
+            ->like('job_sections.job_section_name', 'MONTIR')
+
+            // (A) data di pabrik target SAAT ITU
+            //  OR
+            // (B) data sebelum pindah dari pabrik lama -> ke pabrik target ($id_factory)
             ->groupStart()
-            // 1) Data di id_factory target
             ->where('sum_jarum.id_factory', $id_factory)
-            // 2) OR data dari id_factory asal, tapi hanya yg tgl_input < tanggal_pindah
-            ->orWhere(
-                "(sum_jarum.id_factory = h.id_factory_old AND sum_jarum.tgl_input < h.date_of_change)",
-                null,
-                false
-            )
+            ->orGroupStart()
+            ->where('h.id_factory_new', $id_factory)               // tujuan pindah = pabrik target
+            ->where('sum_jarum.id_factory = h.id_factory_old', null, false) // data berasal dari pabrik lama
+            ->where('sum_jarum.tgl_input < h.date_of_change', null, false)  // hanya sebelum tanggal pindah
             ->groupEnd()
+            ->groupEnd()
+
+            // agregasi per karyawan dalam periode
             ->groupBy('employees.employee_code, periodes.start_date, periodes.end_date')
             ->findAll();
     }
+
 
     public function getFilteredData($area, $startDate, $endDate)
     {
