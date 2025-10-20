@@ -64,8 +64,10 @@ class FormerEmployeeModel extends Model
 
     public function getFormerKaryawan()
     {
-        return $this->select('former_employee.*, users.username as updated_by')
+        return $this->select('former_employee.*, users.username as updated_by, factories.id_factory, job_sections.id_job_section')
             ->join('users', 'users.id_user = former_employee.id_user')
+            ->join('factories', 'former_employee.factory_name = factories.factory_name AND former_employee.main_factory = factories.main_factory')
+            ->join('job_sections', 'former_employee.job_section_name = job_sections.job_section_name')
             ->where('former_employee.status', '0')
             ->findAll();
     }

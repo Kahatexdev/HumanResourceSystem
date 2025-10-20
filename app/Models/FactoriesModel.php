@@ -57,4 +57,12 @@ class FactoriesModel extends Model
             ->groupBy('main_factory')
             ->findAll();
     }
+    public function getFactoryName()
+    {
+        return $this->select('id_factory, factory_name')
+            // ->where('main_factory !=', '-')
+            // ->where('factory_name !=', '-')
+            ->groupBy('factory_name')
+            ->findAll();
+    }
 }

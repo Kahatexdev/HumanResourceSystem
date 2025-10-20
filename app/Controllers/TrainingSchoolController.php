@@ -217,6 +217,8 @@ class TrainingSchoolController extends BaseController
     public function formerKaryawan()
     {
         $karyawan = $this->formerEmployeeModel->getFormerKaryawan();
+        $factories = $this->factoriesModel->getFactoryName();
+        $jobSections = $this->jobSectionModel->getJobSectionName();
 
         $data = [
             'role' => session()->get('role'),
@@ -224,7 +226,9 @@ class TrainingSchoolController extends BaseController
             'active1' => '',
             'active2' => '',
             'active3' => '',
-            'karyawan' => $karyawan
+            'karyawan' => $karyawan,
+            'factories' => $factories,
+            'jobSections' => $jobSections,
         ];
         return view(session()->get('role') . '/formerKaryawan', $data);
     }
@@ -325,9 +329,12 @@ class TrainingSchoolController extends BaseController
 
     public function reactiveKaryawan()
     {
-        $id = $this->request->getGet('id');
+        $userId = session()->get('id_user');
+        $id = $this->request->getPost('id_former_employee');
+        $keterangan = $this->request->getPost('keterangan');
+        $idFactoryNew = $this->request->getPost('factory');
+        $idJobSectionNew = $this->request->getPost('job_section');
         $today = date('Y-m-d H:i:s');
-        log_message('error', 'ID yang diterima: ' . print_r($id, true));
 
         // 1️⃣ Ambil data karyawan yang akan direaktifasi
         $former = $this->formerEmployeeModel->where('id_former_employee', $id)->first();
@@ -346,8 +353,8 @@ class TrainingSchoolController extends BaseController
         // 2️⃣ Update status former_employee jadi aktif (1)
         $update = $this->formerEmployeeModel->update($id, ['status' => '1']);
         if ($update) {
-            $idJobSection = $this->jobSectionModel->select('id_job_section')->where('job_section_name', $job)->first()['id_job_section'];
-            $idFactory = $this->factoriesModel->select('id_factory')->where('main_factory', $mainFactory)->where('factory_name', $factoryName)->first()['id_factory'];
+            $idJobSectionOld = $this->jobSectionModel->select('id_job_section')->where('job_section_name', $job)->first()['id_job_section'];
+            $idFactoryOld = $this->factoriesModel->select('id_factory')->where('main_factory', $mainFactory)->where('factory_name', $factoryName)->first()['id_factory'];
             $idEmploymentStatus = $this->employmentStatusModel->select('id_employment_status')->where('employment_status_name', $employmentStatus)->where('clothes_color', $clothesColor)->first()['id_employment_status'];
             $idHoliday = $this->days->select('id_day')->where('day_name', $holiday)->first()['id_day'];
             $idAdditionalHoliday = $this->days->select('id_day')->where('day_name', $additionalHoliday)->first()['id_day'];
@@ -357,14 +364,28 @@ class TrainingSchoolController extends BaseController
                 'employee_name'       => $former['employee_name'],
                 'employee_code'       => $former['employee_code'],
                 'shift'               => $former['shift'],
-                'id_job_section'      => $idJobSection, // jika pakai ID
-                'id_factory'          => $idFactory,
+                'id_job_section'      => $idJobSectionNew,
+                'id_factory'          => $idFactoryNew,
                 'id_employment_status' => $idEmploymentStatus,
                 'holiday'             => $idHoliday,
                 'additional_holiday'  => $idAdditionalHoliday,
                 'date_of_birth'       => $former['date_of_birth'],
                 'date_of_joining'     => $former['date_of_joining'],
                 'status'              => 'Aktif'
+            ]);
+
+            $idEmployee = $this->employeeModel->getInsertID();
+
+            // 3️⃣ Insert kembali ke table history employees
+            $this->historyPindahKaryawanModel->insert([
+                'id_employee'           => $idEmployee,
+                'id_job_section_old'    => $idJobSectionOld,
+                'id_factory_old'        => $idFactoryOld,
+                'id_job_section_new'    => $idJobSectionNew,
+                'id_factory_new'        => $idFactoryNew,
+                'date_of_change'        => $today,
+                'reason'                => $keterangan,
+                'id_user'               => $userId,
             ]);
 
             return redirect()->back()->with('success', 'Karyawan berhasil diaktifkan kembali!');

@@ -48,4 +48,11 @@ class JobSectionModel extends Model
     protected $afterFind      = [];
     protected $beforeDelete   = [];
     protected $afterDelete    = [];
+
+    public function getJobSectionName()
+    {
+        return $this->select('id_job_section, job_section_name')
+            ->groupBy('job_section_name')
+            ->findAll();
+    }
 }
