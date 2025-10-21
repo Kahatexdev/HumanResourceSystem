@@ -141,6 +141,11 @@
                         </div>
 
                         <div class="mb-3">
+                            <label>Tanggal Pindah</label>
+                            <input type="date" class="form-control" name="date_of_change" id="date_of_change" required>
+                        </div>
+
+                        <div class="mb-3">
                             <label>Keterangan</label>
                             <textarea name="keterangan" class="form-control" required></textarea>
                         </div>

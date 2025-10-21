@@ -333,6 +333,7 @@ class TrainingSchoolController extends BaseController
         $id = $this->request->getPost('id_former_employee');
         $employeeCode = $this->request->getPost('employee_code');
         $tglReaktivasi = $this->request->getPost('tgl_reaktivasi');
+        $tglPindah = $this->request->getPost('date_of_change');
         $keterangan = $this->request->getPost('keterangan');
         $idFactoryNew = $this->request->getPost('factory');
         $idJobSectionNew = $this->request->getPost('job_section');
@@ -384,7 +385,7 @@ class TrainingSchoolController extends BaseController
                 'id_factory_old'        => $idFactoryOld,
                 'id_job_section_new'    => $idJobSectionNew,
                 'id_factory_new'        => $idFactoryNew,
-                'date_of_change'        => $tglReaktivasi,
+                'date_of_change'        => $tglPindah,
                 'reason'                => $keterangan,
                 'id_user'               => $userId,
             ]);
