@@ -75,7 +75,8 @@
                                                     data-id="<?= $karyawan['id_former_employee']; ?>"
                                                     data-name="<?= $karyawan['employee_name']; ?>"
                                                     data-factory="<?= $karyawan['id_factory']; ?>"
-                                                    data-job="<?= $karyawan['id_job_section']; ?>">
+                                                    data-job="<?= $karyawan['id_job_section']; ?>"
+                                                    data-employee-code="<?= $karyawan['employee_code']; ?>">
                                                     Reactive
                                                 </button>
                                             </td>
@@ -105,7 +106,16 @@
                     </div>
 
                     <div class="modal-body">
-                        <p>Aktifkan kembali karyawan: <b id="modal_name"></b>?</p>
+                        <div class="mb-3">
+                            <label>Nama</label>
+                            <input type="text" class="form-control" name="employee_name" id="employee_name" readonly>
+                        </div>
+
+                        <div class="mb-3">
+                            <label>Kode Kartu</label>
+                            <input type="text" class="form-control" name="employee_code" id="employee_code" required>
+                        </div>
+
                         <div class="mb-3">
                             <label>Factory</label>
                             <select name="factory" class="form-control" id="modal_factory" required>
@@ -122,6 +132,11 @@
                                     <option value="<?= $job['id_job_section'] ?>"><?= $job['job_section_name'] ?></option>
                                 <?php endforeach; ?>
                             </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label>Tanggal Reaktifasi</label>
+                            <input type="date" class="form-control" name="tgl_reaktifasi" id="tgl_reaktifasi" required>
                         </div>
 
                         <div class="mb-3">
@@ -171,17 +186,15 @@
             var button = event.relatedTarget;
             var id = button.getAttribute('data-id');
             var name = button.getAttribute('data-name');
+            var code = button.getAttribute('data-employee-code');
             var factory = button.getAttribute('data-factory');
             var job = button.getAttribute('data-job');
 
             modal.querySelector('#modal_id').value = id;
-            modal.querySelector('#modal_name').innerText = name;
-
-            // ✅ Set default pilihan factory
+            document.querySelector('#employee_name').value = name;
+            document.querySelector('#employee_code').value = code;
             var selectFactory = modal.querySelector('#modal_factory');
             selectFactory.value = factory;
-
-            // ✅ Set default pilihan job
             var selectJob = modal.querySelector('#modal_job');
             selectJob.value = job;
         });

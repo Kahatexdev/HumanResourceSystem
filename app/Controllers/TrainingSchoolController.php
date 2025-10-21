@@ -331,10 +331,11 @@ class TrainingSchoolController extends BaseController
     {
         $userId = session()->get('id_user');
         $id = $this->request->getPost('id_former_employee');
+        $employeeCode = $this->request->getPost('employee_code');
+        $tglReaktifasi = $this->request->getPost('tgl_reaktifasi');
         $keterangan = $this->request->getPost('keterangan');
         $idFactoryNew = $this->request->getPost('factory');
         $idJobSectionNew = $this->request->getPost('job_section');
-        $today = date('Y-m-d H:i:s');
 
         // 1️⃣ Ambil data karyawan yang akan direaktifasi
         $former = $this->formerEmployeeModel->where('id_former_employee', $id)->first();
@@ -362,7 +363,7 @@ class TrainingSchoolController extends BaseController
             // 3️⃣ Insert kembali ke table employee
             $this->employeeModel->insert([
                 'employee_name'       => $former['employee_name'],
-                'employee_code'       => $former['employee_code'],
+                'employee_code'       => $employeeCode,
                 'shift'               => $former['shift'],
                 'id_job_section'      => $idJobSectionNew,
                 'id_factory'          => $idFactoryNew,
@@ -370,7 +371,7 @@ class TrainingSchoolController extends BaseController
                 'holiday'             => $idHoliday,
                 'additional_holiday'  => $idAdditionalHoliday,
                 'date_of_birth'       => $former['date_of_birth'],
-                'date_of_joining'     => $former['date_of_joining'],
+                'date_of_joining'     => $tglReaktifasi,
                 'status'              => 'Aktif'
             ]);
 
@@ -383,7 +384,7 @@ class TrainingSchoolController extends BaseController
                 'id_factory_old'        => $idFactoryOld,
                 'id_job_section_new'    => $idJobSectionNew,
                 'id_factory_new'        => $idFactoryNew,
-                'date_of_change'        => $today,
+                'date_of_change'        => $tglReaktifasi,
                 'reason'                => $keterangan,
                 'id_user'               => $userId,
             ]);
