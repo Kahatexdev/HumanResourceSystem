@@ -76,7 +76,8 @@
                                                     data-name="<?= $karyawan['employee_name']; ?>"
                                                     data-factory="<?= $karyawan['id_factory']; ?>"
                                                     data-job="<?= $karyawan['id_job_section']; ?>"
-                                                    data-employee-code="<?= $karyawan['employee_code']; ?>">
+                                                    data-employee-code="<?= $karyawan['employee_code']; ?>"
+                                                    data-date-joining="<?= $karyawan['date_of_joining']; ?>">
                                                     Reactive
                                                 </button>
                                             </td>
@@ -135,8 +136,8 @@
                         </div>
 
                         <div class="mb-3">
-                            <label>Tanggal Reaktifasi</label>
-                            <input type="date" class="form-control" name="tgl_reaktifasi" id="tgl_reaktifasi" required>
+                            <label>Tanggal Reaktivasi</label>
+                            <input type="date" class="form-control" name="tgl_reaktivasi" id="tgl_reaktivasi" required>
                         </div>
 
                         <div class="mb-3">
@@ -187,12 +188,14 @@
             var id = button.getAttribute('data-id');
             var name = button.getAttribute('data-name');
             var code = button.getAttribute('data-employee-code');
+            var join = button.getAttribute('data-date-joining');
             var factory = button.getAttribute('data-factory');
             var job = button.getAttribute('data-job');
 
             modal.querySelector('#modal_id').value = id;
             document.querySelector('#employee_name').value = name;
             document.querySelector('#employee_code').value = code;
+            document.querySelector('#tgl_reaktivasi').value = join;
             var selectFactory = modal.querySelector('#modal_factory');
             selectFactory.value = factory;
             var selectJob = modal.querySelector('#modal_job');
