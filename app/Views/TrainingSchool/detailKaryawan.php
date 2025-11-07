@@ -58,6 +58,10 @@
                             <div class="row">
                                 <div class="col-lg-12 col-sm-12">
                                     <div class="form-group mb-2">
+                                        <label for="nik">NIK</label>
+                                        <input type="text" class="form-control" name="nik" id="nik" required>
+                                    </div>
+                                    <div class="form-group mb-2">
                                         <label for="kode_kartu">Kode Kartu</label>
                                         <input type="text" class="form-control" name="kode_kartu" id="kode_kartu" required>
                                     </div>
@@ -200,6 +204,7 @@
                         <table id="karyawanTable" class="table table-striped table-hover table-bordered w-100">
                             <thead>
                                 <!-- <th>No</th> -->
+                                <th>NIK</th>
                                 <th>Kode Kartu</th>
                                 <th>Nama Karyawan</th>
                                 <th>Shift</th>
@@ -213,6 +218,7 @@
                                     <?php foreach ($karyawan as $karyawan) : ?>
                                         <tr>
                                             <!-- <td><?= $karyawan['id_employee'] ?></td> -->
+                                            <td><?= $karyawan['nik'] ?></td>
                                             <td><?= $karyawan['employee_code'] ?></td>
                                             <td><?= $karyawan['employee_name'] ?></td>
                                             <td><?= $karyawan['shift'] ?></td>
@@ -226,6 +232,7 @@
                                                 <button
                                                     class="btn btn-sm btn-info btn-edit-employee"
                                                     data-id-employee="<?= $karyawan['id_employee'] ?>"
+                                                    data-nik="<?= $karyawan['nik'] ?>"
                                                     data-kode-kartu="<?= $karyawan['employee_code'] ?>"
                                                     data-nama-karyawan="<?= $karyawan['employee_name'] ?>"
                                                     data-shift="<?= $karyawan['shift'] ?>"
@@ -284,7 +291,10 @@
                         <input type="hidden" name="id_employee" id="edit_id_employee">
                         <input type="hidden" name="id_user" id="edit_id_user"
                             value="<?= session()->get('id_user') ?>">
-
+                        <div class="form-group mb-2">
+                            <label for="edit_nik">NIK</label>
+                            <input type="text" class="form-control" name="nik" id="edit_nik" required>
+                        </div>
                         <div class="form-group mb-2">
                             <label for="edit_kode_kartu">Kode Kartu</label>
                             <input type="text" class="form-control" name="kode_kartu" id="edit_kode_kartu" required>
@@ -411,15 +421,20 @@
 
                     <!-- Detail Karyawan -->
                     <div class="row mb-3">
-                        <div class="col-sm-6">
+                        <div class="col-sm-4">
+                            <strong>NIK</strong><br>
+                            <span id="card_nik_karyawan"></span>
+                        </div>
+                        <div class="col-sm-4">
                             <strong>Nama</strong><br>
                             <span id="card_nama_karyawan"></span>
                         </div>
-                        <div class="col-sm-6">
+                        <div class="col-sm-4">
                             <strong>Kode Kartu</strong><br>
                             <span id="card_kode_kartu"></span>
                         </div>
                     </div>
+                    <hr>
 
                     <div class="row mb-3">
                         <div class="col-sm-6">
@@ -541,10 +556,11 @@
             success: function(response) {
                 if (response && response.status === 'success') {
                     const d = response.data;
-
+                    // console.log(d);
                     // Isi konten modal detail
                     // $('#card_id_employee').text(d.id_employee);
                     $('#form_id_employee').val(d.id_employee);
+                    $('#card_nik_karyawan').text(d.nik);
                     $('#card_nama_karyawan').text(d.employee_name);
                     $('#card_kode_kartu').text(d.employee_code);
                     $('#card_shift').text(d.shift);
@@ -623,6 +639,7 @@
         // 1. Ambil semua data lama dari tombol
         const btn = $(this);
         const idEmp = btn.data('id-employee');
+        const nik = btn.data('nik');
         const kode = btn.data('kode-kartu');
         const nama = btn.data('nama-karyawan');
         const shift = btn.data('shift');
@@ -643,6 +660,7 @@
 
         // 3. Isi field visible
         $('#edit_id_employee').val(idEmp);
+        $('#edit_nik').val(nik);
         $('#edit_kode_kartu').val(kode);
         $('#edit_nama_karyawan').val(nama);
         $('#edit_shift').val(shift);

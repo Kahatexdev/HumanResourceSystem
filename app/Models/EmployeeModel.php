@@ -14,6 +14,7 @@ class EmployeeModel extends Model
     protected $protectFields    = true;
     protected $allowedFields    = [
         'id_employee',
+        'nik',
         'employee_name',
         'employee_code',
         'shift',

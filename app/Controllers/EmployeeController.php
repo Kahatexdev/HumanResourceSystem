@@ -293,6 +293,7 @@ class EmployeeController extends BaseController
     public function store()
     {
         $kodeKartu = $this->request->getPost('kode_kartu');
+        $nik = $this->request->getPost('nik');
         $namaKaryawan = $this->request->getPost('nama_karyawan');
         $shift = $this->request->getPost('shift');
         $jenisKelamin = $this->request->getPost('jenis_kelamin');
@@ -309,6 +310,7 @@ class EmployeeController extends BaseController
         $data = [
             'employee_code' => $kodeKartu,
             'employee_name' => $namaKaryawan,
+            'nik'   => $nik,
             'shift' => $shift,
             'gender' => $jenisKelamin,
             'holiday' => $libur,
@@ -336,6 +338,7 @@ class EmployeeController extends BaseController
     {
         // dd($id);
         $kodeKartu = $this->request->getPost('kode_kartu');
+        $nik = $this->request->getPost('nik');
         $namaKaryawan = $this->request->getPost('nama_karyawan');
         $shift = $this->request->getPost('shift');
         $jenisKelamin = $this->request->getPost('jenis_kelamin');
@@ -356,6 +359,7 @@ class EmployeeController extends BaseController
 
         $data = [
             'employee_code' => $kodeKartu,
+            'nik' => $nik,
             'employee_name' => $namaKaryawan,
             'shift' => $shift,
             'gender' => $jenisKelamin,

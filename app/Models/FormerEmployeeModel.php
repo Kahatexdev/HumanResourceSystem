@@ -13,6 +13,7 @@ class FormerEmployeeModel extends Model
     protected $useSoftDeletes   = false;
     protected $protectFields    = true;
     protected $allowedFields    = [
+        'nik',
         'employee_name',
         'employee_code',
         'shift',
