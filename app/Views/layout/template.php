@@ -4,8 +4,8 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <link rel="apple-touch-icon" sizes="76x76" href="<?= base_url('assets/img/apple-icon.png') ?>">
-    <link rel="icon" type="image/png" href="<?= base_url('assets/img/logo-ct.png') ?>">
+    <link rel="apple-touch-icon" sizes="128x128" href="<?= base_url('assets/img/logos/HRSNEWLOGO.png') ?>">
+    <link rel="icon" type="image/png" href="<?= base_url('assets/img/logos/HRSNEWLOGO.png') ?>" sizes="32x32">
     <title><?= $title ?? 'Dashboard' ?></title>
 
     <!--     Fonts and icons     -->
@@ -27,6 +27,21 @@
     <!-- <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.3.4/css/buttons.dataTables.min.css"> -->
     <style>
+        /* Logo HRS di sidenav / header */
+        .hrs-logo-header {
+            max-width: 220px;
+            /* lebar maksimal */
+            height: 220px;
+            /* jaga proporsi */
+        }
+
+        /* Biar lebih kecil lagi di layar kecil */
+        @media (max-width: 1199.98px) {
+            .hrs-logo-header {
+                max-width: 180px;
+            }
+        }
+
         .upload-container {
             text-align: center;
             padding: 20px;
@@ -157,7 +172,7 @@
     <!-- <script src="https://cdn.datatables.net/buttons/2.3.4/js/buttons.html5.min.js"></script> -->
     <script src="<?= base_url('assets/js/buttons.html5.min.js') ?>"></script>
     <script>
-        
+
     </script>
     <script>
         var win = navigator.platform.indexOf('Win') > -1;

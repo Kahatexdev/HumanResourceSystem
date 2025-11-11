@@ -1,9 +1,12 @@
 <aside class="sidenav navbar navbar-vertical navbar-expand-xs border-0 border-radius-xl my-3 fixed-start ms-3 " id="sidenav-main">
-    <div class="sidenav-header">
-        <i class="fas fa-times p-3 cursor-pointer text-secondary opacity-5 position-absolute end-0 top-0 d-none d-xl-none" aria-hidden="true" id="iconSidenav"></i>
-        <a class="navbar-brand m-0" href="<?= base_url('Sudo') ?>" target="_blank">
-            <img src="<?= base_url('assets/img/logo-ct.png') ?>" class="navbar-brand-img h-100" alt="main_logo">
-            <span class="ms-1 font-weight-bold">Human Resource System</span>
+    <div class="sidenav-header text-center">
+        <i class="fas fa-times p-3 cursor-pointer text-secondary opacity-5 position-absolute end-0 top-0 d-none d-xl-none"
+            aria-hidden="true" id="iconSidenav"></i>
+        <img src="<?= base_url('assets/img/logos/HRSNEWLOGO-removebg.png') ?>"
+            alt="HRS Logo" height="90">
+        <a class="navbar-brand m-0"
+            href="<?= base_url('Absensi') ?>">
+
         </a>
     </div>
     <hr class="horizontal dark mt-0">
@@ -12,7 +15,7 @@
             <h6 class="ps-4 ms-2 text-uppercase text-xs font-weight-bolder opacity-10">SUDO</h6>
             <!-- Dashboard -->
             <li class="nav-item">
-                <a class="nav-link <?= $title == 'Dashboard' ? 'active' : '' ?>" href="<?= base_url($role.'') ?>">
+                <a class="nav-link <?= $title == 'Dashboard' ? 'active' : '' ?>" href="<?= base_url($role . '') ?>">
                     <div
                         class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
                         <svg class="text-dark" width="16px" height="16px" viewBox="0 0 40 40" version="1.1"
@@ -51,31 +54,31 @@
             </li>
             <!-- User -->
             <li class="nav-item">
-                    <a class="nav-link <?= $title == 'User' ? 'active' : '' ?>"
-                        href="<?= base_url($role.'/dataUser') ?>">
-                        <div
-                            class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
-                            <svg class="text-dark" width="16px" height="16px" viewBox="0 0 42 42" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-                                <title>user</title>
-                                <g id="Basic-Elements" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
-                                    <g id="Rounded-Icons" transform="translate(-1869.000000, -293.000000)" fill="#FFFFFF" fill-rule="nonzero">
-                                        <g id="Icons-with-opacity" transform="translate(1716.000000, 291.000000)">
-                                            <g id="user" transform="translate(153.000000, 2.000000)">
-                                                <path class="color-background" d="M21 21c5.5 0 10-4.5 10-10S26.5 1 21 1 11 5.5 11 11s4.5 10 10 10zm0 4c-8 0-14 6-14 14h28c0-8-6-14-14-14z" opacity="1"></path>
-                                            </g>
+                <a class="nav-link <?= $title == 'User' ? 'active' : '' ?>"
+                    href="<?= base_url($role . '/dataUser') ?>">
+                    <div
+                        class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
+                        <svg class="text-dark" width="16px" height="16px" viewBox="0 0 42 42" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+                            <title>user</title>
+                            <g id="Basic-Elements" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+                                <g id="Rounded-Icons" transform="translate(-1869.000000, -293.000000)" fill="#FFFFFF" fill-rule="nonzero">
+                                    <g id="Icons-with-opacity" transform="translate(1716.000000, 291.000000)">
+                                        <g id="user" transform="translate(153.000000, 2.000000)">
+                                            <path class="color-background" d="M21 21c5.5 0 10-4.5 10-10S26.5 1 21 1 11 5.5 11 11s4.5 10 10 10zm0 4c-8 0-14 6-14 14h28c0-8-6-14-14-14z" opacity="1"></path>
                                         </g>
                                     </g>
                                 </g>
-                            </svg>
+                            </g>
+                        </svg>
 
-                        </div>
-                        <span class="nav-link-text ms-1">User</span>
-                    </a>
-                </li>
+                    </div>
+                    <span class="nav-link-text ms-1">User</span>
+                </a>
+            </li>
             <!-- Bagian -->
             <li class="nav-item">
                 <a class="nav-link <?= $title == 'Bagian' ? 'active' : '' ?>"
-                    href="<?= base_url($role.'/dataBagian') ?>">
+                    href="<?= base_url($role . '/dataBagian') ?>">
                     <div
                         class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
                         <svg class="text-dark" width="16px" height="16px" viewBox="0 0 42 42" version="1.1"
@@ -104,7 +107,7 @@
             <!-- Karyawan -->
             <li class="nav-item">
                 <a class="nav-link <?= $title == 'Karyawan' ? 'active' : '' ?>"
-                    href="<?= base_url($role.'/dataKaryawan') ?>">
+                    href="<?= base_url($role . '/dataKaryawan') ?>">
                     <div
                         class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
                         <!-- icon karyawan -->
@@ -130,7 +133,7 @@
             <!-- batch -->
             <li class="nav-item">
                 <a class="nav-link <?= $title == 'Batch' ? 'active' : '' ?>"
-                    href="<?= base_url($role.'/dataBatch') ?>">
+                    href="<?= base_url($role . '/dataBatch') ?>">
                     <div
                         class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
                         <!-- svg batch icon -->
@@ -150,7 +153,7 @@
             <!-- periode -->
             <li class="nav-item">
                 <a class="nav-link <?= $title == 'Periode' ? 'active' : '' ?>"
-                    href="<?= base_url($role.'/dataPeriode') ?>">
+                    href="<?= base_url($role . '/dataPeriode') ?>">
                     <div
                         class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
                         <!-- svg calendar -->
@@ -171,7 +174,7 @@
             <!-- Job Role -->
             <li class="nav-item">
                 <a class="nav-link <?= $title == 'Job Role' ? 'active' : '' ?>"
-                    href="<?= base_url($role.'/dataJob') ?>">
+                    href="<?= base_url($role . '/dataJob') ?>">
                     <div
                         class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
                         <svg class="text-dark" width="16px" height="16px" viewBox="0 0 42 42" version="1.1"
@@ -201,7 +204,7 @@
             <!-- Absen -->
             <li class="nav-item">
                 <a class="nav-link <?= $title == 'Absen' ? 'active' : '' ?>"
-                    href="<?= base_url($role.'/dataAbsen') ?>">
+                    href="<?= base_url($role . '/dataAbsen') ?>">
                     <div
                         class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
                         <svg class="text-dark" width="16px" height="16px" viewBox="0 0 40 44" version="1.1"
@@ -235,7 +238,7 @@
             <!-- bsmc -->
             <li class="nav-item">
                 <a class="nav-link <?= $title == 'Bs Mesin' ? 'active' : '' ?>"
-                    href="<?= base_url($role.'/dataBsmc') ?>">
+                    href="<?= base_url($role . '/dataBsmc') ?>">
                     <!-- icon bs mesin -->
                     <div
                         class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
@@ -266,7 +269,7 @@
             <!--  rosso -->
             <li class="nav-item">
                 <a class="nav-link <?= $title == 'Rosso' ? 'active' : '' ?>"
-                    href="<?= base_url($role.'/dataRosso') ?>">
+                    href="<?= base_url($role . '/dataRosso') ?>">
                     <!-- icon summary rosso -->
                     <div
                         class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
@@ -296,7 +299,7 @@
             <!--  rosso -->
             <li class="nav-item">
                 <a class="nav-link <?= $title == 'Jarum' ? 'active' : '' ?>"
-                    href="<?= base_url($role.'/dataJarum') ?>">
+                    href="<?= base_url($role . '/dataJarum') ?>">
                     <!-- icon summary rosso -->
                     <div
                         class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
@@ -331,7 +334,7 @@
             <!-- summary rosso -->
             <!-- <li class="nav-item">
                     <a class="nav-link <?= $title == 'Report Summary Rosso' ? 'active' : '' ?>"
-                        href="<?= base_url($role.'/reportSummaryRosso') ?>">
+                        href="<?= base_url($role . '/reportSummaryRosso') ?>">
                        
                         <div
                             class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
@@ -359,37 +362,37 @@
                 </li> -->
             <!-- penilaian -->
             <li class="nav-item">
-                    <a class="nav-link <?= $title == 'Penilaian Karyawan' ? 'active' : '' ?>"
-                        href="<?= base_url($role.'/dataPenilaian') ?>">
-                        <div
-                            class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
-                            <svg class="text-dark" width="16px" height="16px" viewBox="0 0 40 44" version="1.1"
-                                xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-                                <title>document</title>
-                                <g id="Basic-Elements" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
-                                    <g id="Rounded-Icons" transform="translate(-1870.000000, -591.000000)" fill="#FFFFFF"
-                                        fill-rule="nonzero">
-                                        <g id="Icons-with-opacity" transform="translate(1716.000000, 291.000000)">
-                                            <g id="document" transform="translate(154.000000, 300.000000)">
-                                                <path class="color-background"
-                                                    d="M40,40 L36.3636364,40 L36.3636364,3.63636364 L5.45454545,3.63636364 L5.45454545,0 L38.1818182,0 C39.1854545,0 40,0.814545455 40,1.81818182 L40,40 Z"
-                                                    id="Path" opacity="0.603585379"></path>
-                                                <path class="color-background"
-                                                    d="M30.9090909,7.27272727 L1.81818182,7.27272727 C0.814545455,7.27272727 0,8.08727273 0,9.09090909 L0,41.8181818 C0,42.8218182 0.814545455,43.6363636 1.81818182,43.6363636 L30.9090909,43.6363636 C31.9127273,43.6363636 32.7272727,42.8218182 32.7272727,41.8181818 L32.7272727,9.09090909 C32.7272727,8.08727273 31.9127273,7.27272727 30.9090909,7.27272727 Z M18.1818182,34.5454545 L7.27272727,34.5454545 L7.27272727,30.9090909 L18.1818182,30.9090909 L18.1818182,34.5454545 Z M25.4545455,27.2727273 L7.27272727,27.2727273 L7.27272727,23.6363636 L25.4545455,23.6363636 L25.4545455,27.2727273 Z M25.4545455,20 L7.27272727,20 L7.27272727,16.3636364 L25.4545455,16.3636364 L25.4545455,20 Z"
-                                                    id="Shape"></path>
-                                            </g>
+                <a class="nav-link <?= $title == 'Penilaian Karyawan' ? 'active' : '' ?>"
+                    href="<?= base_url($role . '/dataPenilaian') ?>">
+                    <div
+                        class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
+                        <svg class="text-dark" width="16px" height="16px" viewBox="0 0 40 44" version="1.1"
+                            xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+                            <title>document</title>
+                            <g id="Basic-Elements" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+                                <g id="Rounded-Icons" transform="translate(-1870.000000, -591.000000)" fill="#FFFFFF"
+                                    fill-rule="nonzero">
+                                    <g id="Icons-with-opacity" transform="translate(1716.000000, 291.000000)">
+                                        <g id="document" transform="translate(154.000000, 300.000000)">
+                                            <path class="color-background"
+                                                d="M40,40 L36.3636364,40 L36.3636364,3.63636364 L5.45454545,3.63636364 L5.45454545,0 L38.1818182,0 C39.1854545,0 40,0.814545455 40,1.81818182 L40,40 Z"
+                                                id="Path" opacity="0.603585379"></path>
+                                            <path class="color-background"
+                                                d="M30.9090909,7.27272727 L1.81818182,7.27272727 C0.814545455,7.27272727 0,8.08727273 0,9.09090909 L0,41.8181818 C0,42.8218182 0.814545455,43.6363636 1.81818182,43.6363636 L30.9090909,43.6363636 C31.9127273,43.6363636 32.7272727,42.8218182 32.7272727,41.8181818 L32.7272727,9.09090909 C32.7272727,8.08727273 31.9127273,7.27272727 30.9090909,7.27272727 Z M18.1818182,34.5454545 L7.27272727,34.5454545 L7.27272727,30.9090909 L18.1818182,30.9090909 L18.1818182,34.5454545 Z M25.4545455,27.2727273 L7.27272727,27.2727273 L7.27272727,23.6363636 L25.4545455,23.6363636 L25.4545455,27.2727273 Z M25.4545455,20 L7.27272727,20 L7.27272727,16.3636364 L25.4545455,16.3636364 L25.4545455,20 Z"
+                                                id="Shape"></path>
                                         </g>
                                     </g>
                                 </g>
-                            </svg>
-                        </div>
-                        <span class="nav-link-text ms-1">Penilaian Karyawan</span>
-                    </a>
-                </li>
+                            </g>
+                        </svg>
+                    </div>
+                    <span class="nav-link-text ms-1">Penilaian Karyawan</span>
+                </a>
+            </li>
             <!-- report penilaian -->
             <li class="nav-item">
                 <a class="nav-link <?= $title == 'Report Penilaian' ? 'active' : '' ?>"
-                    href="<?= base_url($role.'/reportPenilaian') ?>">
+                    href="<?= base_url($role . '/reportPenilaian') ?>">
                     <div
                         class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
                         <svg class="text-dark" width="16px" height="16px" viewBox="0 0 40 44" version="1.1"
@@ -419,7 +422,7 @@
             <!-- report Batch -->
             <li class="nav-item">
                 <a class="nav-link <?= $title == 'Report Batch' ? 'active' : '' ?>"
-                    href="<?= base_url($role.'/reportBatch') ?>">
+                    href="<?= base_url($role . '/reportBatch') ?>">
                     <!-- icon Penilaian -->
                     <div
                         class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
