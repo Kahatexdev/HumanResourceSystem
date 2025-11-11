@@ -340,6 +340,49 @@ $routes->group('/TrainingSchool', ['filter' => 'TrainingSchool'], function ($rou
     $routes->get('exportKaryawan/', 'EmployeeController::exportAll');
 });
 
+
+$routes->group('/Absensi', ['filter' => 'Absensi'], function ($routes) {
+    $routes->get('', 'AbsensiController::index');
+    $routes->get('dataAbsensi', 'AbsensiController::dataAbsensi');
+    $routes->get('dataKaryawan', 'AbsensiController::listArea');
+    $routes->get('dataKaryawan/(:any)', 'AbsensiController::detailKaryawanPerArea/$1');
+    $routes->get('downloadTemplateKaryawan', 'EmployeeController::downloadTemplate');
+    $routes->post('karyawanStoreImport', 'EmployeeController::upload');
+    $routes->post('AbsensiImport', 'AbsensiController::upload');
+    $routes->get('exportKaryawan/(:any)', 'EmployeeController::exportPerArea/$1');
+
+    $routes->get('attendance/promote', 'AbsensiController::promoteForm');
+    $routes->post('attendance/promote', 'AbsensiController::promoteSubmit');
+
+
+    $routes->get('karyawanCreate', 'EmployeeController::create');
+    $routes->post('karyawanStore', 'EmployeeController::store');
+    $routes->get('karyawanEdit/(:num)', 'EmployeeController::edit/$1');
+    $routes->post('karyawanUpdate/(:num)', 'EmployeeController::update/$1');
+    $routes->get('karyawanDelete/(:num)', 'EmployeeController::delete/$1');
+    $routes->get('getEmployeeDataById', 'EmployeeController::getEmployeeDataById');
+    $routes->get('formerKaryawan', 'AbsensiController::formerKaryawan');
+    $routes->post('formerEmployee', 'EmployeeController::formerEmployee');
+    $routes->get('exportFormerKaryawan', 'AbsensiController::exportFormerKaryawan');
+    $routes->post('formerEmployee/reactiveKaryawan', 'AbsensiController::reactiveKaryawan');
+
+    $routes->get('historyPindahKaryawan', 'AbsensiController::historyPindahKaryawan');
+    $routes->get('reportHistoryPindahKaryawan', 'HistoryEmployeeController::reportExcel');
+    $routes->post('importHistoryEmployee', 'HistoryEmployeeController::importHistoryEmployee');
+    $routes->post('updateEmployeeCode', 'HistoryEmployeeController::updateEmployeeCode');
+
+    // penilaian
+    $routes->get('reportPenilaian', 'MonitoringController::reportpenilaian');
+    $routes->get('reportBatch', 'MonitoringController::reportBatch');
+    $routes->get('reportBatch/(:segment)', 'PerformanceAssessmentsController::reportAreaperBatch/$1');
+    $routes->get('reportPenilaian/(:segment)', 'PerformanceAssessmentsController::penilaianPerArea/$1');
+    $routes->get('reportPenilaian/(:segment)/(:segment)/(:segment)', 'PerformanceAssessmentsController::excelReportPerPeriode/$1/$2/$3');
+    $routes->get('exelReportBatch/(:segment)/(:segment)', 'PerformanceAssessmentsController::exelReportBatch/$1/$2');
+    $routes->get('finalAssesment/(:any)/(:any)', 'PerformanceAssessmentsController::finalAssesment/$1/$2');
+    $routes->post('exportFinalAssessment', 'PerformanceAssessmentsController::exportFinalAssessment');
+    $routes->get('exportKaryawan/', 'EmployeeController::exportAll');
+});
+
 $routes->group('api', function ($routes) {
     $routes->get('karyawan', 'ApiController::index');
     $routes->get('karyawan/(:segment)', 'ApiController::show/$1');

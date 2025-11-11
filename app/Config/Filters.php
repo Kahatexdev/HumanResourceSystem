@@ -38,6 +38,7 @@ class Filters extends BaseFilters
         'TrainingSchool' => \App\Filters\TrainingSchoolFilter::class,
         'Mandor'        => \App\Filters\MandorFilter::class,
         'Monitoring'    => \App\Filters\MonitoringFilter::class,
+        'Absensi'    => \App\Filters\AbsensiFilter::class,
         
     ];
 

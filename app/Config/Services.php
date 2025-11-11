@@ -3,6 +3,7 @@
 namespace Config;
 
 use CodeIgniter\Config\BaseService;
+use App\Services\AttendanceGroupingService;
 
 /**
  * Services Configuration file.
@@ -29,4 +30,13 @@ class Services extends BaseService
      *     return new \CodeIgniter\Example();
      * }
      */
+
+    public static function attendanceGrouping(bool $getShared = true): AttendanceGroupingService
+    {
+        if ($getShared) {
+            return static::getSharedInstance('attendanceGrouping');
+        }
+
+        return new AttendanceGroupingService();
+    }
 }

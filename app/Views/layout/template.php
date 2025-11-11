@@ -100,6 +100,9 @@
     <?php if (session()->get('role') == 'TrainingSchool') : ?>
         <?= $this->include('layout/sidebarTs') ?>
     <?php endif; ?>
+    <?php if (session()->get('role') == 'Absensi') : ?>
+        <?= $this->include('layout/sidebarAbsensi') ?>
+    <?php endif; ?>
 
 
     <main class="main-content position-relative max-height-vh-100 h-100 border-radius-lg ">

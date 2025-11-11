@@ -122,6 +122,7 @@ if (session()->getFlashdata('error')) {
                                     <select name="role" id="role" class="form-control" required>
                                         <option value="">Pilih Role</option>
                                         <option value="Sudo">Sudo</option>
+                                        <option value="Absensi">Absensi</option>
                                         <option value="Mandor">Mandor</option>
                                         <option value="Monitoring">Monitoring</option>
                                         <option value="TrainingSchool">Training School</option>
