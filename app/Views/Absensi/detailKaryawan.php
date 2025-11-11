@@ -174,7 +174,7 @@
                         Import Data Karyawan
                     </h5>
                     <!-- form import  data karyawan -->
-                    <form action="<?= base_url('TrainingSchool/karyawanStoreImport') ?>" method="post"
+                    <form action="<?= base_url('Absensi/karyawanStoreImport') ?>" method="post"
                         enctype="multipart/form-data">
                         <div class="upload-container">
                             <div class="upload-area" id="upload-area">
