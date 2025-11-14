@@ -354,7 +354,6 @@ $routes->group('/Absensi', ['filter' => 'Absensi'], function ($routes) {
     $routes->get('attendance/promote', 'AbsensiController::promoteForm');
     $routes->post('attendance/promote', 'AbsensiController::promoteSubmit');
 
-
     $routes->get('karyawanCreate', 'EmployeeController::create');
     $routes->post('karyawanStore', 'EmployeeController::store');
     $routes->get('karyawanEdit/(:num)', 'EmployeeController::edit/$1');
@@ -381,6 +380,19 @@ $routes->group('/Absensi', ['filter' => 'Absensi'], function ($routes) {
     $routes->get('finalAssesment/(:any)/(:any)', 'PerformanceAssessmentsController::finalAssesment/$1/$2');
     $routes->post('exportFinalAssessment', 'PerformanceAssessmentsController::exportFinalAssessment');
     $routes->get('exportKaryawan/', 'EmployeeController::exportAll');
+    
+    
+    // master shift
+    $routes->get('shiftDef/', 'ShiftController::shiftDef');
+    $routes->post('storeShiftDef/', 'ShiftController::shiftMasterStore');
+    
+    // shift
+    $routes->get('shiftAssignments/', 'ShiftController::index');
+    $routes->get('getEmployeeNames/', 'ShiftController::getEmployeeNames');
+    $routes->post('storeShiftAssignment/', 'ShiftController::storeShiftAssignment');
+    $routes->get('downloadTemplateJamKerja', 'ShiftController::downloadTemplate');
+    $routes->post('storeUploadTemplate', 'ShiftController::storeUploadTemplate');
+    
 });
 
 $routes->group('api', function ($routes) {

@@ -398,7 +398,7 @@ class AbsensiController extends BaseController
 
     public function dataAbsensi()
     {
-        $logAbsen = $this->absensiModel->findAll();
+        $bulanAbsen = $this->absensiModel->getLogAbsensi();
         // dd($logAbsen);
         $data = [
             'role' => session()->get('role'),
@@ -406,7 +406,7 @@ class AbsensiController extends BaseController
             'active1' => '',
             'active2' => '',
             'active3' => 'active',
-            'log'     => $logAbsen
+            'month'     => $bulanAbsen
         ];
         return view(session()->get('role') . '/dataAbsensi', $data);
     }
@@ -563,239 +563,495 @@ class AbsensiController extends BaseController
     //         ->with('success', "{$successCount} baris berhasil disimpan.");
     // }
 
+    // public function upload()
+    // {
+    //     $file = $this->request->getFile('file');
+
+    //     // 1. Validasi file upload
+    //     if (! $file || ! $file->isValid() || $file->hasMoved()) {
+    //         return redirect()->to(base_url($this->role . '/dataAbsensi'))
+    //             ->with('error', 'File tidak valid atau tidak ada file yang diunggah.');
+    //     }
+
+    //     // 2. Validasi MIME type (hanya Excel)
+    //     $mime = $file->getClientMimeType();
+    //     if (! in_array($mime, [
+    //         'application/vnd.ms-excel',
+    //         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    //     ])) {
+    //         return redirect()->to(base_url($this->role . '/dataAbsensi'))
+    //             ->with('error', 'Tipe file tidak valid. Harus file Excel (.xls / .xlsx).');
+    //     }
+
+    //     // 3. Load spreadsheet
+    //     $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($file->getTempName());
+    //     $sheet       = $spreadsheet->getActiveSheet();
+
+    //     // Asumsi baris pertama adalah header → mulai dari baris 1
+    //     $startRow = 1;
+    //     $lastRow  = $sheet->getHighestRow();
+
+    //     $batchData     = [];
+    //     $successCount  = 0;
+    //     $errorCount    = 0;
+    //     $errorMessages = [];
+
+    //     // untuk menyimpan range tanggal yang berhasil di-import
+    //     $minDate = null;
+    //     $maxDate = null;
+
+    //     // 4. Loop tiap baris
+    //     for ($row = $startRow; $row <= $lastRow; $row++) {
+
+    //         // Ambil nilai dari tiap kolom (sesuai mapping file-mu)
+    //         $terminalId = trim((string) $sheet->getCell("B{$row}")->getValue());
+    //         $dateRaw    = trim((string) $sheet->getCell("C{$row}")->getFormattedValue());
+    //         $time       = trim((string) $sheet->getCell("D{$row}")->getFormattedValue());
+    //         $nik        = trim((string) $sheet->getCell("H{$row}")->getValue());
+    //         $cardNo     = trim((string) $sheet->getCell("I{$row}")->getValue());
+    //         $guestName  = trim((string) $sheet->getCell("J{$row}")->getValue());
+    //         $department = trim((string) $sheet->getCell("K{$row}")->getValue());
+    //         $verSource  = trim((string) $sheet->getCell("N{$row}")->getValue());
+
+    //         // Kalau baris kosong semua → skip
+    //         if ($terminalId === '' && $dateRaw === '' && $nik === '') {
+    //             continue;
+    //         }
+
+    //         $isValid = true;
+    //         $errMsg  = "Row {$row}: ";
+
+    //         // 4.a Validasi wajib isi
+    //         if ($terminalId === '') {
+    //             $isValid  = false;
+    //             $errMsg  .= "Terminal ID kosong. ";
+    //         }
+
+    //         if ($nik === '') {
+    //             $isValid  = false;
+    //             $errMsg  .= "NIK kosong. ";
+    //         }
+
+    //         // 4.b Validasi & normalisasi tanggal
+    //         $dateSql = null;
+    //         if ($dateRaw === '') {
+    //             $isValid  = false;
+    //             $errMsg  .= "Tanggal kosong. ";
+    //         } else {
+    //             // Coba beberapa format umum (silakan sesuaikan kalau formatmu fix)
+    //             $formats = ['Y-m-d', 'd-m-Y', 'd/m/Y', 'm/d/Y'];
+    //             $parsed  = null;
+
+    //             foreach ($formats as $fmt) {
+    //                 $dt = \DateTime::createFromFormat($fmt, $dateRaw);
+    //                 if ($dt && $dt->format($fmt) === $dateRaw) {
+    //                     $parsed = $dt;
+    //                     break;
+    //                 }
+    //             }
+
+    //             if ($parsed) {
+    //                 $dateSql = $parsed->format('Y-m-d');
+    //             } else {
+    //                 // Kalau dari mesin absensi berupa angka Excel date
+    //                 if (is_numeric($dateRaw)) {
+    //                     try {
+    //                         $dt = \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($dateRaw);
+    //                         $dateSql = $dt->format('Y-m-d');
+    //                     } catch (\Throwable $e) {
+    //                         $dateSql = null;
+    //                     }
+    //                 }
+
+    //                 if ($dateSql === null) {
+    //                     $isValid = false;
+    //                     $errMsg .= "Format tanggal tidak dikenali ({$dateRaw}). ";
+    //                 }
+    //             }
+    //         }
+
+    //         $source = 'IMPORT';
+    //         $admin  = session()->get('username');
+
+    //         // 5. Jika lolos validasi → siapkan untuk insert
+    //         if ($isValid) {
+
+    //             // update range tanggal min/max yang berhasil di-import
+    //             if ($dateSql) {
+    //                 if ($minDate === null || $dateSql < $minDate) {
+    //                     $minDate = $dateSql;
+    //                 }
+    //                 if ($maxDate === null || $dateSql > $maxDate) {
+    //                     $maxDate = $dateSql;
+    //                 }
+    //             }
+
+    //             $batchData[] = [
+    //                 // ==== SESUAIKAN DENGAN NAMA KOLOM DI TABEL attendance_logs ====
+    //                 'terminal_id'         => $terminalId,
+    //                 'log_date'            => $dateSql,
+    //                 'log_time'            => $time ?: null,
+    //                 'nik'                 => $nik ?: null,
+    //                 'card_no'             => $cardNo,
+    //                 'employee_name'       => $guestName,
+    //                 'department'          => $department,
+    //                 'verification_source' => $verSource,
+    //                 'source'              => $source,
+    //                 'admin'               => $admin,
+    //                 'created_at'          => date('Y-m-d H:i:s'),
+    //                 'updated_at'          => date('Y-m-d H:i:s'),
+    //             ];
+
+    //             $successCount++;
+    //         } else {
+    //             $errorCount++;
+    //             $errorMessages[] = $errMsg;
+    //         }
+    //     }
+    //     // dd($batchData);
+
+    //     // 6. Simpan semua baris valid sekaligus
+    //     $processedDays = 0; // jumlah record attendance_days yang diproses oleh service
+
+    //     if (! empty($batchData)) {
+
+    //         // --- Hitung ulang min/max date dari batchData (lebih aman) ---
+    //         $dates = array_column($batchData, 'log_date');
+    //         $minDate = min($dates);
+    //         $maxDate = max($dates);
+
+    //         // --- Ambil log yang sudah ada di DB di range tanggal tsb ---
+    //         $existingRows = $this->absensiModel
+    //             ->select('terminal_id, log_date, log_time, nik')
+    //             ->where('log_date >=', $minDate)
+    //             ->where('log_date <=', $maxDate)
+    //             ->findAll();
+
+    //         // Simpan sebagai set key unik
+    //         $existingKeys = [];
+    //         foreach ($existingRows as $er) {
+    //             $key = ($er['terminal_id'] ?? '') . '|' .
+    //                 ($er['log_date']    ?? '') . '|' .
+    //                 ($er['log_time']    ?? '') . '|' .
+    //                 ($er['nik']         ?? '');
+    //             $existingKeys[$key] = true;
+    //         }
+
+    //         // --- Filter duplikat (di file & di DB) ---
+    //         $seenInFile  = [];
+    //         $finalBatch  = [];
+    //         $dupCount    = 0;
+
+    //         foreach ($batchData as $row) {
+    //             $key = ($row['terminal_id'] ?? '') . '|' .
+    //                 ($row['log_date']    ?? '') . '|' .
+    //                 ($row['log_time']    ?? '') . '|' .
+    //                 ($row['nik']         ?? '');
+
+    //             // Duplikat di file atau sudah ada di DB
+    //             if (isset($seenInFile[$key]) || isset($existingKeys[$key])) {
+    //                 $dupCount++;
+    //                 $errorCount++;
+    //                 $errorMessages[] = "Duplikat log: NIK {$row['nik']} tanggal {$row['log_date']} jam {$row['log_time']}";
+    //                 continue;
+    //             }
+
+    //             $seenInFile[$key] = true;
+    //             $finalBatch[]     = $row;
+    //         }
+
+    //         // Revisi jumlah sukses: yang benar-benar akan di-insert
+    //         $successCount = count($finalBatch);
+
+    //         if (! empty($finalBatch)) {
+    //             // pastikan model ini adalah model untuk tabel attendance_logs
+    //             $this->absensiModel->insertBatch($finalBatch);
+
+    //             // 6.b Setelah insert ke attendance_logs, panggil service grouping (kalau mau)
+    //             // if ($minDate !== null) {
+    //             //     $svc = service('attendanceGrouping'); // dari Config\Services
+    //             //     $processedDays = $svc->groupLogsToDays($minDate, $maxDate);
+    //             // }
+    //         }
+    //     }
+
+    //     // 7. Bangun flash message & redirect
+    //     $role        = session()->get('role');
+    //     $redirectUrl = base_url($role . '/dataAbsensi');
+
+    //     if ($errorCount > 0) {
+    //         $msg  = "{$successCount} baris berhasil disimpan ke log, ";
+    //         $msg .= "{$errorCount} baris gagal:<br>" . implode('<br>', $errorMessages);
+
+    //         if ($processedDays > 0) {
+    //             $msg .= "<br><br>{$processedDays} data hari kerja berhasil dipetakan ke attendance_days.";
+    //         }
+
+    //         return $this->response->setJSON([
+    //             'status'  => 'error',
+    //             'message' => $msg
+    //         ]);
+    //     }
+
+    //     $msg = "{$successCount} baris berhasil disimpan ke log.";
+    //     if ($processedDays > 0) {
+    //         $msg .= " {$processedDays} data hari kerja berhasil dipetakan ke attendance_days.";
+    //     }
+
+    //     return $this->response->setJSON([
+    //         'status'  => 'success',
+    //         'message' => $msg
+    //     ]);
+    // }
+
     public function upload()
     {
-        $file = $this->request->getFile('file');
+        $isAjax = $this->request->isAJAX();
 
-        // 1. Validasi file upload
-        if (! $file || ! $file->isValid() || $file->hasMoved()) {
+        $sendError = function (string $message, int $code = 400) use ($isAjax) {
+            if ($isAjax) {
+                return $this->response
+                    ->setStatusCode($code)
+                    ->setJSON([
+                        'status'  => 'error',
+                        'message' => $message,
+                    ]);
+            }
+
             return redirect()->to(base_url($this->role . '/dataAbsensi'))
-                ->with('error', 'File tidak valid atau tidak ada file yang diunggah.');
+                ->with('error', $message);
+        };
+
+        $sendSuccess = function (string $message) use ($isAjax) {
+            if ($isAjax) {
+                return $this->response->setJSON([
+                    'status'  => 'success',
+                    'message' => $message,
+                ]);
+            }
+
+            return redirect()->to(base_url($this->role . '/dataAbsensi'))
+                ->with('success', $message);
+        };
+
+        if (! $this->request->is('post')) {
+            return $sendError('Metode request tidak diizinkan.', 405);
         }
 
-        // 2. Validasi MIME type (hanya Excel)
+        $file = $this->request->getFile('file');
+
+        // JANGAN pakai redirect langsung di bawah sini, pakai $sendError()
+        if (! $file || ! $file->isValid() || $file->hasMoved()) {
+            return $sendError('File tidak valid atau tidak ada file yang diunggah.');
+        }
+
         $mime = $file->getClientMimeType();
         if (! in_array($mime, [
             'application/vnd.ms-excel',
             'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-        ])) {
-            return redirect()->to(base_url($this->role . '/dataAbsensi'))
-                ->with('error', 'Tipe file tidak valid. Harus file Excel (.xls / .xlsx).');
+        ], true)) {
+            return $sendError('Tipe file tidak valid. Harus file Excel (.xls / .xlsx).');
         }
 
-        // 3. Load spreadsheet
-        $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($file->getTempName());
-        $sheet       = $spreadsheet->getActiveSheet();
-
-        // Asumsi baris pertama adalah header → mulai dari baris 1
-        $startRow = 1;
-        $lastRow  = $sheet->getHighestRow();
-
-        $batchData     = [];
-        $successCount  = 0;
-        $errorCount    = 0;
-        $errorMessages = [];
-
-        // untuk menyimpan range tanggal yang berhasil di-import
-        $minDate = null;
-        $maxDate = null;
-
-        // 4. Loop tiap baris
-        for ($row = $startRow; $row <= $lastRow; $row++) {
-
-            // Ambil nilai dari tiap kolom (sesuai mapping file-mu)
-            $terminalId = trim((string) $sheet->getCell("B{$row}")->getValue());
-            $dateRaw    = trim((string) $sheet->getCell("C{$row}")->getFormattedValue());
-            $time       = trim((string) $sheet->getCell("D{$row}")->getFormattedValue());
-            $nik        = trim((string) $sheet->getCell("H{$row}")->getValue());
-            $cardNo     = trim((string) $sheet->getCell("I{$row}")->getValue());
-            $guestName  = trim((string) $sheet->getCell("J{$row}")->getValue());
-            $department = trim((string) $sheet->getCell("K{$row}")->getValue());
-            $verSource  = trim((string) $sheet->getCell("N{$row}")->getValue());
-
-            // Kalau baris kosong semua → skip
-            if ($terminalId === '' && $dateRaw === '' && $nik === '') {
-                continue;
-            }
-
-            $isValid = true;
-            $errMsg  = "Row {$row}: ";
-
-            // 4.a Validasi wajib isi
-            if ($terminalId === '') {
-                $isValid  = false;
-                $errMsg  .= "Terminal ID kosong. ";
-            }
-
-            if ($nik === '') {
-                $isValid  = false;
-                $errMsg  .= "NIK kosong. ";
-            }
-
-            // 4.b Validasi & normalisasi tanggal
-            $dateSql = null;
-            if ($dateRaw === '') {
-                $isValid  = false;
-                $errMsg  .= "Tanggal kosong. ";
-            } else {
-                // Coba beberapa format umum (silakan sesuaikan kalau formatmu fix)
-                $formats = ['Y-m-d', 'd-m-Y', 'd/m/Y', 'm/d/Y'];
-                $parsed  = null;
-
-                foreach ($formats as $fmt) {
-                    $dt = \DateTime::createFromFormat($fmt, $dateRaw);
-                    if ($dt && $dt->format($fmt) === $dateRaw) {
-                        $parsed = $dt;
-                        break;
-                    }
-                }
-
-                if ($parsed) {
-                    $dateSql = $parsed->format('Y-m-d');
-                } else {
-                    // Kalau dari mesin absensi berupa angka Excel date
-                    if (is_numeric($dateRaw)) {
-                        try {
-                            $dt = \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($dateRaw);
-                            $dateSql = $dt->format('Y-m-d');
-                        } catch (\Throwable $e) {
-                            $dateSql = null;
-                        }
-                    }
-
-                    if ($dateSql === null) {
-                        $isValid = false;
-                        $errMsg .= "Format tanggal tidak dikenali ({$dateRaw}). ";
-                    }
-                }
-            }
-
-            $source = 'IMPORT';
-            $admin  = session()->get('username');
-
-            // 5. Jika lolos validasi → siapkan untuk insert
-            if ($isValid) {
-
-                // update range tanggal min/max yang berhasil di-import
-                if ($dateSql) {
-                    if ($minDate === null || $dateSql < $minDate) {
-                        $minDate = $dateSql;
-                    }
-                    if ($maxDate === null || $dateSql > $maxDate) {
-                        $maxDate = $dateSql;
-                    }
-                }
-
-                $batchData[] = [
-                    // ==== SESUAIKAN DENGAN NAMA KOLOM DI TABEL attendance_logs ====
-                    'terminal_id'         => $terminalId,
-                    'log_date'            => $dateSql,
-                    'log_time'            => $time ?: null,
-                    'nik'                 => $nik ?: null,
-                    'card_no'             => $cardNo,
-                    'employee_name'       => $guestName,
-                    'department'          => $department,
-                    'verification_source' => $verSource,
-                    'source'              => $source,
-                    'admin'               => $admin,
-                    'created_at'          => date('Y-m-d H:i:s'),
-                    'updated_at'          => date('Y-m-d H:i:s'),
-                ];
-
-                $successCount++;
-            } else {
-                $errorCount++;
-                $errorMessages[] = $errMsg;
-            }
+        if ($file->getSize() > 5 * 1024 * 1024) {
+            return $sendError('Ukuran file melebihi 5 MB.');
         }
-        // dd($batchData);
 
-        // 6. Simpan semua baris valid sekaligus
-        $processedDays = 0; // jumlah record attendance_days yang diproses oleh service
+        try {
+            // 3. Load spreadsheet
+            $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($file->getTempName());
+            $sheet       = $spreadsheet->getActiveSheet();
 
-        if (! empty($batchData)) {
+            $startRow = 2;
+            $lastRow  = $sheet->getHighestRow();
 
-            // --- Hitung ulang min/max date dari batchData (lebih aman) ---
-            $dates = array_column($batchData, 'log_date');
-            $minDate = min($dates);
-            $maxDate = max($dates);
+            $batchData     = [];
+            $successCount  = 0;
+            $errorCount    = 0;
+            $errorMessages = [];
+            $minDate       = null;
+            $maxDate       = null;
 
-            // --- Ambil log yang sudah ada di DB di range tanggal tsb ---
-            $existingRows = $this->absensiModel
-                ->select('terminal_id, log_date, log_time, nik')
-                ->where('log_date >=', $minDate)
-                ->where('log_date <=', $maxDate)
-                ->findAll();
+            // 4. Loop tiap baris
+            for ($row = $startRow; $row <= $lastRow; $row++) {
+                $terminalId = trim((string) $sheet->getCell("B{$row}")->getValue());
+                $dateRaw    = trim((string) $sheet->getCell("C{$row}")->getFormattedValue());
+                $time       = trim((string) $sheet->getCell("D{$row}")->getFormattedValue());
+                $nik        = trim((string) $sheet->getCell("H{$row}")->getValue());
+                $cardNo     = trim((string) $sheet->getCell("I{$row}")->getValue());
+                $guestName  = trim((string) $sheet->getCell("J{$row}")->getValue());
+                $department = trim((string) $sheet->getCell("K{$row}")->getValue());
+                $verSource  = trim((string) $sheet->getCell("N{$row}")->getValue());
 
-            // Simpan sebagai set key unik
-            $existingKeys = [];
-            foreach ($existingRows as $er) {
-                $key = ($er['terminal_id'] ?? '') . '|' .
-                    ($er['log_date']    ?? '') . '|' .
-                    ($er['log_time']    ?? '') . '|' .
-                    ($er['nik']         ?? '');
-                $existingKeys[$key] = true;
-            }
-
-            // --- Filter duplikat (di file & di DB) ---
-            $seenInFile  = [];
-            $finalBatch  = [];
-            $dupCount    = 0;
-
-            foreach ($batchData as $row) {
-                $key = ($row['terminal_id'] ?? '') . '|' .
-                    ($row['log_date']    ?? '') . '|' .
-                    ($row['log_time']    ?? '') . '|' .
-                    ($row['nik']         ?? '');
-
-                // Duplikat di file atau sudah ada di DB
-                if (isset($seenInFile[$key]) || isset($existingKeys[$key])) {
-                    $dupCount++;
-                    $errorCount++;
-                    $errorMessages[] = "Duplikat log: NIK {$row['nik']} tanggal {$row['log_date']} jam {$row['log_time']}";
+                // Baris kosong → skip
+                if ($row === 1 || ($terminalId === '' && $dateRaw === '' && $nik === '')) {
                     continue;
                 }
 
-                $seenInFile[$key] = true;
-                $finalBatch[]     = $row;
+                $isValid = true;
+                $errMsg  = "Row {$row}: ";
+
+                // Wajib isi
+                if ($terminalId === '') {
+                    $isValid  = false;
+                    $errMsg  .= "Terminal ID kosong. ";
+                }
+
+                if ($nik === '') {
+                    $isValid  = false;
+                    $errMsg  .= "NIK kosong. ";
+                }
+
+                // Validasi tanggal
+                $dateSql = null;
+                if ($dateRaw === '') {
+                    $isValid  = false;
+                    $errMsg  .= "Tanggal kosong. ";
+                } else {
+                    $formats = ['Y-m-d', 'd-m-Y', 'd/m/Y', 'm/d/Y'];
+                    $parsed  = null;
+
+                    foreach ($formats as $fmt) {
+                        $dt = \DateTime::createFromFormat($fmt, $dateRaw);
+                        if ($dt && $dt->format($fmt) === $dateRaw) {
+                            $parsed = $dt;
+                            break;
+                        }
+                    }
+
+                    if ($parsed) {
+                        $dateSql = $parsed->format('Y-m-d');
+                    } else {
+                        if (is_numeric($dateRaw)) {
+                            try {
+                                $dt = \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($dateRaw);
+                                $dateSql = $dt->format('Y-m-d');
+                            } catch (\Throwable $e) {
+                                $dateSql = null;
+                            }
+                        }
+
+                        if ($dateSql === null) {
+                            $isValid = false;
+                            $errMsg .= "Format tanggal tidak dikenali ({$dateRaw}). ";
+                        }
+                    }
+                }
+
+                $source = 'IMPORT';
+                $admin  = session()->get('username');
+
+                if ($isValid) {
+                    if ($dateSql) {
+                        if ($minDate === null || $dateSql < $minDate) {
+                            $minDate = $dateSql;
+                        }
+                        if ($maxDate === null || $dateSql > $maxDate) {
+                            $maxDate = $dateSql;
+                        }
+                    }
+
+                    $batchData[] = [
+                        'terminal_id'         => $terminalId,
+                        'log_date'            => $dateSql,
+                        'log_time'            => $time ?: null,
+                        'nik'                 => $nik ?: null,
+                        'card_no'             => $cardNo,
+                        'employee_name'       => $guestName,
+                        'department'          => $department,
+                        'verification_source' => $verSource,
+                        'source'              => $source,
+                        'admin'               => $admin,
+                        'created_at'          => date('Y-m-d H:i:s'),
+                        'updated_at'          => date('Y-m-d H:i:s'),
+                    ];
+
+                    $successCount++;
+                } else {
+                    $errorCount++;
+                    $errorMessages[] = $errMsg;
+                }
             }
 
-            // Revisi jumlah sukses: yang benar-benar akan di-insert
-            $successCount = count($finalBatch);
+            $processedDays = 0;
 
-            if (! empty($finalBatch)) {
-                // pastikan model ini adalah model untuk tabel attendance_logs
-                $this->absensiModel->insertBatch($finalBatch);
+            // 6. Simpan batch
+            if (! empty($batchData)) {
+                $dates   = array_column($batchData, 'log_date');
+                $minDate = min($dates);
+                $maxDate = max($dates);
 
-                // 6.b Setelah insert ke attendance_logs, panggil service grouping (kalau mau)
-                // if ($minDate !== null) {
-                //     $svc = service('attendanceGrouping'); // dari Config\Services
-                //     $processedDays = $svc->groupLogsToDays($minDate, $maxDate);
-                // }
+                $existingRows = $this->absensiModel
+                    ->select('terminal_id, log_date, log_time, nik')
+                    ->where('log_date >=', $minDate)
+                    ->where('log_date <=', $maxDate)
+                    ->findAll();
+
+                $existingKeys = [];
+                foreach ($existingRows as $er) {
+                    $key = ($er['terminal_id'] ?? '') . '|' .
+                        ($er['log_date']    ?? '') . '|' .
+                        ($er['log_time']    ?? '') . '|' .
+                        ($er['nik']         ?? '');
+                    $existingKeys[$key] = true;
+                }
+
+                $seenInFile = [];
+                $finalBatch = [];
+
+                foreach ($batchData as $row) {
+                    $key = ($row['terminal_id'] ?? '') . '|' .
+                        ($row['log_date']    ?? '') . '|' .
+                        ($row['log_time']    ?? '') . '|' .
+                        ($row['nik']         ?? '');
+
+                    if (isset($seenInFile[$key]) || isset($existingKeys[$key])) {
+                        $errorCount++;
+                        $errorMessages[] = "Duplikat log: NIK {$row['nik']} tanggal {$row['log_date']} jam {$row['log_time']}";
+                        continue;
+                    }
+
+                    $seenInFile[$key] = true;
+                    $finalBatch[]     = $row;
+                }
+
+                $successCount = count($finalBatch);
+
+                if (! empty($finalBatch)) {
+                    $this->absensiModel->insertBatch($finalBatch);
+
+                    // Kalau mau grouping ke attendance_days, aktifkan ini:
+                    // if ($minDate !== null) {
+                    //     $svc = service('attendanceGrouping');
+                    //     $processedDays = $svc->groupLogsToDays($minDate, $maxDate);
+                    // }
+                }
             }
-        }
 
-        // 7. Bangun flash message & redirect
-        $role        = session()->get('role');
-        $redirectUrl = base_url($role . '/dataAbsensi');
+            // 7. Build message
+            if ($errorCount > 0) {
+                $msg  = "{$successCount} baris berhasil disimpan ke log, ";
+                $msg .= "{$errorCount} baris gagal:<br>" . implode('<br>', $errorMessages);
 
-        if ($errorCount > 0) {
-            $msg  = "{$successCount} baris berhasil disimpan ke log, ";
-            $msg .= "{$errorCount} baris gagal:<br>" . implode('<br>', $errorMessages);
+                if ($processedDays > 0) {
+                    $msg .= "<br><br>{$processedDays} data hari kerja berhasil dipetakan ke attendance_days.";
+                }
 
+                return $sendError($msg);
+            }
+
+            $msg = "{$successCount} baris berhasil disimpan ke log.";
             if ($processedDays > 0) {
-                $msg .= "<br><br>{$processedDays} data hari kerja berhasil dipetakan ke attendance_days.";
+                $msg .= " {$processedDays} data hari kerja berhasil dipetakan ke attendance_days.";
             }
 
-            return redirect()->to($redirectUrl)->with('error', $msg);
-        }
+            return $sendSuccess($msg);
+            // return $sendSuccess('Import absensi OK (dummy setelah try)');
+        } catch (\Throwable $e) {
+            log_message('error', 'Gagal import absensi: {err}', ['err' => $e->getMessage()]);
 
-        $msg = "{$successCount} baris berhasil disimpan ke log.";
-        if ($processedDays > 0) {
-            $msg .= " {$processedDays} data hari kerja berhasil dipetakan ke attendance_days.";
+            return $sendError('Terjadi kesalahan saat memproses file. Coba lagi atau hubungi IT.');
         }
-
-        return redirect()->to($redirectUrl)->with('success', $msg);
     }
 
 

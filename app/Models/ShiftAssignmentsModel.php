@@ -4,26 +4,20 @@ namespace App\Models;
 
 use CodeIgniter\Model;
 
-class AbsensiModel extends Model
+class ShiftAssignmentsModel extends Model
 {
-    protected $table            = 'attendance_logs';
-    protected $primaryKey       = 'id_log';
+    protected $table            = 'shift_assignments';
+    protected $primaryKey       = 'id_assignment';
     protected $useAutoIncrement = true;
     protected $returnType       = 'array';
     protected $useSoftDeletes   = false;
     protected $protectFields    = true;
     protected $allowedFields    = [
-        'id_log',
-        'terminal_id',
-        'nik',
-        'card_no',
-        'employee_name',
-        'department',
-        'log_date',
-        'log_time',
-        'source',
-        'verification_source',
-        'admin',
+        'id_employee',
+        'id_shift',
+        'date_of_change',
+        'note',
+        'created_by',
         'created_at',
         'updated_at'
     ];
@@ -58,15 +52,26 @@ class AbsensiModel extends Model
     protected $beforeDelete   = [];
     protected $afterDelete    = [];
 
-
-    public function getLogAbsensi()
+    public function getDataShift()
     {
-        return $this->select('MONTH(attendance_logs.log_date) AS month,
-                YEAR(attendance_logs.log_date) AS year')
-            ->orderBy('log_date', 'ASC')
-            ->orderBy('log_time', 'ASC')
-            ->groupBy('MONTH(attendance_logs.log_date), YEAR(attendance_logs.log_date)')
-            ->get()
-            ->getResultArray();
+        return $this->select('
+                shift_assignments.*,
+                shift_assignments.id_assignment AS id,
+                employees.nik,
+                employees.employee_code,
+                employees.employee_name,
+                job_sections.job_section_name,
+                shift_defs.shift_name,
+                shift_defs.start_time,
+                shift_defs.end_time,
+                shift_defs.break_time,
+                shift_defs.grace_min
+            ')
+            ->join('employees', 'employees.id_employee = shift_assignments.id_employee')
+            ->join('job_sections', 'job_sections.id_job_section = employees.id_job_section', 'left')
+            ->join('shift_defs', 'shift_defs.id_shift = shift_assignments.id_shift', 'left')
+            ->orderBy('employees.employee_name', 'ASC')
+            ->orderBy('shift_defs.shift_name', 'ASC')
+            ->findAll();
     }
 }
