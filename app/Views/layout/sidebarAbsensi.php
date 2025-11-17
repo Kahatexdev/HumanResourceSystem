@@ -150,7 +150,7 @@
                             </g>
                         </svg>
                     </div>
-                    <span class="nav-link-text ms-1">Data Absensi</span>
+                    <span class="nav-link-text ms-1">Log Absensi</span>
                 </a>
             </li>
 
