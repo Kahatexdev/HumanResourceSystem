@@ -414,7 +414,7 @@ class AbsensiController extends BaseController
     public function detailAbsensi($month, $year)
     {
         $logAbsen = $this->absensiModel->getDetailLogAbsensi($month, $year);
-        dd ($logAbsen);
+        dd($logAbsen);
         $data = [
             'role' => session()->get('role'),
             'title' => 'Data Absensi',
@@ -1195,5 +1195,18 @@ class AbsensiController extends BaseController
         ];
 
         return view($role . '/Attendance/promote_form', $data);
+    }
+
+    public function reportDataAbsensi()
+    {
+        $data = [
+            'role'        => session()->get('role'),
+            'title'       => 'Report Data Absensi',
+            'active1'     => '',
+            'active2'     => '',
+            'active3'     => 'active',
+        ];
+
+        return view(session()->get('role') . '/reportDataAbsensi', $data);
     }
 }

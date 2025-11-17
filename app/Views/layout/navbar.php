@@ -75,7 +75,7 @@
                             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownAbsensiMenu">
                                 <li>
                                     <a class="dropdown-item"
-                                        href="<?= base_url('absensi/attendance/upload') ?>">
+                                        href="<?= base_url($role . '/reportDataAbsensi') ?>">
                                         <i class="fas fa-file-alt"></i> Report Data Absensi
                                     </a>
                                 </li>
