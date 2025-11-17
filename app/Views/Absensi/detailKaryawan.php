@@ -297,15 +297,15 @@
                         </div>
                         <div class="form-group mb-2">
                             <label for="edit_kode_kartu">Kode Kartu</label>
-                            <input type="text" class="form-control" name="kode_kartu" id="edit_kode_kartu" readonly>
+                            <input type="text" class="form-control" name="kode_kartu" id="edit_kode_kartu" required>
                         </div>
                         <div class="form-group mb-2">
                             <label for="edit_nama_karyawan">Nama Karyawan</label>
-                            <input type="text" class="form-control" name="nama_karyawan" id="edit_nama_karyawan" readonly>
+                            <input type="text" class="form-control" name="nama_karyawan" id="edit_nama_karyawan" required>
                         </div>
                         <div class="form-group mb-2">
                             <label for="edit_shift">Shift</label>
-                            <select name="shift" id="edit_shift" class="form-control" readonly>
+                            <select name="shift" id="edit_shift" class="form-control" required>
                                 <option value="">Pilih Shift</option>
                                 <option value="A">A</option>
                                 <option value="B">B</option>
@@ -315,7 +315,7 @@
                         </div>
                         <div class="form-group mb-2">
                             <label for="edit_jenis_kelamin">Jenis Kelamin</label>
-                            <select name="jenis_kelamin" id="edit_jenis_kelamin" class="form-control" readonly>
+                            <select name="jenis_kelamin" id="edit_jenis_kelamin" class="form-control" required>
                                 <option value="">Pilih Jenis Kelamin</option>
                                 <option value="L">Laki-laki</option>
                                 <option value="P">Perempuan</option>
@@ -323,7 +323,7 @@
                         </div>
                         <div class="form-group mb-2">
                             <label for="edit_libur">Libur</label>
-                            <select name="libur" id="edit_libur" class="form-control" readonly>
+                            <select name="libur" id="edit_libur" class="form-control" required>
                                 <option value="">Pilih Hari Libur</option>
                                 <?php foreach ($day as $d): ?>
                                     <option value="<?= $d['id_day'] ?>"><?= $d['day_name'] ?></option>
@@ -332,7 +332,7 @@
                         </div>
                         <div class="form-group mb-2">
                             <label for="edit_libur_tambahan">Libur Tambahan</label>
-                            <select name="libur_tambahan" id="edit_libur_tambahan" class="form-control" readonly>
+                            <select name="libur_tambahan" id="edit_libur_tambahan" class="form-control">
                                 <option value="">Pilih Hari Libur</option>
                                 <?php foreach ($day as $d): ?>
                                     <option value="<?= $d['id_day'] ?>"><?= $d['day_name'] ?></option>
@@ -341,7 +341,7 @@
                         </div>
                         <div class="form-group mb-2">
                             <label for="edit_warna_baju">Warna Baju</label>
-                            <select name="warna_baju" id="edit_warna_baju" class="form-control" readonly>
+                            <select name="warna_baju" id="edit_warna_baju" class="form-control" required>
                                 <option value="">Pilih Warna Baju</option>
                                 <?php foreach ($baju as $b): ?>
                                     <option value="<?= $b['id_employment_status'] ?>">
@@ -352,15 +352,15 @@
                         </div>
                         <div class="form-group mb-2">
                             <label for="edit_tgl_lahir">Tanggal Lahir</label>
-                            <input type="date" class="form-control" name="tgl_lahir" id="edit_tgl_lahir" readonly>
+                            <input type="date" class="form-control" name="tgl_lahir" id="edit_tgl_lahir" required>
                         </div>
                         <div class="form-group mb-2">
                             <label for="edit_tgl_masuk">Tanggal Masuk</label>
-                            <input type="date" class="form-control" name="tgl_masuk" id="edit_tgl_masuk" readonly>
+                            <input type="date" class="form-control" name="tgl_masuk" id="edit_tgl_masuk" required>
                         </div>
                         <div class="form-group mb-2">
                             <label for="edit_bagian">Bagian</label>
-                            <select name="bagian" id="edit_bagian" class="form-control" readonly>
+                            <select name="bagian" id="edit_bagian" class="form-control" required>
                                 <option value="">Pilih Bagian</option>
                                 <?php foreach ($bagian as $row): ?>
                                     <option value="<?= $row['id_job_section'] ?>">
@@ -371,7 +371,7 @@
                         </div>
                         <div class="form-group mb-2">
                             <label for="edit_area">Area</label>
-                            <select name="area" id="edit_area" class="form-control" readonly>
+                            <select name="area" id="edit_area" class="form-control" required>
                                 <option value="">Pilih Area</option>
                                 <?php foreach ($factory as $a): ?>
                                     <option value="<?= $a['id_factory'] ?>">
@@ -382,7 +382,7 @@
                         </div>
                         <div class="form-group mb-2">
                             <label for="edit_status_aktif">Status</label>
-                            <select name="status_aktif" id="edit_status_aktif" class="form-control" readonly>
+                            <select name="status_aktif" id="edit_status_aktif" class="form-control" required>
                                 <option value="">Pilih Status</option>
                                 <option value="Aktif">Aktif</option>
                                 <option value="Tidak Aktif">Tidak Aktif</option>
