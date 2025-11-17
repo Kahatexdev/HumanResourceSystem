@@ -344,6 +344,7 @@ $routes->group('/TrainingSchool', ['filter' => 'TrainingSchool'], function ($rou
 $routes->group('/Absensi', ['filter' => 'Absensi'], function ($routes) {
     $routes->get('', 'AbsensiController::index');
     $routes->get('dataAbsensi', 'AbsensiController::dataAbsensi');
+    $routes->get('detailAbsensi/(:any)/(:any)', 'AbsensiController::detailAbsensi/$1/$2');
     $routes->get('dataKaryawan', 'AbsensiController::listArea');
     $routes->get('dataKaryawan/(:any)', 'AbsensiController::detailKaryawanPerArea/$1');
     $routes->get('downloadTemplateKaryawan', 'EmployeeController::downloadTemplate');
@@ -385,6 +386,7 @@ $routes->group('/Absensi', ['filter' => 'Absensi'], function ($routes) {
     // master shift
     $routes->get('shiftDef/', 'ShiftController::shiftDef');
     $routes->post('storeShiftDef/', 'ShiftController::shiftMasterStore');
+    $routes->post('updateShiftDef/(:num)', 'ShiftController::shiftMasterUpdate/$1');
     
     // shift
     $routes->get('shiftAssignments/', 'ShiftController::index');

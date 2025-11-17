@@ -73,7 +73,7 @@ $updateUrl = base_url($role . '/updateShiftAssignment');
                         </div>
                         <div>
                             <div class="d-flex justify-content-between align-items-center">
-                                <a href="<?= base_url($role . '/exportKaryawan') ?>" class="btn bg-gradient-primary me-2">
+                                <a href="#" class="btn bg-gradient-primary me-2">
                                     <i class="fas fa-file-excel text-lg opacity-10" aria-hidden="true"></i>
                                     Export Excel
                                 </a>

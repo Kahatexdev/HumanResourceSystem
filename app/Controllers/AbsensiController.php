@@ -411,6 +411,23 @@ class AbsensiController extends BaseController
         return view(session()->get('role') . '/dataAbsensi', $data);
     }
 
+    public function detailAbsensi($month, $year)
+    {
+        $logAbsen = $this->absensiModel->getDetailLogAbsensi($month, $year);
+        dd ($logAbsen);
+        $data = [
+            'role' => session()->get('role'),
+            'title' => 'Data Absensi',
+            'active1' => '',
+            'active2' => '',
+            'active3' => 'active',
+            'logAbsen'     => $logAbsen,
+            'month'        => $month,
+            'year'         => $year
+        ];
+        return view(session()->get('role') . '/detailAbsensi', $data);
+    }
+
     // public function upload()
     // {
     //     $file = $this->request->getFile('file');
@@ -853,17 +870,17 @@ class AbsensiController extends BaseController
             return $sendError('Tipe file tidak valid. Harus file Excel (.xls / .xlsx).');
         }
 
-        if ($file->getSize() > 5 * 1024 * 1024) {
-            return $sendError('Ukuran file melebihi 5 MB.');
+        if ($file->getSize() > 10 * 1024 * 1024) {
+            return $sendError('Ukuran file melebihi 10 MB.');
         }
 
         try {
             // 3. Load spreadsheet
             $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($file->getTempName());
-            $sheet       = $spreadsheet->getActiveSheet();
+            // $sheet       = $spreadsheet->getActiveSheet();
 
             $startRow = 2;
-            $lastRow  = $sheet->getHighestRow();
+            // $lastRow  = $sheet->getHighestRow();
 
             $batchData     = [];
             $successCount  = 0;
@@ -872,104 +889,111 @@ class AbsensiController extends BaseController
             $minDate       = null;
             $maxDate       = null;
 
-            // 4. Loop tiap baris
-            for ($row = $startRow; $row <= $lastRow; $row++) {
-                $terminalId = trim((string) $sheet->getCell("B{$row}")->getValue());
-                $dateRaw    = trim((string) $sheet->getCell("C{$row}")->getFormattedValue());
-                $time       = trim((string) $sheet->getCell("D{$row}")->getFormattedValue());
-                $nik        = trim((string) $sheet->getCell("H{$row}")->getValue());
-                $cardNo     = trim((string) $sheet->getCell("I{$row}")->getValue());
-                $guestName  = trim((string) $sheet->getCell("J{$row}")->getValue());
-                $department = trim((string) $sheet->getCell("K{$row}")->getValue());
-                $verSource  = trim((string) $sheet->getCell("N{$row}")->getValue());
+            // 4. Loop tiap SHEET
+            foreach ($spreadsheet->getWorksheetIterator() as $sheetIndex => $sheet) {
+                $sheetName = $sheet->getTitle();
+                $lastRow   = $sheet->getHighestRow();
 
-                // Baris kosong → skip
-                if ($row === 1 || ($terminalId === '' && $dateRaw === '' && $nik === '')) {
-                    continue;
-                }
+                // Loop tiap BARIS di sheet ini
+                // 4. Loop tiap baris
+                for ($row = $startRow; $row <= $lastRow; $row++) {
+                    $terminalId = trim((string) $sheet->getCell("B{$row}")->getValue());
+                    $dateRaw    = trim((string) $sheet->getCell("C{$row}")->getFormattedValue());
+                    $time       = trim((string) $sheet->getCell("D{$row}")->getFormattedValue());
+                    $nik        = trim((string) $sheet->getCell("H{$row}")->getValue());
+                    $cardNo     = trim((string) $sheet->getCell("I{$row}")->getValue());
+                    $guestName  = trim((string) $sheet->getCell("J{$row}")->getValue());
+                    $department = trim((string) $sheet->getCell("K{$row}")->getValue());
+                    $verSource  = trim((string) $sheet->getCell("N{$row}")->getValue());
 
-                $isValid = true;
-                $errMsg  = "Row {$row}: ";
-
-                // Wajib isi
-                if ($terminalId === '') {
-                    $isValid  = false;
-                    $errMsg  .= "Terminal ID kosong. ";
-                }
-
-                if ($nik === '') {
-                    $isValid  = false;
-                    $errMsg  .= "NIK kosong. ";
-                }
-
-                // Validasi tanggal
-                $dateSql = null;
-                if ($dateRaw === '') {
-                    $isValid  = false;
-                    $errMsg  .= "Tanggal kosong. ";
-                } else {
-                    $formats = ['Y-m-d', 'd-m-Y', 'd/m/Y', 'm/d/Y'];
-                    $parsed  = null;
-
-                    foreach ($formats as $fmt) {
-                        $dt = \DateTime::createFromFormat($fmt, $dateRaw);
-                        if ($dt && $dt->format($fmt) === $dateRaw) {
-                            $parsed = $dt;
-                            break;
-                        }
+                    // Baris kosong → skip
+                    if ($row === 1 || ($terminalId === '' && $dateRaw === '' && $nik === '')) {
+                        continue;
                     }
 
-                    if ($parsed) {
-                        $dateSql = $parsed->format('Y-m-d');
+                    $isValid = true;
+                    $errMsg  = "Row {$row}: ";
+
+                    // Wajib isi
+                    if ($terminalId === '') {
+                        $isValid  = false;
+                        $errMsg  .= "Terminal ID kosong. ";
+                    }
+
+                    if ($nik === '') {
+                        $isValid  = false;
+                        $errMsg  .= "NIK kosong. ";
+                    }
+
+                    // Validasi tanggal
+                    $dateSql = null;
+                    if ($dateRaw === '') {
+                        $isValid  = false;
+                        $errMsg  .= "Tanggal kosong. ";
                     } else {
-                        if (is_numeric($dateRaw)) {
-                            try {
-                                $dt = \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($dateRaw);
-                                $dateSql = $dt->format('Y-m-d');
-                            } catch (\Throwable $e) {
-                                $dateSql = null;
+                        $formats = ['Y-m-d', 'd-m-Y', 'd/m/Y', 'm/d/Y'];
+                        $parsed  = null;
+
+                        foreach ($formats as $fmt) {
+                            $dt = \DateTime::createFromFormat($fmt, $dateRaw);
+                            if ($dt && $dt->format($fmt) === $dateRaw) {
+                                $parsed = $dt;
+                                break;
                             }
                         }
 
-                        if ($dateSql === null) {
-                            $isValid = false;
-                            $errMsg .= "Format tanggal tidak dikenali ({$dateRaw}). ";
+                        if ($parsed) {
+                            $dateSql = $parsed->format('Y-m-d');
+                        } else {
+                            if (is_numeric($dateRaw)) {
+                                try {
+                                    $dt = \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($dateRaw);
+                                    $dateSql = $dt->format('Y-m-d');
+                                } catch (\Throwable $e) {
+                                    $dateSql = null;
+                                }
+                            }
+
+                            if ($dateSql === null) {
+                                $isValid = false;
+                                $errMsg .= "Format tanggal tidak dikenali ({$dateRaw}). ";
+                            }
                         }
                     }
-                }
 
-                $source = 'IMPORT';
-                $admin  = session()->get('username');
+                    $source = 'IMPORT';
+                    $admin  = session()->get('username');
 
-                if ($isValid) {
-                    if ($dateSql) {
-                        if ($minDate === null || $dateSql < $minDate) {
-                            $minDate = $dateSql;
+                    if ($isValid) {
+                        if ($dateSql) {
+                            if ($minDate === null || $dateSql < $minDate) {
+                                $minDate = $dateSql;
+                            }
+                            if ($maxDate === null || $dateSql > $maxDate) {
+                                $maxDate = $dateSql;
+                            }
                         }
-                        if ($maxDate === null || $dateSql > $maxDate) {
-                            $maxDate = $dateSql;
-                        }
+
+                        $batchData[] = [
+                            'terminal_id'         => $terminalId,
+                            'log_date'            => $dateSql,
+                            'log_time'            => $time ?: null,
+                            'nik'                 => $nik ?: null,
+                            'card_no'             => $cardNo,
+                            'employee_name'       => $guestName,
+                            'department'          => $department,
+                            'verification_source' => $verSource,
+                            'source'              => $source,
+                            'admin'               => $admin,
+                            'created_at'          => date('Y-m-d H:i:s'),
+                            'updated_at'          => date('Y-m-d H:i:s'),
+                        ];
+
+                        $successCount++;
+                    } else {
+                        $errorCount++;
+                        $errorMessages[] = $errMsg;
                     }
-
-                    $batchData[] = [
-                        'terminal_id'         => $terminalId,
-                        'log_date'            => $dateSql,
-                        'log_time'            => $time ?: null,
-                        'nik'                 => $nik ?: null,
-                        'card_no'             => $cardNo,
-                        'employee_name'       => $guestName,
-                        'department'          => $department,
-                        'verification_source' => $verSource,
-                        'source'              => $source,
-                        'admin'               => $admin,
-                        'created_at'          => date('Y-m-d H:i:s'),
-                        'updated_at'          => date('Y-m-d H:i:s'),
-                    ];
-
-                    $successCount++;
-                } else {
-                    $errorCount++;
-                    $errorMessages[] = $errMsg;
                 }
             }
 

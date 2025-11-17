@@ -6,6 +6,7 @@ use App\Models\AbsensiModel;
 use App\Models\AttendanceDayModel;
 use App\Models\ShiftDefModel;
 use App\Models\EmployeeModel;
+use App\Models\ShiftAssignmentsModel;
 use CodeIgniter\Database\BaseConnection;
 use DateTime;
 
@@ -17,6 +18,7 @@ class AttendanceGroupingService
     protected AttendanceDayModel $dayM;
     protected ShiftDefModel $shiftM;
     protected EmployeeModel $empM;
+    protected ShiftAssignmentsModel $shiftAssignM;
 
     /**
      * Batas maksimal selisih menit antar log
@@ -37,7 +39,7 @@ class AttendanceGroupingService
      * supaya masih dianggap 1 shift.
      * Misal 8 jam = 480 menit.
      */
-    protected int $maxGapBetweenLogsMinutes = 480;
+    protected int $maxGapBetweenLogsMinutes = 479;
 
 
 
@@ -48,6 +50,7 @@ class AttendanceGroupingService
         $this->dayM = new AttendanceDayModel();
         $this->shiftM = new ShiftDefModel();
         $this->empM   = new EmployeeModel();
+        $this->shiftAssignM = new ShiftAssignmentsModel();
     }
 
     /**
@@ -197,11 +200,19 @@ class AttendanceGroupingService
             $workDate   = $group['work_date'];
             $rows       = $group['logs'];
 
-            // >>> JIKA JUMLAH LOG <= 3, JANGAN DISAVE <<<
-            if (count($rows) <= 3) {
+            // >>> JIKA JUMLAH LOG < 3, JANGAN DISAVE <<<
+            if (count($rows) < 3) {
                 log_message(
                     'info',
-                    "AttendanceGroupingService: skip grouping, log count <= 3. " .
+                    "AttendanceGroupingService: skip grouping, log count < 3. " .
+                        "emp={$idEmployee}, work_date={$workDate}, count=" . count($rows)
+                );
+                continue;
+            } elseif (count($rows) > 4) {
+                // opsional: batasi maksimal log yang diproses per hari
+                log_message(
+                    'info',
+                    "AttendanceGroupingService: skip grouping, log count > 4. " .
                         "emp={$idEmployee}, work_date={$workDate}, count=" . count($rows)
                 );
                 continue;
@@ -220,7 +231,27 @@ class AttendanceGroupingService
             $outDT = $mapped['out_time'] ? new DateTime($mapped['out_time']) : null;
 
             $idShift = $this->detectShiftId($inDT, $outDT, $shifts);
+            if ($idShift === null) {
+                log_message(
+                    'info',
+                    "AttendanceGroupingService: skip grouping, shift not detected. " .
+                        "emp={$idEmployee}, work_date={$workDate}"
+                );
+                continue;
+            }
 
+            $shiftAssigned = $this->shiftAssignM
+                ->where('id_employee', $idEmployee)
+                ->where('id_shift', $idShift)
+                ->first();
+            if (!$shiftAssigned) {
+                log_message(
+                    'info',
+                    "AttendanceGroupingService: skip grouping, shift not assigned to employee. " .
+                        "emp={$idEmployee}, work_date={$workDate}, id_shift={$idShift}"
+                );
+                continue;
+            }
             $verifiedBy = session()->get('id_user');
             if ($verifiedBy) {
                 $userExists = $this->db->table('users')

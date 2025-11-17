@@ -641,7 +641,7 @@ class ShiftController extends BaseController
         $shifData = $this->shiftDeftM->findAll();
         $data = [
             'role'      => session()->get('role'),
-            'title'     => 'Master Jam Kerja',
+            'title'     => 'Master Shift',
             'active1'   => '',
             'active2'   => '',
             'active3'   => 'active',
@@ -668,5 +668,47 @@ class ShiftController extends BaseController
         }
     }
 
-    
+    public function shiftMasterUpdate()
+    {
+        // Ambil ID dari hidden input
+        $id = $this->request->getPost('id_shift');
+
+        if (! $id) {
+            return redirect()->back()->with('error', 'ID shift tidak ditemukan.');
+        }
+
+        // Cek apakah data lama memang ada
+        $exist = $this->shiftDeftM->find($id);
+        if (! $exist) {
+            return redirect()->back()->with('error', 'Data jam kerja tidak ditemukan.');
+        }
+
+        // Ambil data baru dari form
+        $data = [
+            'shift_name' => $this->request->getPost('shift_name'),
+            'start_time' => $this->request->getPost('start_time'),
+            'end_time'   => $this->request->getPost('end_time'),
+            'break_time' => (int) $this->request->getPost('break_time'),
+            'grace_min'  => (int) $this->request->getPost('grace_min'),
+        ];
+
+        // Cek duplikat: ada data lain (id berbeda) dengan kombinasi yang sama
+        $duplicate = $this->shiftDeftM
+            ->where('id_shift !=', $id)
+            ->where('shift_name', $data['shift_name'])
+            ->where('start_time', $data['start_time'])
+            ->where('end_time', $data['end_time'])
+            ->where('break_time', $data['break_time'])
+            ->where('grace_min', $data['grace_min'])
+            ->first();
+
+        if ($duplicate) {
+            return redirect()->back()->with('error', 'Data jam kerja dengan kombinasi tersebut sudah ada sebelumnya.');
+        }
+
+        // Update data
+        $this->shiftDeftM->update($id, $data);
+
+        return redirect()->back()->with('success', 'Data jam kerja berhasil diupdate.');
+    }
 }

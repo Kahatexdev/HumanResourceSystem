@@ -69,4 +69,15 @@ class AbsensiModel extends Model
             ->get()
             ->getResultArray();
     }
+
+    public function getDetailLogAbsensi($month, $year)
+    {
+        return $this->select('attendance_logs.*')
+            ->where('MONTH(attendance_logs.log_date)', $month)
+            ->where('YEAR(attendance_logs.log_date)', $year)
+            ->orderBy('log_date', 'ASC')
+            ->orderBy('log_time', 'ASC')
+            ->get()
+            ->getResultArray();
+    }
 }
