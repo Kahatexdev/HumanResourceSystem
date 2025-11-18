@@ -85,8 +85,17 @@
                             </ul>
                         </div>
                     </div>
+                <?php else : ?>
+                    <div class="ms-md-auto pe-md-3 d-flex align-items-center">
+                        <div class="input-group">
+                            <span class="input-group-text text-body">
+                                <i class="fas fa-search"></i>
+                            </span>
+                            <input type="text" class="form-control" placeholder="Type here...">
+                        </div>
+                    </div>
                 <?php endif; ?>
-            <?php else: ?>
+            <?php else : ?>
                 <div class="ms-md-auto pe-md-3 d-flex align-items-center">
                     <div class="input-group">
                         <span class="input-group-text text-body">
@@ -97,10 +106,10 @@
                 </div>
             <?php endif; ?>
 
-            <ul class="navbar-nav  justify-content-end">
+            <ul class="navbar-nav justify-content-end">
                 <li class="nav-item d-flex align-items-center">
                     <a href="" data-bs-toggle="modal" data-bs-target="#LogoutModal"
-                        class=" nav-link text-body font-weight-bold px-0">
+                        class="nav-link text-body font-weight-bold px-0">
                         <img src="<?= base_url('assets/img/user.png') ?>" alt="User Icon" width="20">
                         <span class="d-sm-inline d-none"><?= session()->get('username') ?></span>
                     </a>

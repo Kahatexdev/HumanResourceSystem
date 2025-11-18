@@ -80,4 +80,16 @@ class AbsensiModel extends Model
             ->get()
             ->getResultArray();
     }
+
+    public function getkaryawan($tglAbsen)
+    {
+        return $this->select('
+            attendance_logs.nik,
+            attendance_logs.employee_name
+        ')
+            ->where('attendance_logs.log_date', $tglAbsen)
+            // ->where('attendance_logs.nik', '39I3733')
+            ->groupBy('attendance_logs.nik')
+            ->findAll();
+    }
 }

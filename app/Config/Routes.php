@@ -348,6 +348,8 @@ $routes->group('/Absensi', ['filter' => 'Absensi'], function ($routes) {
     $routes->get('dataKaryawan', 'AbsensiController::listArea');
     $routes->get('dataKaryawan/(:any)', 'AbsensiController::detailKaryawanPerArea/$1');
     $routes->get('reportDataAbsensi', 'AbsensiController::reportDataAbsensi');
+    $routes->get('tambahDataAbsensi', 'AbsensiController::tambahDataAbsensi');
+    $routes->get('getKaryawanByTglAbsen', 'AbsensiController::getKaryawanByTglAbsen');
     $routes->get('downloadTemplateKaryawan', 'EmployeeController::downloadTemplate');
     $routes->post('karyawanStoreImport', 'EmployeeController::upload');
     $routes->post('AbsensiImport', 'AbsensiController::upload');

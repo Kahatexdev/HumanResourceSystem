@@ -13,6 +13,8 @@ use App\Models\HistoryEmployeeModel;
 use App\Models\DayModel;
 use App\Models\FormerEmployeeModel;
 use App\Models\AbsensiModel;
+use App\Models\AttendanceResultModel;
+use App\Models\AttendanceDayModel;
 
 class AbsensiController extends BaseController
 {
@@ -26,6 +28,9 @@ class AbsensiController extends BaseController
     protected $days;
     protected $formerEmployeeModel;
     protected $absensiModel;
+    protected $attendanceResultModel;
+    protected $attendanceDayModel;
+    protected $attendanceLogModel;
 
     public function __construct()
     {
@@ -38,6 +43,9 @@ class AbsensiController extends BaseController
         $this->days = new DayModel();
         $this->formerEmployeeModel = new FormerEmployeeModel();
         $this->absensiModel = new AbsensiModel();
+        $this->attendanceResultModel = new AttendanceResultModel();
+        $this->attendanceDayModel = new AttendanceDayModel();
+
         $this->role = session()->get('role');
     }
     public function index()
@@ -1199,14 +1207,60 @@ class AbsensiController extends BaseController
 
     public function reportDataAbsensi()
     {
+        $dateFrom = $this->request->getGet('tglAwal');
+        $dateTo   = $this->request->getGet('tglAkhir');
+
+        $results = [];
+
+        if ($dateFrom && $dateTo) {
+            $results = $this->attendanceDayModel->getAttendanceResults($dateFrom, $dateTo);
+        }
+        // dd($results);
         $data = [
             'role'        => session()->get('role'),
             'title'       => 'Report Data Absensi',
             'active1'     => '',
             'active2'     => '',
             'active3'     => 'active',
+            'results'     => $results,
+            'tglAwal'     => $dateFrom,
+            'tglAkhir'    => $dateTo
         ];
 
         return view(session()->get('role') . '/reportDataAbsensi', $data);
+    }
+
+    public function tambahDataAbsensi()
+    {
+        $data = [
+            'role'      => session()->get('role'),
+            'title'     => 'Tambah Data Absensi',
+            'active1'   => '',
+            'active2'   => '',
+            'active3'   => 'active',
+        ];
+        return view(session()->get('role') . '/tambahDataAbsensi', $data);
+    }
+
+    public function getKaryawanByTglAbsen()
+    {
+        $tglAbsen = $this->request->getGet('date');
+        $sudahdiolah = $this->attendanceDayModel->getKaryawanByTglAbsen($tglAbsen);
+        $logs = $this->absensiModel->getkaryawan($tglAbsen);
+        // dd($sudahdiolah, $logs);
+        $karyawan = [];
+        foreach ($logs as $data) {
+            $nikLog = $data['nik'];
+            // dd($nik);
+            foreach ($sudahdiolah as $olah) {
+                // dd($olah);
+                $nikOlah = $olah['nik'];
+                if ($nikLog != $nikOlah) {
+                    $karyawan = $nikLog;
+                }
+            }
+        }
+        // dd($karyawan);
+        // return $this->response->setJSON($karyawan);
     }
 }
