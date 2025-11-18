@@ -345,6 +345,7 @@ $routes->group('/Absensi', ['filter' => 'Absensi'], function ($routes) {
     $routes->get('', 'AbsensiController::index');
     $routes->get('dataAbsensi', 'AbsensiController::dataAbsensi');
     $routes->get('detailAbsensi/(:any)/(:any)', 'AbsensiController::detailAbsensi/$1/$2');
+    $routes->post('getDetailAbsensiAjax/(:any)/(:any)', 'AbsensiController::getDetailAbsensiAjax/$1/$2');
     $routes->get('dataKaryawan', 'AbsensiController::listArea');
     $routes->get('dataKaryawan/(:any)', 'AbsensiController::detailKaryawanPerArea/$1');
     $routes->get('reportDataAbsensi', 'AbsensiController::reportDataAbsensi');

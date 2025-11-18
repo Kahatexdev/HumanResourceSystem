@@ -92,4 +92,46 @@ class AbsensiModel extends Model
             ->groupBy('attendance_logs.nik')
             ->findAll();
     }
+
+    public function getDetailLogAbsensiServer(
+        $month,
+        $year,
+        $start,
+        $length,
+        $search,
+        $orderColumn,
+        $orderDir
+    ) {
+        // total rows
+        $builder = $this->builder();
+        $builder->where('MONTH(log_date)', $month);
+        $builder->where('YEAR(log_date)', $year);
+        $total = $builder->countAllResults(false);
+
+        // filter search
+        if (!empty($search)) {
+            $builder->groupStart()
+                ->like('nik', $search)
+                ->orLike('employee_name', $search)
+                ->orLike('department', $search)
+                ->groupEnd();
+        }
+
+        $filtered = $builder->countAllResults(false);
+
+        // order
+        $builder->orderBy($orderColumn, $orderDir);
+
+        // limit
+        $builder->limit($length, $start);
+
+        $query = $builder->get();
+        $data  = $query->getResultArray();
+
+        return [
+            'data'     => $data,
+            'total'    => $total,
+            'filtered' => $filtered,
+        ];
+    }
 }
