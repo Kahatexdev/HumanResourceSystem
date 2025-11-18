@@ -60,21 +60,266 @@ class AttendanceGroupingService
      * @param string|null $dateTo    kalau null = sama dengan $dateFrom
      * @return int jumlah record attendance_days yang diproses
      */
+    // public function groupLogsToDays(string $dateFrom, ?string $dateTo = null): int
+    // {
+    //     $dateTo = $dateTo ?? $dateFrom;
+
+    //     // 1. Ambil semua shift
+    //     $shifts = $this->shiftM
+    //         ->orderBy('start_time', 'ASC')
+    //         ->findAll();
+
+    //     if (empty($shifts)) {
+    //         // kalau shift belum di-setup, hentikan
+    //         return 0;
+    //     }
+
+    //     // 2. Ambil log absensi per tanggal
+    //     $logs = $this->logM
+    //         ->where('log_date >=', $dateFrom)
+    //         ->where('log_date <=', $dateTo)
+    //         ->orderBy('log_date', 'ASC')
+    //         ->orderBy('nik', 'ASC')
+    //         ->orderBy('log_time', 'ASC')
+    //         ->findAll();
+    //     // dd($logs);
+    //     if (empty($logs)) {
+    //         return 0;
+    //     }
+
+    //     // 3. Grouping per karyawan + sesi shift (berdasarkan jarak antar log)
+    //     $grouped = [];
+    //     $byEmp   = [];
+
+    //     // Kelompokkan log per karyawan dulu
+    //     foreach ($logs as $row) {
+    //         $employeeId = $this->resolveEmployeeId($row);
+    //         if (!$employeeId) {
+    //             log_message(
+    //                 'warning',
+    //                 'AttendanceGroupingService: employee not found for log. NIK: ' . ($row['nik'] ?? '-') .
+    //                     ', log_date: ' . ($row['log_date'] ?? '-') .
+    //                     ', log_time: ' . ($row['log_time'] ?? '-')
+    //             );
+    //             continue;
+    //         }
+
+    //         $logDate = $row['log_date'] ?? null;
+    //         $logTime = $row['log_time'] ?? null;
+
+    //         if (!$logDate || !$logTime) {
+    //             log_message(
+    //                 'warning',
+    //                 'AttendanceGroupingService: log_date/log_time kosong. NIK: ' . ($row['nik'] ?? '-')
+    //             );
+    //             continue;
+    //         }
+
+    //         $dtString = $logDate . ' ' . $logTime;
+
+    //         try {
+    //             $dt = new \DateTime($dtString);
+    //         } catch (\Exception $e) {
+    //             log_message(
+    //                 'error',
+    //                 'AttendanceGroupingService: invalid datetime "' . $dtString . '" : ' . $e->getMessage()
+    //             );
+    //             continue;
+    //         }
+
+    //         // Simpan objek DateTime untuk sorting & perhitungan selisih
+    //         $row['log_datetime_obj'] = $dt;
+    //         $row['log_datetime']     = $dt->format('Y-m-d H:i:s');
+
+    //         $byEmp[$employeeId][] = $row;
+    //     }
+
+    //     // Bentuk group per "sesi shift"
+    //     foreach ($byEmp as $employeeId => $empLogs) {
+    //         // sort per datetime
+    //         usort($empLogs, function ($a, $b) {
+    //             /** @var \DateTime $da */
+    //             $da = $a['log_datetime_obj'];
+    //             /** @var \DateTime $db */
+    //             $db = $b['log_datetime_obj'];
+    //             return $da <=> $db;
+    //         });
+
+    //         $currentGroup = null;
+    //         /** @var \DateTime|null $lastDt */
+    //         $lastDt = null;
+
+    //         foreach ($empLogs as $logRow) {
+    //             /** @var \DateTime $dt */
+    //             $dt = $logRow['log_datetime_obj'];
+
+    //             if ($currentGroup === null) {
+    //                 // Mulai sesi baru
+    //                 $currentGroup = [
+    //                     'id_employee' => $employeeId,
+    //                     // work_date = tanggal log pertama di sesi
+    //                     'work_date'   => $dt->format('Y-m-d'),
+    //                     'logs'        => [],
+    //                 ];
+    //             } else {
+    //                 // Hitung selisih menit dengan log sebelumnya
+    //                 $diffMinutes = ($dt->getTimestamp() - $lastDt->getTimestamp()) / 60;
+
+    //                 // Kalau selisih terlalu jauh => anggap shift baru
+    //                 if ($diffMinutes > $this->maxGapBetweenLogsMinutes) {
+    //                     $grouped[]    = $currentGroup;
+    //                     $currentGroup = [
+    //                         'id_employee' => $employeeId,
+    //                         'work_date'   => $dt->format('Y-m-d'),
+    //                         'logs'        => [],
+    //                     ];
+    //                 }
+    //             }
+
+    //             $currentGroup['logs'][] = $logRow;
+    //             $lastDt                 = $dt;
+    //         }
+
+    //         if ($currentGroup !== null) {
+    //             $grouped[] = $currentGroup;
+    //         }
+    //     }
+
+    //     // HAPUS dd($grouped); kalau sudah tidak dipakai debug
+    //     // dd($grouped);
+
+
+
+    //     // 4. Mapping ke attendance_days
+    //     $processed = 0;
+
+    //     $this->db->transStart();
+
+    //     foreach ($grouped as $group) {
+    //         $idEmployee = $group['id_employee'];
+    //         $workDate   = $group['work_date'];
+    //         $rows       = $group['logs'];
+
+    //         // >>> JIKA JUMLAH LOG < 3, JANGAN DISAVE <<<
+    //         if (count($rows) < 3) {
+    //             log_message(
+    //                 'info',
+    //                 "AttendanceGroupingService: skip grouping, log count < 3. " .
+    //                     "emp={$idEmployee}, work_date={$workDate}, count=" . count($rows)
+    //             );
+    //             continue;
+    //         } elseif (count($rows) > 4) {
+    //             // opsional: batasi maksimal log yang diproses per hari
+    //             log_message(
+    //                 'info',
+    //                 "AttendanceGroupingService: skip grouping, log count > 4. " .
+    //                     "emp={$idEmployee}, work_date={$workDate}, count=" . count($rows)
+    //             );
+    //             continue;
+    //         }
+
+    //         // pastikan sort per datetime
+    //         usort($rows, function ($a, $b) {
+    //             return strcmp($a['log_datetime'], $b['log_datetime']);
+    //         });
+
+    //         // mapping jam (pakai full datetime)
+    //         $mapped = $this->mapLogsToDay($rows);
+
+    //         // deteksi shift
+    //         $inDT  = $mapped['in_time']  ? new DateTime($mapped['in_time'])  : null;
+    //         $outDT = $mapped['out_time'] ? new DateTime($mapped['out_time']) : null;
+
+    //         $idShift = $this->detectShiftId($inDT, $outDT, $shifts);
+    //         if ($idShift === null) {
+    //             log_message(
+    //                 'info',
+    //                 "AttendanceGroupingService: skip grouping, shift not detected. " .
+    //                     "emp={$idEmployee}, work_date={$workDate}"
+    //             );
+    //             continue;
+    //         }
+
+    //         $shiftAssigned = $this->shiftAssignM
+    //             ->where('id_employee', $idEmployee)
+    //             ->where('id_shift', $idShift)
+    //             ->first();
+    //         if (!$shiftAssigned) {
+    //             log_message(
+    //                 'info',
+    //                 "AttendanceGroupingService: skip grouping, shift not assigned to employee. " .
+    //                     "emp={$idEmployee}, work_date={$workDate}, id_shift={$idShift}"
+    //             );
+    //             continue;
+    //         }
+    //         $verifiedBy = session()->get('id_user');
+    //         if ($verifiedBy) {
+    //             $userExists = $this->db->table('users')
+    //                 ->where('id_user', $verifiedBy)
+    //                 ->countAllResults() > 0;
+
+    //             if (! $userExists) {
+    //                 $verifiedBy = null;
+    //             }
+    //         } else {
+    //             $verifiedBy = null;
+    //         }
+
+    //         // siapkan payload untuk attendance_days
+    //         $payload = [
+    //             'id_employee'    => $idEmployee,
+    //             'work_date'      => $workDate,
+    //             'id_shift'       => $idShift,
+    //             'in_time'        => $mapped['in_time'],
+    //             'break_out_time' => $mapped['break_out_time'],
+    //             'break_in_time'  => $mapped['break_in_time'],
+    //             'out_time'       => $mapped['out_time'],
+    //             'status_final'   => 'LOCKED',
+    //             'verified_by'    => $verifiedBy,
+    //             'verified_at'    => date('Y-m-d H:i:s')
+    //         ];
+
+    //         // cek existing & insert/update
+    //         $existing = $this->dayM
+    //             ->where('id_employee', $idEmployee)
+    //             ->where('work_date', $workDate)
+    //             ->first();
+
+    //         if ($existing) {
+    //             $this->dayM->update($existing['id_attendance'], $payload);
+    //         } else {
+    //             $this->dayM->insert($payload);
+    //         }
+
+    //         $processed++;
+    //     }
+
+    //     $this->db->transComplete();
+
+    //     // ⬇⬇⬇  TAMBAHKAN BAGIAN INI  ⬇⬇⬇
+    //     if ($this->db->transStatus() === false) {
+    //         // kalau transaksi gagal, balikin 0 (atau boleh lempar exception kalau mau)
+    //         return 0;
+    //     }
+
+    //     return $processed;
+    // }
+
     public function groupLogsToDays(string $dateFrom, ?string $dateTo = null): int
     {
         $dateTo = $dateTo ?? $dateFrom;
 
         // 1. Ambil semua shift
-        $shifts = $this->shiftM
-            ->orderBy('start_time', 'ASC')
-            ->findAll();
-        
-        if (empty($shifts)) {
-            // kalau shift belum di-setup, hentikan
-            return 0;
+        $shifts = $this->shiftM->orderBy('start_time', 'ASC')->findAll();
+        if (empty($shifts)) return 0;
+
+        // convert shift list ke map by id_shift (dipakai detectShiftId)
+        $shiftMap = [];
+        foreach ($shifts as $s) {
+            $shiftMap[$s['id_shift']] = $s;
         }
 
-        // 2. Ambil log absensi per tanggal
+        // 2. Ambil log absensi per tanggal SEKALI
         $logs = $this->logM
             ->where('log_date >=', $dateFrom)
             ->where('log_date <=', $dateTo)
@@ -82,92 +327,58 @@ class AttendanceGroupingService
             ->orderBy('nik', 'ASC')
             ->orderBy('log_time', 'ASC')
             ->findAll();
-        // dd($logs);
+
         if (empty($logs)) {
             return 0;
         }
 
-        // 3. Grouping per karyawan + sesi shift (berdasarkan jarak antar log)
-        $grouped = [];
-        $byEmp   = [];
-
-        // Kelompokkan log per karyawan dulu
+        // 3. Kelompokkan logs per employee (resolveEmployeeId tetap dipanggil,
+        // tapi hanya saat pembentukan kelompok — tidak nge-query DB tiap kali)
+        $byEmp = [];
         foreach ($logs as $row) {
             $employeeId = $this->resolveEmployeeId($row);
             if (!$employeeId) {
-                log_message(
-                    'warning',
-                    'AttendanceGroupingService: employee not found for log. NIK: ' . ($row['nik'] ?? '-') .
-                        ', log_date: ' . ($row['log_date'] ?? '-') .
-                        ', log_time: ' . ($row['log_time'] ?? '-')
-                );
+                log_message('warning', 'AttendanceGroupingService: employee not found for log. NIK: ' . ($row['nik'] ?? '-'));
                 continue;
             }
-
             $logDate = $row['log_date'] ?? null;
             $logTime = $row['log_time'] ?? null;
-
             if (!$logDate || !$logTime) {
-                log_message(
-                    'warning',
-                    'AttendanceGroupingService: log_date/log_time kosong. NIK: ' . ($row['nik'] ?? '-')
-                );
+                log_message('warning', 'AttendanceGroupingService: log_date/log_time kosong. NIK: ' . ($row['nik'] ?? '-'));
                 continue;
             }
-
-            $dtString = $logDate . ' ' . $logTime;
-
             try {
-                $dt = new \DateTime($dtString);
+                $dt = new \DateTime($logDate . ' ' . $logTime);
             } catch (\Exception $e) {
-                log_message(
-                    'error',
-                    'AttendanceGroupingService: invalid datetime "' . $dtString . '" : ' . $e->getMessage()
-                );
+                log_message('error', 'AttendanceGroupingService: invalid datetime "' . ($logDate . ' ' . $logTime) . '" : ' . $e->getMessage());
                 continue;
             }
-
-            // Simpan objek DateTime untuk sorting & perhitungan selisih
             $row['log_datetime_obj'] = $dt;
-            $row['log_datetime']     = $dt->format('Y-m-d H:i:s');
-
+            $row['log_datetime'] = $dt->format('Y-m-d H:i:s');
             $byEmp[$employeeId][] = $row;
         }
 
-        // Bentuk group per "sesi shift"
+        // 4. Bentuk groups per sesi (sama seperti sebelumnya)
+        $grouped = [];
         foreach ($byEmp as $employeeId => $empLogs) {
-            // sort per datetime
             usort($empLogs, function ($a, $b) {
-                /** @var \DateTime $da */
-                $da = $a['log_datetime_obj'];
-                /** @var \DateTime $db */
-                $db = $b['log_datetime_obj'];
-                return $da <=> $db;
+                return $a['log_datetime'] <=> $b['log_datetime'];
             });
 
             $currentGroup = null;
-            /** @var \DateTime|null $lastDt */
             $lastDt = null;
-
             foreach ($empLogs as $logRow) {
-                /** @var \DateTime $dt */
                 $dt = $logRow['log_datetime_obj'];
-
                 if ($currentGroup === null) {
-                    // Mulai sesi baru
                     $currentGroup = [
                         'id_employee' => $employeeId,
-                        // work_date = tanggal log pertama di sesi
                         'work_date'   => $dt->format('Y-m-d'),
                         'logs'        => [],
                     ];
                 } else {
-                    // Hitung selisih menit dengan log sebelumnya
                     $diffMinutes = ($dt->getTimestamp() - $lastDt->getTimestamp()) / 60;
-
-                    // Kalau selisih terlalu jauh => anggap shift baru
                     if ($diffMinutes > $this->maxGapBetweenLogsMinutes) {
-                        $grouped[]    = $currentGroup;
+                        $grouped[] = $currentGroup;
                         $currentGroup = [
                             'id_employee' => $employeeId,
                             'work_date'   => $dt->format('Y-m-d'),
@@ -175,97 +386,90 @@ class AttendanceGroupingService
                         ];
                     }
                 }
-
                 $currentGroup['logs'][] = $logRow;
-                $lastDt                 = $dt;
+                $lastDt = $dt;
             }
-
-            if ($currentGroup !== null) {
-                $grouped[] = $currentGroup;
-            }
+            if ($currentGroup !== null) $grouped[] = $currentGroup;
         }
 
-        // HAPUS dd($grouped); kalau sudah tidak dipakai debug
-        // dd($grouped);
+        if (empty($grouped)) return 0;
 
+        // --- OPTIMISASI: preload data yang dipakai dalam loop ---
+        // 5. Ambil semua shift_assignments untuk semua employee yang ada di grouped
+        $empIds = array_values(array_unique(array_map(function ($g) {
+            return $g['id_employee'];
+        }, $grouped)));
+        $assignRows = $this->shiftAssignM
+            ->whereIn('id_employee', $empIds)
+            ->findAll();
 
+        // map: employee -> array of assigned id_shift
+        $assignMap = [];
+        foreach ($assignRows as $r) {
+            $assignMap[$r['id_employee']][] = (int)$r['id_shift'];
+        }
 
-        // 4. Mapping ke attendance_days
-        $processed = 0;
+        // 6. Preload existing attendance_days untuk range (id_employee + work_date)
+        // Ambil unique pairs
+        $pairs = [];
+        foreach ($grouped as $g) {
+            $pairs[$g['id_employee'] . '|' . $g['work_date']] = [$g['id_employee'], $g['work_date']];
+        }
+        $keys = array_values($pairs);
+        // Build where clause: (id_employee = x AND work_date = y) OR ...
+        // Simpler: ambil semua attendance_days di rentang tanggal untuk employees yg terlibat
+        $existingDaysRows = $this->dayM
+            ->whereIn('id_employee', $empIds)
+            ->where('work_date >=', $dateFrom)
+            ->where('work_date <=', $dateTo)
+            ->findAll();
 
-        $this->db->transStart();
+        $existingDaysMap = [];
+        foreach ($existingDaysRows as $r) {
+            $existingDaysMap[$r['id_employee'] . '|' . $r['work_date']] = $r;
+        }
+
+        // 7. Cek verified_by user sekali saja (cache)
+        $verifiedBy = session()->get('id_user') ?: null;
+        if ($verifiedBy) {
+            $userExists = $this->db->table('users')->where('id_user', $verifiedBy)->countAllResults() > 0;
+            if (! $userExists) $verifiedBy = null;
+        }
+
+        // 8. Siapkan batch arrays
+        $toInsert = [];
+        $toUpdate = [];
 
         foreach ($grouped as $group) {
             $idEmployee = $group['id_employee'];
             $workDate   = $group['work_date'];
             $rows       = $group['logs'];
 
-            // >>> JIKA JUMLAH LOG < 3, JANGAN DISAVE <<<
-            if (count($rows) < 3) {
-                log_message(
-                    'info',
-                    "AttendanceGroupingService: skip grouping, log count < 3. " .
-                        "emp={$idEmployee}, work_date={$workDate}, count=" . count($rows)
-                );
-                continue;
-            } elseif (count($rows) > 4) {
-                // opsional: batasi maksimal log yang diproses per hari
-                log_message(
-                    'info',
-                    "AttendanceGroupingService: skip grouping, log count > 4. " .
-                        "emp={$idEmployee}, work_date={$workDate}, count=" . count($rows)
-                );
+            if (count($rows) < 3 || count($rows) > 4) {
+                // skip seperti rule awal
                 continue;
             }
 
-            // pastikan sort per datetime
             usort($rows, function ($a, $b) {
                 return strcmp($a['log_datetime'], $b['log_datetime']);
             });
 
-            // mapping jam (pakai full datetime)
             $mapped = $this->mapLogsToDay($rows);
 
-            // deteksi shift
             $inDT  = $mapped['in_time']  ? new DateTime($mapped['in_time'])  : null;
             $outDT = $mapped['out_time'] ? new DateTime($mapped['out_time']) : null;
 
             $idShift = $this->detectShiftId($inDT, $outDT, $shifts);
             if ($idShift === null) {
-                log_message(
-                    'info',
-                    "AttendanceGroupingService: skip grouping, shift not detected. " .
-                        "emp={$idEmployee}, work_date={$workDate}"
-                );
                 continue;
             }
 
-            $shiftAssigned = $this->shiftAssignM
-                ->where('id_employee', $idEmployee)
-                ->where('id_shift', $idShift)
-                ->first();
-            if (!$shiftAssigned) {
-                log_message(
-                    'info',
-                    "AttendanceGroupingService: skip grouping, shift not assigned to employee. " .
-                        "emp={$idEmployee}, work_date={$workDate}, id_shift={$idShift}"
-                );
+            // cek apakah shift ini termasuk assignment employee (pakai preload assignMap)
+            $assignedShifts = $assignMap[$idEmployee] ?? [];
+            if (!in_array($idShift, $assignedShifts, true)) {
                 continue;
             }
-            $verifiedBy = session()->get('id_user');
-            if ($verifiedBy) {
-                $userExists = $this->db->table('users')
-                    ->where('id_user', $verifiedBy)
-                    ->countAllResults() > 0;
 
-                if (! $userExists) {
-                    $verifiedBy = null;
-                }
-            } else {
-                $verifiedBy = null;
-            }
-
-            // siapkan payload untuk attendance_days
             $payload = [
                 'id_employee'    => $idEmployee,
                 'work_date'      => $workDate,
@@ -279,36 +483,43 @@ class AttendanceGroupingService
                 'verified_at'    => date('Y-m-d H:i:s')
             ];
 
-            // cek existing & insert/update
-            $existing = $this->dayM
-                ->where('id_employee', $idEmployee)
-                ->where('work_date', $workDate)
-                ->first();
-
-            if ($existing) {
-                $this->dayM->update($existing['id_attendance'], $payload);
+            $key = $idEmployee . '|' . $workDate;
+            if (isset($existingDaysMap[$key])) {
+                // prepare update: include id_attendance key
+                $payload['id_attendance'] = $existingDaysMap[$key]['id_attendance'];
+                $toUpdate[] = $payload;
             } else {
-                $this->dayM->insert($payload);
+                $toInsert[] = $payload;
             }
+        }
 
-            $processed++;
+        // 9. Batch write (transaction)
+        $this->db->transStart();
+
+        if (!empty($toInsert)) {
+            // insertBatch expects array of arrays
+            $this->dayM->insertBatch($toInsert, true);
+        }
+        if (!empty($toUpdate)) {
+            // updateBatch needs index key name; ensure id_attendance exists in payload
+            $this->dayM->updateBatch($toUpdate, 'id_attendance');
         }
 
         $this->db->transComplete();
 
-        // ⬇⬇⬇  TAMBAHKAN BAGIAN INI  ⬇⬇⬇
         if ($this->db->transStatus() === false) {
-            // kalau transaksi gagal, balikin 0 (atau boleh lempar exception kalau mau)
             return 0;
         }
 
-        return $processed;
+        // return jumlah record changed (insert + update)
+        return count($toInsert) + count($toUpdate);
     }
 
-        /**
-         * Resolve id_employee berdasarkan log (nik / card_no).
-         * Silakan sesuaikan dengan struktur tabel employees kamu.
-         */
+
+    /**
+     * Resolve id_employee berdasarkan log (nik / card_no).
+     * Silakan sesuaikan dengan struktur tabel employees kamu.
+     */
     protected function resolveEmployeeId(array $logRow): ?int
     {
         // Prioritas 1: NIK

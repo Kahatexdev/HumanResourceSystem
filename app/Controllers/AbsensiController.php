@@ -418,30 +418,30 @@ class AbsensiController extends BaseController
         $resultsCount = 0;
 
         // 3) Grouping log -> attendance_days
-        try {
-            $groupSvc  = new \App\Services\AttendanceGroupingService();
-            log_message('debug', 'Before groupLogsToDays, mem: ' . memory_get_usage());
-            $daysCount = $groupSvc->groupLogsToDays($startDate, $endDate);
-            log_message('debug', 'After groupLogsToDays, mem: ' . memory_get_usage());
-        } catch (\Throwable $e) {
-            // log_message(
-            //     'error',
-            //     '[dataAbsensi] Error groupLogsToDays: {msg}',
-            //     ['msg' => $e->getMessage()]
-            // );
-        }
+        // try {
+        //     $groupSvc  = new \App\Services\AttendanceGroupingService();
+        //     log_message('debug', 'Before groupLogsToDays, mem: ' . memory_get_usage());
+        //     $daysCount = $groupSvc->groupLogsToDays($startDate, $endDate);
+        //     log_message('debug', 'After groupLogsToDays, mem: ' . memory_get_usage());
+        // } catch (\Throwable $e) {
+        //     // log_message(
+        //     //     'error',
+        //     //     '[dataAbsensi] Error groupLogsToDays: {msg}',
+        //     //     ['msg' => $e->getMessage()]
+        //     // );
+        // }
 
-        // 4) Hitung hasil kerja -> attendance_results
-        try {
-            $resultSvc    = new \App\Services\AttendanceResultService();
-            $resultsCount = $resultSvc->processRange($startDate, $endDate);
-        } catch (\Throwable $e) {
-            // log_message(
-            //     'error',
-            //     '[dataAbsensi] Error processRange: {msg}',
-            //     ['msg' => $e->getMessage()]
-            // );
-        }
+        // // 4) Hitung hasil kerja -> attendance_results
+        // try {
+        //     $resultSvc    = new \App\Services\AttendanceResultService();
+        //     $resultsCount = $resultSvc->processRange($startDate, $endDate);
+        // } catch (\Throwable $e) {
+        //     // log_message(
+        //     //     'error',
+        //     //     '[dataAbsensi] Error processRange: {msg}',
+        //     //     ['msg' => $e->getMessage()]
+        //     // );
+        // }
 
         // 5) Data untuk view
         $data = [
@@ -453,8 +453,8 @@ class AbsensiController extends BaseController
             'month'         => $bulanAbsen,
             'startDate'     => $startDate,
             'endDate'       => $endDate,
-            'daysCount'     => $daysCount,
-            'resultsCount'  => $resultsCount,
+            // 'daysCount'     => $daysCount,
+            // 'resultsCount'  => $resultsCount,
         ];
 
         return view(session()->get('role') . '/dataAbsensi', $data);
@@ -464,7 +464,7 @@ class AbsensiController extends BaseController
     public function detailAbsensi($month, $year)
     {
         $logAbsen = $this->absensiModel->getDetailLogAbsensi($month, $year);
-        dd($logAbsen);
+        // dd($logAbsen);
         $data = [
             'role' => session()->get('role'),
             'title' => 'Data Absensi',
@@ -477,6 +477,52 @@ class AbsensiController extends BaseController
         ];
         return view(session()->get('role') . '/detailAbsensi', $data);
     }
+
+    public function getDetailAbsensiAjax($month, $year)
+    {
+        $request = service('request');
+
+        $start  = $request->getPost('start');
+        $length = $request->getPost('length');
+        $search = $request->getPost('search')['value'];
+
+        $orderColIndex = $request->getPost('order')[0]['column'];
+        $orderDir      = $request->getPost('order')[0]['dir'];
+        $orderColumn   = $request->getPost('columns')[$orderColIndex]['data'];
+
+        // Ambil data dari model
+        $result = $this->absensiModel->getDetailLogAbsensiServer(
+            $month,
+            $year,
+            $start,
+            $length,
+            $search,
+            $orderColumn,
+            $orderDir
+        );
+
+        // Format output DataTables
+        $data = [];
+        foreach ($result['data'] as $r) {
+            $data[] = [
+                'terminal_id'  => $r['terminal_id'],
+                'nik'          => $r['nik'],
+                'employee_name' => $r['employee_name'],
+                'log_date'     => $r['log_date'],
+                'log_time'     => $r['log_time'],
+                'dept_card'    => $r['department'] . ' - ' . $r['card_no'],
+                'admin'        => $r['admin'],
+            ];
+        }
+
+        return $this->response->setJSON([
+            "draw"            => intval($request->getPost('draw')),
+            "recordsTotal"    => $result['total'],
+            "recordsFiltered" => $result['filtered'],
+            "data"            => $data
+        ]);
+    }
+
 
     public function upload()
     {
