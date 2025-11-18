@@ -894,22 +894,25 @@ class AbsensiController extends BaseController
     public function getKaryawanByTglAbsen()
     {
         $tglAbsen = $this->request->getGet('date');
+
         $sudahdiolah = $this->attendanceDayModel->getKaryawanByTglAbsen($tglAbsen);
         $logs = $this->absensiModel->getkaryawan($tglAbsen);
+
+        // Ambil semua nik dari sudah diolah
+        $nikSudah = array_column($sudahdiolah, 'nik');
         // dd($sudahdiolah, $logs);
         $karyawan = [];
+
         foreach ($logs as $data) {
             $nikLog = $data['nik'];
-            // dd($nik);
-            foreach ($sudahdiolah as $olah) {
-                // dd($olah);
-                $nikOlah = $olah['nik'];
-                if ($nikLog != $nikOlah) {
-                    $karyawan = $nikLog;
-                }
+
+            // Jika nik belum ada di sudah diolah → masukkan ke karyawan
+            if (!in_array($nikLog, $nikSudah)) {
+                $karyawan[] = $data; // atau $karyawan[] = $nikLog;
             }
         }
+
         // dd($karyawan);
-        // return $this->response->setJSON($karyawan);
+        return $this->response->setJSON($karyawan);
     }
 }
