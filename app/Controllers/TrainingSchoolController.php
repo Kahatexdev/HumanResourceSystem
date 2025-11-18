@@ -157,7 +157,7 @@ class TrainingSchoolController extends BaseController
             'active1' => 'active',
             'active2' => '',
             'active3' => '',
-            'karyawan' => $karyawan,
+            // 'karyawan' => $karyawan,
             'area' => $area,
             'bagian' => $bagian,
             'day' => $day,

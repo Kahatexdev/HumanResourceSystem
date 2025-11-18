@@ -553,13 +553,12 @@ class EmployeeController extends BaseController
             'created_at' => date('Y-m-d H:i:s'),
             'updated_at' => date('Y-m-d H:i:s')
         ];
-        
+
         if ($this->employeeModel->insert($data)) {
-            return redirect()->to(base_url($this->role. '/dataKaryawan'))->with('success', 'Employee data successfully saved.');
+            return redirect()->to(base_url($this->role . '/dataKaryawan'))->with('success', 'Employee data successfully saved.');
         } else {
             return redirect()->to(base_url($this->role . '/dataKaryawan'))->with('error', 'Failed to save employee data.');
         }
-        
     }
 
 
@@ -868,7 +867,7 @@ class EmployeeController extends BaseController
 
     public function exportPerArea($area)
     {
-        if($area === 'ALL') {
+        if ($area === 'ALL') {
             return redirect()->to(base_url($this->role . '/exportKaryawan'));
         }
 
@@ -1148,5 +1147,51 @@ class EmployeeController extends BaseController
         return redirect()
             ->to(base_url("{$this->role}/dataKaryawan/ALL"))
             ->with('error', 'Gagal memproses data karyawan. Silakan coba lagi.');
+    }
+
+    public function getKaryawanServerSide()
+    {
+        $request = service('request');
+
+        $draw   = $request->getGetPost('draw');
+        $start  = $request->getGetPost('start');
+        $length = $request->getGetPost('length');
+        $search = $request->getGetPost('search')['value'];
+        $area   = $request->getGetPost('area');
+
+        // QUERY DASAR
+        $builder = $this->employeeModel
+            ->select('employees.*, job_sections.job_section_name, factories.main_factory, factories.factory_name, employment_statuses.employment_status_name')
+            ->join('job_sections', 'job_sections.id_job_section = employees.id_job_section')
+            ->join('factories', 'factories.id_factory = employees.id_factory')
+            ->join('employment_statuses', 'employment_statuses.id_employment_status = employees.id_employment_status');
+
+        // FILTER AREA
+        if ($area !== 'ALL') {
+            $builder->where('employees.id_factory', $area);
+        }
+
+        // SEARCH FILTER
+        if ($search) {
+            $builder->groupStart()
+                ->like('employees.nik', $search)
+                ->orLike('employees.employee_code', $search)
+                ->orLike('employees.employee_name', $search)
+                ->groupEnd();
+        }
+
+        // TOTAL RECORDS
+        $totalRecords = $builder->countAllResults(false);
+
+        // LIMIT & ORDER
+        $records = $builder->orderBy('employees.employee_name', 'ASC')
+            ->findAll($length, $start);
+
+        return $this->response->setJSON([
+            'draw'            => intval($draw),
+            'recordsTotal'    => $totalRecords,
+            'recordsFiltered' => $totalRecords,
+            'data'            => $records
+        ]);
     }
 }

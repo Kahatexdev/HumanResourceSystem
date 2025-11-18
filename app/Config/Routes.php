@@ -296,6 +296,7 @@ $routes->group('/TrainingSchool', ['filter' => 'TrainingSchool'], function ($rou
     $routes->get('downloadTemplateKaryawan', 'EmployeeController::downloadTemplate');
     $routes->post('karyawanStoreImport', 'EmployeeController::upload');
     $routes->get('exportKaryawan/(:any)', 'EmployeeController::exportPerArea/$1');
+    $routes->post('getKaryawanServerSide', 'EmployeeController::getKaryawanServerSide');
 
     $routes->get('karyawanCreate', 'EmployeeController::create');
     $routes->post('karyawanStore', 'EmployeeController::store');

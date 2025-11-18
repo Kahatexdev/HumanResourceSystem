@@ -213,61 +213,7 @@
                                 <th>Status</th>
                                 <th>Aksi</th>
                             </thead>
-                            <tbody>
-                                <?php if (!empty($karyawan)) : ?>
-                                    <?php foreach ($karyawan as $karyawan) : ?>
-                                        <tr>
-                                            <!-- <td><?= $karyawan['id_employee'] ?></td> -->
-                                            <td><?= $karyawan['nik'] ?></td>
-                                            <td><?= $karyawan['employee_code'] ?></td>
-                                            <td><?= $karyawan['employee_name'] ?></td>
-                                            <td><?= $karyawan['shift'] ?></td>
 
-                                            <td><?= $karyawan['employment_status_name'] ?></td>
-
-                                            <td><?= $karyawan['job_section_name'] . ' - ' . $karyawan['main_factory'] . ' - ' . $karyawan['factory_name'] ?></td>
-                                            <input type="hidden" name="id_job_section" value="<?= $karyawan['id_job_section'] ?>">
-                                            <td><?= $karyawan['status'] ?></td>
-                                            <td>
-                                                <button
-                                                    class="btn btn-sm btn-info btn-edit-employee"
-                                                    data-id-employee="<?= $karyawan['id_employee'] ?>"
-                                                    data-nik="<?= $karyawan['nik'] ?>"
-                                                    data-kode-kartu="<?= $karyawan['employee_code'] ?>"
-                                                    data-nama-karyawan="<?= $karyawan['employee_name'] ?>"
-                                                    data-shift="<?= $karyawan['shift'] ?>"
-                                                    data-jenis-kelamin="<?= $karyawan['gender'] ?>"
-                                                    data-libur="<?= $karyawan['holiday'] ?>"
-                                                    data-libur-tambahan="<?= $karyawan['additional_holiday'] ?>"
-                                                    data-baju-id="<?= $karyawan['id_employment_status'] ?>"
-                                                    data-tgl-lahir="<?= $karyawan['date_of_birth'] ?>"
-                                                    data-tgl-masuk="<?= $karyawan['date_of_joining'] ?>"
-                                                    data-bagian-id="<?= $karyawan['id_job_section'] ?>"
-                                                    data-area-id="<?= $karyawan['id_factory'] ?>"
-                                                    data-status-aktif="<?= $karyawan['status'] ?>">
-                                                    Edit
-                                                </button>
-
-                                                <button class="btn bg-gradient-danger btn-sm"
-                                                    onclick="getEmployeeDataById('<?= $karyawan['id_employee'] ?>')">
-                                                    <i class="fas fa-user-slash text-lg opacity-10" aria-hidden="true" title="Former Employee"></i>
-                                                </button>
-
-                                                <!-- <form action="<?= base_url($role . '/formerEmployee') ?>" method="post">
-                                                    <input type="hidden" name="id_employee" value="<?= $karyawan['id_employee'] ?>">
-                                                    <button type="submit" class="btn bg-gradient-danger btn-sm">
-                                                        <i class="fas fa-user-slash text-lg opacity-10" aria-hidden="true" title="Former Employee"></i>
-                                                    </button>
-                                                </form> -->
-                                            </td>
-                                        </tr>
-                                    <?php endforeach ?>
-                                <?php else : ?>
-                                    <tr>
-                                        <td colspan="14" class="text-center">No Karyawan found</td>
-                                    </tr>
-                                <?php endif; ?>
-                            </tbody>
                         </table>
                     </div>
                 </div>
@@ -590,7 +536,70 @@
 <script>
     $(document).ready(function() {
         // Initialize DataTable with export options
-        $('#karyawanTable').DataTable({});
+        $('#karyawanTable').DataTable({
+            processing: true,
+            serverSide: true,
+            ajax: {
+                url: "<?= base_url($role . '/getKaryawanServerSide') ?>",
+                type: "POST",
+                data: {
+                    area: "<?= $area ?>"
+                }
+            },
+            columns: [{
+                    data: 'nik'
+                },
+                {
+                    data: 'employee_code'
+                },
+                {
+                    data: 'employee_name'
+                },
+                {
+                    data: 'shift'
+                },
+                {
+                    data: 'employment_status_name'
+                },
+                {
+                    data: null,
+                    render: (data) => data.job_section_name + " - " + data.main_factory + " - " + data.factory_name
+                },
+                {
+                    data: 'status'
+                },
+                {
+                    data: null,
+                    render: function(d) {
+                        return `
+                    <button class="btn btn-sm btn-info btn-edit-employee"
+                        data-id-employee="${d.id_employee}"
+                        data-nik="${d.nik}"
+                        data-kode-kartu="${d.employee_code}"
+                        data-nama-karyawan="${d.employee_name}"
+                        data-shift="${d.shift}"
+                        data-jenis-kelamin="${d.gender}"
+                        data-libur="${d.holiday}"
+                        data-libur-tambahan="${d.additional_holiday}"
+                        data-baju-id="${d.id_employment_status}"
+                        data-tgl-lahir="${d.date_of_birth}"
+                        data-tgl-masuk="${d.date_of_joining}"
+                        data-bagian-id="${d.id_job_section}"
+                        data-area-id="${d.id_factory}"
+                        data-status-aktif="${d.status}">
+                        Edit
+                    </button>
+
+                    <button class="btn bg-gradient-danger btn-sm"
+                        onclick="getEmployeeDataById('${d.id_employee}')">
+                        <i class="fas fa-user-slash"></i>
+                    </button>
+                `;
+                    }
+                }
+            ]
+        });
+
 
         // Flash message SweetAlerts
         <?php if (session()->getFlashdata('success')) : ?>
