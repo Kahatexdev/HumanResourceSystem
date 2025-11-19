@@ -53,6 +53,10 @@
 // Convenience URLs for JS
 $storeUrl  = base_url($role . '/storeShiftAssignment');
 $updateUrl = base_url($role . '/updateShiftAssignment');
+$deleteUrl = base_url($role . '/deleteShiftAssignment');
+$csrfName  = csrf_token();
+$csrfHash  = csrf_hash();
+
 ?>
 
 <div class="container-fluid py-4">
@@ -120,6 +124,7 @@ $updateUrl = base_url($role . '/updateShiftAssignment');
 
                             <!-- id hidden untuk edit -->
                             <input type="hidden" name="id_shift" id="id_shift">
+                            <input type="hidden" name="id_assignment" id="id_assignment"> <!-- TAMBAHAN -->
 
                             <!-- SECTION: Informasi Dasar -->
                             <div class="card card-section mb-3">
@@ -317,7 +322,6 @@ $updateUrl = base_url($role . '/updateShiftAssignment');
                                 </tr>
                             </thead>
                             <?php
-                            // ---- Grouping per karyawan (gunakan id_employee kalau ada) ----
                             $groups = [];
                             if (!empty($shift) && is_array($shift)) {
                                 foreach ($shift as $r) {
@@ -332,19 +336,20 @@ $updateUrl = base_url($role . '/updateShiftAssignment');
                                         ];
                                     }
                                     $groups[$empKey]['rows'][] = [
-                                        'id_shift'    => $r['id_shift'] ?? null,
-                                        'shift_name'  => $r['shift_name'] ?? '-',
-                                        'start_time'  => $r['start_time'] ?? '-',
-                                        'end_time'    => $r['end_time'] ?? '-',
-                                        'break_time'  => $r['break_time'] ?? '0',
-                                        'grace_min'   => $r['grace_min'] ?? '0',
+                                        'id_assignment'  => $r['id_assignment'] ?? null,   // <- penting
+                                        'id_shift'       => $r['id_shift'] ?? null,
+                                        'shift_name'     => $r['shift_name'] ?? '-',
+                                        'start_time'     => $r['start_time'] ?? '-',
+                                        'end_time'       => $r['end_time'] ?? '-',
+                                        'break_time'     => $r['break_time'] ?? '0',
+                                        'grace_min'      => $r['grace_min'] ?? '0',
+                                        'date_of_change' => $r['date_of_change'] ?? null,
+                                        'note'           => $r['note'] ?? null,
                                     ];
                                 }
                             }
-                            // Siapkan data JS untuk child rows
-                            $groupsForJs = $groups; // aman, kita encode JSON di bawah
+                            $groupsForJs = $groups;
                             ?>
-
                             <tbody>
                                 <?php if (!empty($groups)) : ?>
                                     <?php $no = 1;
@@ -355,7 +360,7 @@ $updateUrl = base_url($role . '/updateShiftAssignment');
                                                 return ($rr['shift_name'] . ' ' . $rr['start_time'] . ' ' . $rr['end_time'] . ' ' . $rr['break_time'] . ' ' . $rr['grace_min']);
                                             }, $g['rows']));
                                     ?>
-                                        <tr data-group-key="<?= esc($key) ?>">
+                                        <tr data-group-key="<?= esc($key) ?>" data-employee-id="<?= esc($g['id_employee'] ?? '') ?>">
                                             <td><?= $no++ ?></td>
                                             <td><?= esc($g['nik']) ?></td>
                                             <td><?= esc($g['employee_code']) ?></td>
@@ -374,13 +379,6 @@ $updateUrl = base_url($role . '/updateShiftAssignment');
 
                                                 <?php // contoh aksi di parent (opsional) 
                                                 ?>
-                                                <form action="<?= base_url($role . '/deleteShift') ?>" method="post" class="d-inline">
-                                                    <?= csrf_field() ?>
-                                                    <input type="hidden" name="id_employee" value="<?= esc($g['id_employee'] ?? '') ?>">
-                                                    <button type="submit" class="btn bg-gradient-danger" title="Hapus Data Shift ">
-                                                        <i class="fas fa-trash"></i>
-                                                    </button>
-                                                </form>
                                             </td>
 
                                             <!-- elemen tersembunyi agar search DataTables menemukan teks shift -->
@@ -436,12 +434,24 @@ $updateUrl = base_url($role . '/updateShiftAssignment');
     $(document).ready(function() {
 
         function toggleRemoveButtons() {
-            const total = $('#workGroupContainer .work-group-item').length;
-            if (total <= 1) {
-                $('#workGroupContainer .btn-remove-group').addClass('d-none');
-            } else {
-                $('#workGroupContainer .btn-remove-group').removeClass('d-none');
-            }
+            const $items = $('#workGroupContainer .work-group-item');
+            const total = $items.length;
+
+            $items.each(function(index) {
+                const $btn = $(this).find('.btn-remove-group');
+
+                if (index === 0) {
+                    // baris pertama: selalu sembunyikan tombol hapus
+                    $btn.addClass('d-none');
+                } else {
+                    // baris kedua dst:
+                    if (total > 1) {
+                        $btn.removeClass('d-none');
+                    } else {
+                        $btn.addClass('d-none');
+                    }
+                }
+            });
         }
 
         // awal: kalau cuma 1 row, hide tombol hapus
@@ -472,21 +482,19 @@ $updateUrl = base_url($role . '/updateShiftAssignment');
         });
 
         // Optional: reset ke 1 group setiap modal dibuka
-        $('#addShiftAssignment').on('show.bs.modal', function() {
-            const $container = $('#workGroupContainer');
-            const $first = $container.find('.work-group-item').first().clone();
+        // $('#addShiftAssignment').on('show.bs.modal', function() {
+        //     const $container = $('#workGroupContainer');
+        //     const $first = $container.find('.work-group-item').first().clone();
 
-            // clear value
-            $first.find('input[type="time"]').val('');
-            $first.find('input[type="number"]').val(0);
+        //     // clear value
+        //     $first.find('input[type="time"]').val('');
+        //     $first.find('input[type="number"]').val(0);
 
-            $container.html($first);
-            toggleRemoveButtons();
-        });
+        //     $container.html($first);
+        //     toggleRemoveButtons();
+        // });
     });
-</script>
 
-<script>
     document.addEventListener('DOMContentLoaded', function() {
         const msgSuccess = <?= json_encode(session()->getFlashdata('success')) ?>;
         const msgError = <?= json_encode(session()->getFlashdata('error')) ?>;
@@ -533,63 +541,86 @@ $updateUrl = base_url($role . '/updateShiftAssignment');
             });
         }
     });
-</script>
 
-<script>
     $(function() {
         // Data grup dari PHP -> JS
         const groups = <?= json_encode($groupsForJs, JSON_UNESCAPED_UNICODE) ?>;
+        const updateUrl = '<?= esc($updateUrl, 'js') ?>';
+        const deleteUrl = '<?= esc($deleteUrl, 'js') ?>';
+        const csrfName = '<?= esc($csrfName, 'js') ?>';
+        const csrfHash = '<?= esc($csrfHash, 'js') ?>';
 
         // Helper: render HTML child table
         function renderChildHTML(group) {
             const rows = group.rows || [];
             let html = `
-            <div class="p-2">
-              <div class="fw-bold mb-2">Detail Shift: ${group.employee_name} (NIK: ${group.nik}, Kode: ${group.employee_code})</div>
-              <div class="table-responsive">
-                <table class="table table-sm table-bordered mb-0">
-                  <thead>
-                    <tr>
-                      <th style="width:26%">Nama Shift</th>
-                      <th style="width:28%">Jam Kerja</th>
-                      <th style="width:18%">Istirahat (menit)</th>
-                      <th style="width:18%">Toleransi (menit)</th>
-                      <th style="width:10%">Aksi</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-        `;
+        <div class="p-2">
+          <div class="fw-bold mb-2">
+            Detail Shift: ${$('<div>').text(group.employee_name).html()}
+            (NIK: ${$('<div>').text(group.nik).html()},
+             Kode: ${$('<div>').text(group.employee_code).html()})
+          </div>
+          <div class="table-responsive">
+            <table class="table table-sm table-bordered mb-0">
+              <thead>
+                <tr>
+                  <th style="width:26%">Nama Shift</th>
+                  <th style="width:28%">Jam Kerja</th>
+                  <th style="width:12%">Istirahat</th>
+                  <th style="width:12%">Toleransi</th>
+                  <th style="width:10%">Aksi</th>
+                </tr>
+              </thead>
+              <tbody>
+    `;
+
             rows.forEach(rr => {
                 const jam = `${rr.start_time} - ${rr.end_time}`;
                 html += `
-                <tr>
-                  <td>${$('<div>').text(rr.shift_name).html()}</td>
-                  <td>${$('<div>').text(jam).html()}</td>
-                  <td>${$('<div>').text(rr.break_time).html()}</td>
-                  <td>${$('<div>').text(rr.grace_min).html()}</td>
-                  <td>
-                    <button type="button"
-                        class="btn btn-sm btn-info btn-edit-master-jam"
-                        data-id="${rr.id_shift ?? ''}"
-                        data-shift_name="${$('<div>').text(rr.shift_name).html()}"
-                        data-start="${rr.start_time ?? ''}"
-                        data-end="${rr.end_time ?? ''}"
-                        data-break="${rr.break_time ?? 0}"
-                        data-grace="${rr.grace_min ?? 0}">
-                        Edit
-                    </button>
-                  </td>
-                </tr>
-            `;
-            });
-            html += `
-                  </tbody>
-                </table>
-              </div>
-            </div>
+            <tr>
+              <td>${$('<div>').text(rr.shift_name).html()}</td>
+              <td>${$('<div>').text(jam).html()}</td>
+              <td>${$('<div>').text(rr.break_time).html()}</td>
+              <td>${$('<div>').text(rr.grace_min).html()}</td>
+              <td class="text-nowrap">
+                <button type="button"
+                    class="btn btn-sm btn-info btn-edit-assignment"
+                    data-assignment_id="${rr.id_assignment ?? ''}"
+                    data-shift_id="${rr.id_shift ?? ''}"
+                    data-start="${rr.start_time ?? ''}"
+                    data-end="${rr.end_time ?? ''}"
+                    data-break="${rr.break_time ?? 0}"
+                    data-grace="${rr.grace_min ?? 0}"
+                    data-effective="${rr.date_of_change ?? ''}"
+                    data-note="${$('<div>').text(rr.note ?? '').html()}"
+                    data-emp_id="${group.id_employee ?? ''}"
+                    data-emp_name="${$('<div>').text(group.employee_name).html()}">
+                    <i class="fas fa-edit"></i>
+                </button>
+
+                <form method="post" action="${deleteUrl}"
+                      class="d-inline form-delete-assignment"
+                      onsubmit="return confirm('Yakin hapus jam kerja ini?');">
+                  <input type="hidden" name="${csrfName}" value="${csrfHash}">
+                  <input type="hidden" name="id_assignment" value="${rr.id_assignment ?? ''}">
+                  <button type="submit" class="btn btn-sm btn-danger">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </form>
+              </td>
+            </tr>
         `;
+            });
+
+            html += `
+              </tbody>
+            </table>
+          </div>
+        </div>
+    `;
             return html;
         }
+
 
         const table = $('#shiftTable').DataTable({
             pageLength: 25,
@@ -650,10 +681,90 @@ $updateUrl = base_url($role . '/updateShiftAssignment');
         });
 
     });
-</script>
 
+    $(function() {
+        // Saat klik tombol "Jam Kerja" (tambah baru)
+        $('.add-btn').on('click', function() {
+            $('#formMasterJam').attr('action', '<?= esc($storeUrl, 'js') ?>');
+            $('#modalTitleJam').html('<i class="bi bi-clock-history"></i> Tambah Shift / Jam Kerja');
 
-<script>
+            $('#id_shift').val('');
+            $('#id_assignment').val('');
+            $('#effective_date').val('');
+            $('#note').val('');
+
+            $('#employee_ids').prop('disabled', false);
+            $('#employee_ids').val(null).trigger('change');
+
+            const $container = $('#workGroupContainer');
+            const $first = $container.find('.work-group-item').first();
+            $first.find('input[type="time"]').val('');
+            $first.find('input[name="break_time[]"]').val(0);
+            $first.find('input[name="grace_min[]"]').val(0);
+            $container.html($first);
+            // toggleRemoveButtons();
+        });
+
+        // Saat klik tombol Edit di child row
+        $('#shiftTable').on('click', '.btn-edit-assignment', function() {
+            const idAssignment = $(this).data('assignment_id');
+            const idShift = $(this).data('shift_id');
+            const start = $(this).data('start');
+            const end = $(this).data('end');
+            const brk = $(this).data('break');
+            const grace = $(this).data('grace');
+            const effective = $(this).data('effective');
+            const note = $(this).data('note');
+
+            const empId = $(this).data('emp_id') || '';
+            const empName = $(this).data('emp_name') || '';
+
+            // console.log('empId, empName = ', empId, empName);
+
+            // set form ke UPDATE
+            $('#formMasterJam').attr('action', '<?= esc($updateUrl, 'js') ?>');
+            $('#modalTitleJam').html('<i class="bi bi-pencil-square"></i> Edit Shift / Jam Kerja');
+
+            $('#id_shift').val(idShift);
+            $('#id_assignment').val(idAssignment);
+            $('#effective_date').val(effective || '');
+            $('#note').val(note || '');
+
+            // --- isi Select2 dengan nama karyawan yang lagi diedit ---
+            $('#employee_ids').empty();
+
+            if (empName) {
+                // kalau empId kosong, pakai value fallback saja
+                const valueForSelect2 = empId ? String(empId) : 'emp-' + empName.replace(/\s+/g, '_');
+
+                const opt = new Option(empName, valueForSelect2, true, true);
+                $('#employee_ids').append(opt).trigger('change');
+            } else {
+                $('#employee_ids').val(null).trigger('change');
+            }
+
+            // kunci select karyawan saat edit (nggak boleh ganti di sini)
+            $('#employee_ids').prop('disabled', true);
+
+            // reset workGroupContainer -> hanya 1 row isi dari data yang diedit
+            const $container = $('#workGroupContainer');
+            const $first = $container.find('.work-group-item').first();
+            $first.find('input[name="start_time[]"]').val(start || '');
+            $first.find('input[name="end_time[]"]').val(end || '');
+            $first.find('input[name="break_time[]"]').val(brk || 0);
+            $first.find('input[name="grace_min[]"]').val(grace || 0);
+            $container.html($first);
+            // toggleRemoveButtons();
+
+            const modal = new bootstrap.Modal(document.getElementById('addShiftAssignment'));
+            modal.show();
+        });
+
+        $('#addShiftAssignment').on('hidden.bs.modal', function() {
+            $('#employee_ids').prop('disabled', false);
+        });
+    });
+
     const fileInput = document.getElementById('file-upload');
     const uploadArea = document.getElementById('upload-area');
 

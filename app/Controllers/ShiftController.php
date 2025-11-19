@@ -203,6 +203,201 @@ class ShiftController extends BaseController
             ->with('success', 'Shift / jam kerja berhasil disimpan untuk ' . $totalKaryawan . ' karyawan.');
     }
 
+    public function updateShiftAssignment()
+    {
+        $role = session()->get('role');
+
+        $idAssignment = (int) $this->request->getPost('id_assignment');
+
+        $startTimes = (array) $this->request->getPost('start_time');
+        $endTimes   = (array) $this->request->getPost('end_time');
+        $breakTimes = (array) $this->request->getPost('break_time');
+        $graceMins  = (array) $this->request->getPost('grace_min');
+
+        $effectiveDate  = $this->request->getPost('effective_date') ?: date('Y-m-d');
+        $note           = $this->request->getPost('note') ?: null;
+
+        $errors = [];
+
+        if (! $idAssignment) {
+            $errors[] = 'ID assignment tidak valid.';
+        }
+
+        // Ambil data assignment lama untuk tahu id_employee
+        $oldAssign = $this->shiftAssignM->find($idAssignment);
+        if (! $oldAssign) {
+            $errors[] = 'Data jam kerja yang akan diedit tidak ditemukan.';
+        }
+
+        // Kumpulkan semua baris yang terisi
+        $rows = [];
+        foreach ($startTimes as $idx => $start) {
+            $start = trim((string) $start);
+            $end   = trim((string) ($endTimes[$idx] ?? ''));
+
+            // Kalau dua-duanya kosong, skip (baris kosong)
+            if ($start === '' && $end === '') {
+                continue;
+            }
+
+            // Kalau salah satu kosong → error
+            if ($start === '' || $end === '') {
+                $errors[] = "Baris " . ($idx + 1) . ": Jam masuk dan jam pulang wajib diisi.";
+                continue;
+            }
+
+            $break = (int) ($breakTimes[$idx] ?? 0);
+            $grace = (int) ($graceMins[$idx] ?? 0);
+
+            $rows[] = [
+                'start' => $start,
+                'end'   => $end,
+                'break' => $break,
+                'grace' => $grace,
+                'row_no' => $idx + 1,
+            ];
+        }
+
+        if (empty($rows)) {
+            $errors[] = 'Minimal isi satu pola jam kerja.';
+        }
+
+        if (! empty($errors)) {
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'Edit jam kerja gagal.')
+                ->with('error_detail', $errors);
+        }
+
+        // Cek kombinasi di master shift_defs untuk semua baris
+        $notFound = [];
+        $shiftIds = []; // index sesuai $rows
+
+        foreach ($rows as $i => $r) {
+            $shiftMaster = $this->shiftDeftM
+                ->where('start_time', $r['start'])
+                ->where('end_time', $r['end'])
+                ->where('break_time', $r['break'])
+                ->where('grace_min', $r['grace'])
+                ->first();
+
+            if (! $shiftMaster) {
+                $notFound[] = "Baris {$r['row_no']}: Masuk {$r['start']}, Pulang {$r['end']}, Istirahat {$r['break']} menit, Toleransi {$r['grace']} menit belum terdaftar di Master Jam Kerja.";
+            } else {
+                $shiftIds[$i] = (int) $shiftMaster['id_shift'];
+            }
+        }
+
+        if (! empty($notFound)) {
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'Beberapa kombinasi jam kerja belum terdaftar di Master Jam Kerja.')
+                ->with('error_detail', $notFound);
+        }
+
+        // Sampai sini, semua kombinasi aman di master
+        $this->db = db_connect();
+        $this->db->transStart();
+
+        try {
+            // 1) UPDATE assignment lama pakai baris pertama
+            $firstShiftId = $shiftIds[0];
+
+            $this->shiftAssignM->update($idAssignment, [
+                'id_shift'       => $firstShiftId,
+                'date_of_change' => $effectiveDate,
+                'note'           => $note,
+                'updated_at'     => date('Y-m-d H:i:s'),
+            ]);
+
+            // 2) INSERT assignment baru untuk baris tambahan (jika ada)
+            $idEmployee = (int) $oldAssign['id_employee'];
+            $userId     = session()->get('id_user');
+
+            if (count($rows) > 1) {
+                $batchInsert = [];
+                foreach ($rows as $i => $r) {
+                    // skip baris pertama (sudah diupdate)
+                    if ($i === 0) {
+                        continue;
+                    }
+
+                    $batchInsert[] = [
+                        'id_employee'    => $idEmployee,
+                        'id_shift'       => $shiftIds[$i],
+                        'date_of_change' => $effectiveDate,
+                        'note'           => $note,
+                        'created_by'     => $userId,
+                        'created_at'     => date('Y-m-d H:i:s'),
+                    ];
+                }
+
+                if (! empty($batchInsert)) {
+                    $this->shiftAssignM->insertBatch($batchInsert);
+                }
+            }
+
+            $this->db->transComplete();
+
+            if ($this->db->transStatus() === false) {
+                throw new \RuntimeException('Transaksi edit gagal.');
+            }
+
+            $tambahan = max(0, count($rows) - 1);
+            $msg = 'Jam kerja karyawan berhasil diupdate.';
+            if ($tambahan > 0) {
+                $msg .= " Ditambahkan {$tambahan} jam kerja baru.";
+            }
+
+            return redirect()->back()
+                ->with('success', $msg);
+        } catch (\Throwable $e) {
+            $this->db->transRollback();
+            log_message('error', '[ShiftAssignment] Gagal update: {msg}', [
+                'msg' => $e->getMessage(),
+            ]);
+
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'Terjadi kesalahan saat mengupdate jam kerja.')
+                ->with('error_detail', [
+                    'Silakan coba lagi beberapa saat lagi.',
+                    'Jika masalah berlanjut, hubungi tim IT.'
+                ]);
+        }
+    }
+
+    public function deleteShiftAssignment()
+    {
+        $role = session()->get('role') ?? 'Absensi';
+
+        $idAssignment = (int) $this->request->getPost('id_assignment');
+
+        if (! $idAssignment) {
+            return redirect()->back()
+                ->with('error', 'ID assignment tidak valid.');
+        }
+
+        try {
+            $this->shiftAssignM->delete($idAssignment);
+
+            return redirect()->back()
+                ->with('success', 'Jam kerja karyawan berhasil dihapus.');
+        } catch (\Throwable $e) {
+            log_message('error', '[ShiftAssignment] Gagal delete: {msg}', [
+                'msg' => $e->getMessage(),
+            ]);
+
+            return redirect()->back()
+                ->with('error', 'Terjadi kesalahan saat menghapus jam kerja.')
+                ->with('error_detail', [
+                    'Silakan coba lagi beberapa saat lagi.',
+                    'Jika masalah berlanjut, hubungi tim IT.'
+                ]);
+        }
+    }
+
+
 
     public function downloadTemplate()
     {

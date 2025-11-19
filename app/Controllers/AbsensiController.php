@@ -52,32 +52,6 @@ class AbsensiController extends BaseController
     {
         $TtlKaryawan = $this->employeeModel->where('status', 'active')->countAll();
         $PerpindahanBulanIni = $this->historyPindahKaryawanModel->where('MONTH(date_of_change)', date('m'))->countAllResults();
-        $dataKaryawan = $this->employeeModel->getActiveKaryawanByBagiaAndArea();
-        // dd($dataKaryawan);
-        // Group data berdasarkan area_utama
-        $groupedData = [];
-        foreach ($dataKaryawan as $row) {
-            $groupedData[$row['main_factory']][] = $row;
-        }
-
-        // Sort berdasarkan angka setelah 'KK'
-        uksort($groupedData, function ($a, $b) {
-            return (int) filter_var($a, FILTER_SANITIZE_NUMBER_INT) <=> (int) filter_var($b, FILTER_SANITIZE_NUMBER_INT);
-        });
-
-        $totalKaryawan = 0;
-        foreach ($dataKaryawan as $row) {
-            $totalKaryawan += $row['jumlah_karyawan'];
-        }
-
-        $dataPindah = $this->historyPindahKaryawanModel->getPindahGroupedByDate();
-        // dd($dataPindah);
-        $labelsKar = [];
-        $valuesKar = [];
-        foreach ($dataPindah as $row) {
-            $labelsKar[] = $row['tgl'];
-            $valuesKar[] = (int)$row['jumlah'];
-        }
 
         return view($this->role . '/index', [
             'role' => $this->role,
@@ -86,10 +60,7 @@ class AbsensiController extends BaseController
             'active2' => '',
             'active3' => '',
             'TtlKaryawan' => $TtlKaryawan,
-            'PerpindahanBulanIni' => $PerpindahanBulanIni,
-            'groupedData' => $groupedData,
-            'labelsKar' => $labelsKar,
-            'valuesKar' => $valuesKar
+            'PerpindahanBulanIni' => $PerpindahanBulanIni
         ]);
     }
 
@@ -781,69 +752,36 @@ class AbsensiController extends BaseController
         }
     }
 
-
-    public function promote()
+    public function promoteView()
     {
-        $role = session()->get('role');
-
-        $dateFrom = $this->request->getPost('date_from');
-        $dateTo   = $this->request->getPost('date_to') ?: $dateFrom;
-
-        // 1) Jalankan grouping
-        $processed = $this->groupSvc->groupLogsToDays($dateFrom, $dateTo);
-
-        // 2) Ambil data attendance_days yang sudah ada di range tanggal tsb
-        $days = $this->dayM
-            ->select('attendance_days.*, e.nik, e.full_name, s.shift_name')
-            ->join('employees e', 'e.id_employee = attendance_days.id_employee', 'left')
-            ->join('shift_defs s', 's.id_shift = attendance_days.id_shift', 'left')
-            ->where('work_date >=', $dateFrom)
-            ->where('work_date <=', $dateTo)
-            ->orderBy('work_date', 'ASC')
-            ->orderBy('e.nik', 'ASC')
-            ->findAll();
+        $dateFrom = $this->request->getGet('date_from');
+        $dateTo   = $this->request->getGet('date_to') ?: $dateFrom;
 
         $data = [
-            'role'      => $role,
-            'title'     => 'Promote Form',
-            'active1'   => '',
-            'active2'   => '',
-            'active3'   => 'active',
-            'date_from' => $dateFrom,
-            'date_to'   => $dateTo,
-            'processed' => $processed,
-            'days'      => $days,
+            'role'         => session()->get('role'),
+            'title'        => 'Promote Form',
+            'active1'      => '',
+            'active2'      => '',
+            'active3'      => 'active',
+            'date_from'    => $dateFrom,
+            'date_to'      => $dateTo,
+            // card summary ambil dari flash hasil POST sebelumnya
+            'processed'    => session()->getFlashdata('processed'),
+            'resProcessed' => session()->getFlashdata('resProcessed'),
+            // table sekarang selalu server-side, jadi tidak perlu kirim data ke view
+            'days'         => [],
         ];
-
-        return view($role . '/Attendance/promote_form', $data);
-    }
-
-    /**
-     * Halaman form sederhana untuk pilih tanggal yang mau diproses
-     */
-    public function promoteForm()
-    {
-        $data = [
-            'role'      => session()->get('role'),
-            'title'     => 'Promote Form',
-            'active1'   => '',
-            'active2'   => '',
-            'active3'   => 'active',
-            // default kosong
-            'date_from' => null,
-            'date_to'   => null,
-            'processed' => null,
-            'days'      => [],
-        ];
+        // dd ($data);
         return view(session()->get('role') . '/Attendance/promote_form', $data);
     }
 
-    /**
-     * Proses grouping log -> attendance_days
-     */
     public function promoteSubmit()
     {
         $role = session()->get('role');
+        // if ($this->request->getMethod() !== 'post') {
+        //     return redirect()->to(base_url($role . '/attendance/promote'));
+        // }
+
         $dateFrom = $this->request->getPost('date_from');
         $dateTo   = $this->request->getPost('date_to') ?: $dateFrom;
 
@@ -852,52 +790,220 @@ class AbsensiController extends BaseController
         }
 
         // 1) Jalankan service grouping: logs → attendance_days
-        $groupSvc     = service('attendanceGrouping'); // pastikan sudah di Config\Services
-        $daysCount    = $groupSvc->groupLogsToDays($dateFrom, $dateTo);
-
+        $groupSvc  = new \App\Services\AttendanceGroupingService();
+        $daysCount = $groupSvc->groupLogsToDays($dateFrom, $dateTo);
         // 2) Hitung hasil kerja: attendance_days → attendance_results
         $resultSvc    = new \App\Services\AttendanceResultService();
         $resultsCount = $resultSvc->processRange($dateFrom, $dateTo);
+        // dd ($dateFrom, $dateTo, $daysCount, $resultsCount);
 
-        // Ambil data hasil grouping
-        // 3) Ambil data hasil grouping + result untuk ditampilkan
-        $dayM = new \App\Models\AttendanceDayModel();
-        $days = $dayM
+        // Tidak lagi ambil semua data di sini.
+        // View akan load data via DataTables server-side.
+
+        return redirect()
+            ->to(base_url($role . '/attendance/promote?date_from=' . $dateFrom . '&date_to=' . $dateTo))
+            ->with('success', 'Kalkulasi absensi selesai.')
+            ->with('processed', $daysCount)
+            ->with('resProcessed', $resultsCount);
+    }
+
+    public function promoteData()
+    {
+        $role = session()->get('role');
+        if (! $this->request->isAJAX()) {
+            throw PageNotFoundException::forPageNotFound();
+        }
+
+        $dateFrom = $this->request->getGet('date_from');
+        $dateTo   = $this->request->getGet('date_to') ?: $dateFrom;
+
+        // Kalau belum pilih tanggal, balikin kosong saja
+        if (empty($dateFrom)) {
+            return $this->response->setJSON([
+                'draw'            => (int) ($this->request->getGet('draw') ?? 1),
+                'recordsTotal'    => 0,
+                'recordsFiltered' => 0,
+                'data'            => [],
+            ]);
+        }
+        
+        $draw   = (int) ($this->request->getGet('draw') ?? 1);
+        $start  = (int) ($this->request->getGet('start') ?? 0);
+        $length = (int) ($this->request->getGet('length') ?? 10);
+
+        $searchValue = $this->request->getGet('search')['value'] ?? '';
+
+        $orderColumnIndex = (int) ($this->request->getGet('order')[0]['column'] ?? 1);
+        $orderDir         = $this->request->getGet('order')[0]['dir'] ?? 'asc';
+
+        // Mapping kolom sesuai urutan di DataTables
+        $columns = [
+            0  => 'attendance_days.id_attendance', // #
+            1  => 'attendance_days.work_date',
+            2  => 'e.nik',
+            3  => 'e.employee_name',
+            4  => 's.shift_name',
+            5  => 'attendance_days.in_time',
+            6  => 'attendance_days.break_out_time',
+            7  => 'attendance_days.break_in_time',
+            8  => 'attendance_days.out_time',
+            9  => 'r.total_work_min',
+            10 => 'r.total_break_min',
+            11 => 'r.late_min',
+            12 => 'r.early_leave_min',
+            13 => 'r.overtime_min',
+            14 => 'r.status_code',
+        ];
+
+        $orderColumn = $columns[$orderColumnIndex] ?? 'attendance_days.work_date';
+
+        $dayM = new AttendanceDayModel();
+        $db   = $dayM->db; // atau db_connect()
+
+        // Base query
+        $builder = $db->table('attendance_days')
             ->select('
-            attendance_days.*,
-            e.nik,
-            e.employee_name,
-            s.shift_name,
-            r.total_work_min,
-            r.total_break_min,
-            r.late_min,
-            r.early_leave_min,
-            r.overtime_min,
-            r.status_code
-        ')
+                attendance_days.id_attendance,
+                attendance_days.work_date,
+                attendance_days.in_time,
+                attendance_days.break_out_time,
+                attendance_days.break_in_time,
+                attendance_days.out_time,
+                e.nik,
+                e.employee_name,
+                s.shift_name,
+                s.id_shift,
+                r.total_work_min,
+                r.total_break_min,
+                r.late_min,
+                r.early_leave_min,
+                r.overtime_min,
+                r.status_code
+            ')
             ->join('employees e', 'e.id_employee = attendance_days.id_employee', 'left')
             ->join('shift_defs s', 's.id_shift = attendance_days.id_shift', 'left')
             ->join('attendance_results r', 'r.id_attendance = attendance_days.id_attendance', 'left')
-            ->where('work_date >=', $dateFrom)
-            ->where('work_date <=', $dateTo)
-            ->orderBy('work_date', 'ASC')
-            ->orderBy('e.nik', 'ASC')
-            ->findAll();
+            ->where('attendance_days.work_date >=', $dateFrom)
+            ->where('attendance_days.work_date <=', $dateTo);
 
-        $data = [
-            'role'        => $role,
-            'title'       => 'Promote Form',
-            'active1'     => '',
-            'active2'     => '',
-            'active3'     => 'active',
-            'date_from'   => $dateFrom,
-            'date_to'     => $dateTo,
-            'processed'   => $daysCount,
-            'resProcessed' => $resultsCount,
-            'days'        => $days,
-        ];
+        // Total tanpa filter search
+        $builderTotal = clone $builder;
+        $recordsTotal = $builderTotal->countAllResults();
 
-        return view($role . '/Attendance/promote_form', $data);
+        // Filtering search (nik, nama, tanggal)
+        if ($searchValue !== '') {
+            $builder->groupStart()
+                ->like('e.nik', $searchValue)
+                ->orLike('e.employee_name', $searchValue)
+                ->orLike('attendance_days.work_date', $searchValue)
+                ->groupEnd();
+        }
+
+        // Total setelah filter search
+        $builderFiltered   = clone $builder;
+        $recordsFiltered   = $builderFiltered->countAllResults();
+
+        // Order, limit, offset
+        $builder->orderBy($orderColumn, $orderDir)
+            ->limit($length, $start);
+
+        $query = $builder->get();
+        $rows  = $query->getResultArray();
+
+        $data  = [];
+        $no    = $start + 1;
+
+        foreach ($rows as $row) {
+            $status     = $row['status_code'] ?? '-';
+            $badgeClass = 'bg-gradient-secondary';
+            if ($status === 'PRESENT') {
+                $badgeClass = 'bg-gradient-info';
+            } elseif ($status === 'LATE') {
+                $badgeClass = 'bg-gradient-danger';
+            } elseif ($status === 'L') {
+                $badgeClass = 'bg-gradient-warning';
+            }
+
+            $statusHtml = '<span class="badge ' . $badgeClass . ' px-3">'
+                . esc($status)
+                . '</span>';
+
+            $shiftLabel = esc($row['shift_name'] ?? ($row['id_shift'] ?? '-'));
+            $shiftHtml  = '<span class="badge bg-gradient-secondary">'
+                . $shiftLabel
+                . '</span>';
+
+            // Sesuaikan HTML sama view-mu (icon, time-badge, etc)
+            $data[] = [
+                // #
+                '<span class="text-xs text-secondary">' . $no++ . '</span>',
+
+                // Tanggal
+                '<span class="d-flex align-items-center">
+                    <i class="fas fa-calendar-alt text-muted me-2"></i>'
+                    . esc($row['work_date']) .
+                    '</span>',
+
+                // NIK
+                esc($row['nik'] ?? '-'),
+
+                // Nama
+                esc($row['employee_name'] ?? '-'),
+
+                // Shift
+                $shiftHtml,
+
+                // Masuk
+                '<span class="time-badge">' . esc($row['in_time'] ?? '-') . '</span>',
+
+                // Istirahat
+                '<span class="time-badge">' . esc($row['break_out_time'] ?? '-') . '</span>',
+
+                // Kembali
+                '<span class="time-badge">' . esc($row['break_in_time'] ?? '-') . '</span>',
+
+                // Pulang
+                '<span class="time-badge">' . esc($row['out_time'] ?? '-') . '</span>',
+
+                // Kerja
+                '<span class="metric-positive text-xs">'
+                    . esc($row['total_work_min'] ?? 0) . ' <small>m</small>'
+                    . '</span>',
+
+                // Break
+                '<span class="metric-neutral text-xs">'
+                    . esc($row['total_break_min'] ?? 0) . ' <small>m</small>'
+                    . '</span>',
+
+                // Telat
+                '<span class="metric-negative text-xs">'
+                    . (($row['late_min'] ?? 0) > 0 ? '<i class="fas fa-arrow-up me-1"></i>' : '')
+                    . esc($row['late_min'] ?? 0) . ' <small>m</small>'
+                    . '</span>',
+
+                // Pulang cepat
+                '<span class="metric-negative text-xs">'
+                    . (($row['early_leave_min'] ?? 0) > 0 ? '<i class="fas fa-arrow-up me-1"></i>' : '')
+                    . esc($row['early_leave_min'] ?? 0) . ' <small>m</small>'
+                    . '</span>',
+
+                // Lembur
+                '<span class="metric-positive text-xs">'
+                    . (($row['overtime_min'] ?? 0) > 0 ? '<i class="fas fa-plus-circle me-1"></i>' : '')
+                    . esc($row['overtime_min'] ?? 0) . ' <small>m</small>'
+                    . '</span>',
+
+                // Status
+                $statusHtml,
+            ];
+        }
+
+        return $this->response->setJSON([
+            'draw'            => $draw,
+            'recordsTotal'    => $recordsTotal,
+            'recordsFiltered' => $recordsFiltered,
+            'data'            => $data,
+        ]);
     }
 
     public function reportDataAbsensi()

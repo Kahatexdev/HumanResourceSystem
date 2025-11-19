@@ -238,143 +238,66 @@
     <?php endif; ?>
 
     <!-- Attendance Data Table -->
-    <?php if (!empty($days)): ?>
-        <div class="card border-radius-xl shadow-sm">
-            <div class="card-header pb-0">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="mb-0">
-                            <i class="fas fa-table text-info me-2"></i>
-                            Detail Data Absensi
-                        </h6>
-                        <p class="text-xs text-muted mb-0">
-                            Menampilkan data hasil kalkulasi dalam rentang tanggal terpilih
-                        </p>
-                    </div>
-                    <div class="text-end">
-                        <span class="badge bg-gradient-info">
-                            <?= count($days) ?> Records
-                        </span>
-                    </div>
+    <!-- Attendance Data Table -->
+    <div class="card border-radius-xl shadow-sm">
+        <div class="card-header pb-0">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="mb-0">
+                        <i class="fas fa-table text-info me-2"></i>
+                        Detail Data Absensi
+                    </h6>
+                    <p class="text-xs text-muted mb-0">
+                        Menampilkan data hasil kalkulasi dalam rentang tanggal terpilih
+                    </p>
                 </div>
-            </div>
-            <div class="card-body px-0 pt-0 pb-2">
-                <div class="table-responsive">
-                    <table class="table align-items-center mb-0 table-soft">
-                        <thead>
-                            <tr>
-                                <th class="text-center">#</th>
-                                <th>Tanggal</th>
-                                <th>NIK</th>
-                                <th>Nama Karyawan</th>
-                                <th>Shift</th>
-                                <th class="text-center">Masuk</th>
-                                <th class="text-center">Istirahat</th>
-                                <th class="text-center">Kembali</th>
-                                <th class="text-center">Pulang</th>
-                                <th class="text-end">Kerja</th>
-                                <th class="text-end">Break</th>
-                                <th class="text-end">Telat</th>
-                                <th class="text-end">P.Cepat</th>
-                                <th class="text-end">Lembur</th>
-                                <th class="text-center">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php $no = 1; ?>
-                            <?php foreach ($days as $row): ?>
-                                <tr>
-                                    <td class="text-center text-xs text-secondary">
-                                        <?= $no++ ?>
-                                    </td>
-                                    <td class="text-sm">
-                                        <span class="d-flex align-items-center">
-                                            <i class="fas fa-calendar-alt text-muted me-2"></i>
-                                            <?= esc($row['work_date']) ?>
-                                        </span>
-                                    </td>
-                                    <td class="text-sm font-weight-bolder">
-                                        <?= esc($row['nik'] ?? '-') ?>
-                                    </td>
-                                    <td class="text-sm">
-                                        <?= esc($row['employee_name'] ?? '-') ?>
-                                    </td>
-                                    <td class="text-sm">
-                                        <span class="badge bg-gradient-secondary">
-                                            <?= esc($row['shift_name'] ?? ($row['id_shift'] ?? '-')) ?>
-                                        </span>
-                                    </td>
-                                    <td class="text-center text-xs">
-                                        <span class="time-badge">
-                                            <?= esc($row['in_time'] ?? '-') ?>
-                                        </span>
-                                    </td>
-                                    <td class="text-center text-xs">
-                                        <span class="time-badge">
-                                            <?= esc($row['break_out_time'] ?? '-') ?>
-                                        </span>
-                                    </td>
-                                    <td class="text-center text-xs">
-                                        <span class="time-badge">
-                                            <?= esc($row['break_in_time'] ?? '-') ?>
-                                        </span>
-                                    </td>
-                                    <td class="text-center text-xs">
-                                        <span class="time-badge">
-                                            <?= esc($row['out_time'] ?? '-') ?>
-                                        </span>
-                                    </td>
-                                    <td class="text-end text-xs metric-positive">
-                                        <?= esc($row['total_work_min'] ?? 0) ?> <small>m</small>
-                                    </td>
-                                    <td class="text-end text-xs metric-neutral">
-                                        <?= esc($row['total_break_min'] ?? 0) ?> <small>m</small>
-                                    </td>
-                                    <td class="text-end text-xs metric-negative">
-                                        <?php if (($row['late_min'] ?? 0) > 0): ?>
-                                            <i class="fas fa-arrow-up me-1"></i>
-                                        <?php endif; ?>
-                                        <?= esc($row['late_min'] ?? 0) ?> <small>m</small>
-                                    </td>
-                                    <td class="text-end text-xs metric-negative">
-                                        <?php if (($row['early_leave_min'] ?? 0) > 0): ?>
-                                            <i class="fas fa-arrow-up me-1"></i>
-                                        <?php endif; ?>
-                                        <?= esc($row['early_leave_min'] ?? 0) ?> <small>m</small>
-                                    </td>
-                                    <td class="text-end text-xs metric-positive">
-                                        <?php if (($row['overtime_min'] ?? 0) > 0): ?>
-                                            <i class="fas fa-plus-circle me-1"></i>
-                                        <?php endif; ?>
-                                        <?= esc($row['overtime_min'] ?? 0) ?> <small>m</small>
-                                    </td>
-                                    <td class="text-center text-xs">
-                                        <?php
-                                        $status    = $row['status_code'] ?? '-';
-                                        $badgeClass = 'bg-gradient-secondary';
-                                        if ($status === 'H') $badgeClass = 'bg-gradient-success';
-                                        elseif ($status === 'A') $badgeClass = 'bg-gradient-danger';
-                                        elseif ($status === 'L') $badgeClass = 'bg-gradient-warning';
-                                        ?>
-                                        <span class="badge <?= $badgeClass ?> px-3">
-                                            <?= esc($status) ?>
-                                        </span>
-                                    </td>
-                                </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
+                <div class="text-end">
+                    <span class="badge bg-gradient-info" id="js-record-count">
+                        0 Records
+                    </span>
                 </div>
-            </div>
-            <div class="card-footer d-flex justify-content-between align-items-center pt-0">
-                <p class="text-xs text-muted mb-0">
-                    <i class="fas fa-info-circle me-1"></i>
-                    Menampilkan <strong><?= count($days) ?></strong> data absensi dalam rentang tanggal yang diproses
-                </p>
             </div>
         </div>
-    <?php elseif (isset($processed) && $processed === 0): ?>
-        <div class="card border-radius-xl shadow-sm">
+        <div class="card-body px-0 pt-0 pb-2">
+            <div class="table-responsive">
+                <table
+                    class="table align-items-center mb-0 table-soft js-promote-table"
+                    style="width: 100%;">
+                    <thead>
+                        <tr>
+                            <th class="text-center">#</th>
+                            <th>Tanggal</th>
+                            <th>NIK</th>
+                            <th>Nama Karyawan</th>
+                            <th>Shift</th>
+                            <th class="text-center">Masuk</th>
+                            <th class="text-center">Istirahat</th>
+                            <th class="text-center">Kembali</th>
+                            <th class="text-center">Pulang</th>
+                            <th class="text-end">Kerja</th>
+                            <th class="text-end">Break</th>
+                            <th class="text-end">Telat</th>
+                            <th class="text-end">P.Cepat</th>
+                            <th class="text-end">Lembur</th>
+                            <th class="text-center">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Kosong, diisi DataTables server-side -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="card-footer d-flex justify-content-between align-items-center pt-0">
+            <p class="text-xs text-muted mb-0">
+                <i class="fas fa-info-circle me-1"></i>
+                Menampilkan data absensi berdasarkan rentang tanggal yang diproses
+            </p>
+        </div>
+    </div>
+
+    <?php if (isset($processed) && $processed === 0): ?>
+        <div class="card border-radius-xl shadow-sm mt-3">
             <div class="card-body text-center py-5">
                 <div class="icon icon-shape bg-gradient-warning shadow text-center border-radius-md mb-3">
                     <i class="fas fa-exclamation-triangle text-white"></i>
@@ -388,6 +311,109 @@
         </div>
     <?php endif; ?>
 
+
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const tableEl = document.querySelector('.js-promote-table');
+        if (!tableEl) return;
+
+        const dateFrom = <?= json_encode($date_from ?? '') ?>;
+        const dateTo = <?= json_encode($date_to ?? '') ?>;
+        const role = <?= json_encode($role ?? '') ?>;
+
+        // Kalau belum ada tanggal, jangan init DataTables dulu
+        if (!dateFrom) return;
+
+        const ajaxUrl = '<?= base_url() ?>/' + role + '/attendance/promote-data' +
+            '?date_from=' + encodeURIComponent(dateFrom) +
+            '&date_to=' + encodeURIComponent(dateTo);
+
+        const dt = $(tableEl).DataTable({
+            processing: true,
+            serverSide: true,
+            searching: true,
+            ordering: true,
+            pageLength: 25,
+            lengthMenu: [10, 25, 50, 100],
+            ajax: {
+                url: ajaxUrl,
+                type: 'GET'
+            },
+            order: [
+                [1, 'asc']
+            ],
+            columns: [{
+                    data: 0,
+                    orderable: false,
+                    searchable: false,
+                    className: 'text-center'
+                },
+                {
+                    data: 1
+                },
+                {
+                    data: 2
+                },
+                {
+                    data: 3
+                },
+                {
+                    data: 4
+                },
+                {
+                    data: 5,
+                    className: 'text-center'
+                },
+                {
+                    data: 6,
+                    className: 'text-center'
+                },
+                {
+                    data: 7,
+                    className: 'text-center'
+                },
+                {
+                    data: 8,
+                    className: 'text-center'
+                },
+                {
+                    data: 9,
+                    className: 'text-end'
+                },
+                {
+                    data: 10,
+                    className: 'text-end'
+                },
+                {
+                    data: 11,
+                    className: 'text-end'
+                },
+                {
+                    data: 12,
+                    className: 'text-end'
+                },
+                {
+                    data: 13,
+                    className: 'text-end'
+                },
+                {
+                    data: 14,
+                    className: 'text-center'
+                },
+            ],
+            drawCallback: function(settings) {
+                const info = this.api().page.info();
+                const total = info.recordsDisplay;
+                const badge = document.getElementById('js-record-count');
+                if (badge) {
+                    badge.textContent = total + ' Records';
+                }
+            }
+        });
+    });
+</script>
+
 
 <?= $this->endSection(); ?>
