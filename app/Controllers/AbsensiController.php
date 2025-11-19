@@ -377,55 +377,15 @@ class AbsensiController extends BaseController
 
     public function dataAbsensi()
     {
-        // 1) Range tanggal yang mau diproses
-        $endDate   = date('Y-m-d'); // hari ini
-        $startDate = date('Y-m-d', strtotime('-2 days')); // 2 hari ke belakang
-
-        // 2) Data bulan absensi untuk ditampilkan di view
         $bulanAbsen = $this->absensiModel->getLogAbsensi();
-        // log_message('debug', 'Before groupLogsToDays, mem: ' . memory_get_usage());
-        // Siapkan default nilai kalau service gagal
-        $daysCount    = 0;
-        $resultsCount = 0;
 
-        // 3) Grouping log -> attendance_days
-        // try {
-        //     $groupSvc  = new \App\Services\AttendanceGroupingService();
-        //     log_message('debug', 'Before groupLogsToDays, mem: ' . memory_get_usage());
-        //     $daysCount = $groupSvc->groupLogsToDays($startDate, $endDate);
-        //     log_message('debug', 'After groupLogsToDays, mem: ' . memory_get_usage());
-        // } catch (\Throwable $e) {
-        //     // log_message(
-        //     //     'error',
-        //     //     '[dataAbsensi] Error groupLogsToDays: {msg}',
-        //     //     ['msg' => $e->getMessage()]
-        //     // );
-        // }
-
-        // // 4) Hitung hasil kerja -> attendance_results
-        // try {
-        //     $resultSvc    = new \App\Services\AttendanceResultService();
-        //     $resultsCount = $resultSvc->processRange($startDate, $endDate);
-        // } catch (\Throwable $e) {
-        //     // log_message(
-        //     //     'error',
-        //     //     '[dataAbsensi] Error processRange: {msg}',
-        //     //     ['msg' => $e->getMessage()]
-        //     // );
-        // }
-
-        // 5) Data untuk view
         $data = [
             'role'          => session()->get('role'),
-            'title'         => 'Data Absensi',
+            'title'         => 'Log Absen',
             'active1'       => '',
             'active2'       => '',
             'active3'       => 'active',
-            'month'         => $bulanAbsen,
-            'startDate'     => $startDate,
-            'endDate'       => $endDate,
-            // 'daysCount'     => $daysCount,
-            // 'resultsCount'  => $resultsCount,
+            'month'         => $bulanAbsen
         ];
 
         return view(session()->get('role') . '/dataAbsensi', $data);
@@ -759,7 +719,7 @@ class AbsensiController extends BaseController
 
         $data = [
             'role'         => session()->get('role'),
-            'title'        => 'Promote Form',
+            'title'        => 'Kalkulasi Absen',
             'active1'      => '',
             'active2'      => '',
             'active3'      => 'active',
