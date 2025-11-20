@@ -10,7 +10,6 @@ class AddIndexesShiftAssignments extends Migration
     {
         $this->db->query("
             ALTER TABLE `shift_assignments`
-                ADD KEY `shift_assignments_id_shift_foreign` (`id_shift`),
                 ADD KEY `idx_emp_shift` (`id_employee`, `id_shift`);
         ");
     }
@@ -19,7 +18,6 @@ class AddIndexesShiftAssignments extends Migration
     {
         $this->db->query("
             ALTER TABLE `shift_assignments`
-                DROP INDEX `shift_assignments_id_shift_foreign`,
                 DROP INDEX `idx_emp_shift`;
         ");
     }
