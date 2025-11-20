@@ -15,6 +15,7 @@ use App\Models\FormerEmployeeModel;
 use App\Models\AbsensiModel;
 use App\Models\AttendanceResultModel;
 use App\Models\AttendanceDayModel;
+use App\Models\AttendanceLetterModel;
 
 class AbsensiController extends BaseController
 {
@@ -31,6 +32,7 @@ class AbsensiController extends BaseController
     protected $attendanceResultModel;
     protected $attendanceDayModel;
     protected $attendanceLogModel;
+    protected $attendanceLetterModel;
 
     public function __construct()
     {
@@ -45,22 +47,58 @@ class AbsensiController extends BaseController
         $this->absensiModel = new AbsensiModel();
         $this->attendanceResultModel = new AttendanceResultModel();
         $this->attendanceDayModel = new AttendanceDayModel();
+        $this->attendanceLetterModel = new AttendanceLetterModel();
 
         $this->role = session()->get('role');
     }
     public function index()
     {
-        $TtlKaryawan = $this->employeeModel->where('status', 'active')->countAll();
-        $PerpindahanBulanIni = $this->historyPindahKaryawanModel->where('MONTH(date_of_change)', date('m'))->countAllResults();
+        // harian
+        $HadirHariIni = $this->attendanceResultModel->getEmployeePresentTodayCount();
+        $TtlKaryawan = $this->employeeModel->where('status', 'Aktif')->countAllResults();
+        $IzinHariIni = $this->attendanceLetterModel->getIzinTodayCount();
+        $SakitHariIni = $this->attendanceLetterModel->getSakitTodayCount();
+        $MangkirHariIni = $this->attendanceLetterModel->getMangkirTodayCount();
 
+        // minggu
+        $DataHadirMinggu = $this->attendanceResultModel->getEmployeePresentWeekByDay();
+        $DataIzinMinggu = $this->attendanceLetterModel->getIzinWeekByDay();
+        $DataSakitMinggu = $this->attendanceLetterModel->getSakitWeekByDay();
+        $DataMangkirMinggu = $this->attendanceLetterModel->getMangkirWeekByDay();
+
+        // bulan
+        $TotalHadirBulan = $this->attendanceResultModel->getEmployeeStatusMonth('PRESENT');
+        $TotalIzinBulan = $this->attendanceLetterModel->getIzinMonthCount();
+        $TotalSakitBulan = $this->attendanceLetterModel->getSakitMonthCount();
+        $TotalMangkirBulan = $this->attendanceLetterModel->getMangkirMonthCount();
+
+        // absen karyawan
+        $AbsensiHariIni = $this->attendanceResultModel->getAttendanceTodayAllEmployees();
+
+        // data top ketidakhadiran
+        $TopKetidakhadiran = $this->attendanceLetterModel->getTopKetidakhadiran();
+        // dd($TopKetidakhadiran);
         return view($this->role . '/index', [
             'role' => $this->role,
             'title' => 'Dashboard',
             'active1' => 'active',
             'active2' => '',
             'active3' => '',
+            'HadirHariIni' => $HadirHariIni,
             'TtlKaryawan' => $TtlKaryawan,
-            'PerpindahanBulanIni' => $PerpindahanBulanIni
+            'IzinHariIni'   => $IzinHariIni,
+            'SakitHariIni' => $SakitHariIni,
+            'MangkirHariIni' => $MangkirHariIni,
+            'DataHadirMinggu' => $DataHadirMinggu,
+            'DataIzinMinggu' => $DataIzinMinggu,
+            'DataSakitMinggu' => $DataSakitMinggu,
+            'DataMangkirMinggu' => $DataMangkirMinggu,
+            'TotalHadirBulan' => $TotalHadirBulan,
+            'TotalIzinBulan' => $TotalIzinBulan,
+            'TotalSakitBulan' => $TotalSakitBulan,
+            'TotalMangkirBulan' => $TotalMangkirBulan,
+            'AbsensiHariIni'    => $AbsensiHariIni,
+            'TopKetidakhadiran' => $TopKetidakhadiran
         ]);
     }
 

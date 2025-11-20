@@ -134,16 +134,16 @@
                         <div>
                             <div class="d-flex justify-content-between">
 
-                                <a href="<?= base_url($role . '/downloadTemplateKaryawan') ?>"
+                                <!-- <a href="<?= base_url($role . '/downloadTemplateKaryawan') ?>"
                                     class="btn bg-gradient-success me-2">
                                     <i class="fas fa-download text-lg opacity-10" aria-hidden="true"></i>
                                     Template Excel
-                                </a>
+                                </a> -->
 
                                 <a class="btn bg-gradient-info add-btn"
                                     data-bs-toggle="modal"
                                     data-bs-target="#addKaryawan">
-                                    <i class="fas fa-user-plus text-lg opacity-10" aria-hidden="true"></i>
+                                    <i class="fas fa-file-signature text-lg opacity-10" aria-hidden="true"></i>
                                     Surat Absen
                                 </a>
 
@@ -196,11 +196,11 @@
                                             <label for="letter_type">Jenis Surat</label>
                                             <select name="letter_type" id="letter_type" class="form-control" required>
                                                 <option value="">Pilih jenis surat</option>
-                                                <option value="IZIN">Izin</option>
-                                                <option value="SAKIT">Sakit</option>
-                                                <option value="CUTI">Cuti</option>
-                                                <option value="DINAS_LUAR">Dinas Luar</option>
-                                                <option value="LAINNYA">Lainnya</option>
+                                                <option value="SI">SI</option>
+                                                <option value="MI">MI</option>
+                                                <option value="T">T</option>
+                                                <option value="M">M</option>
+                                                <option value="Lain-lain">Lain-lain</option>
                                             </select>
                                         </div>
                                     </div>

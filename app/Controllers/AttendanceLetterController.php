@@ -139,7 +139,7 @@ class AttendanceLetterController extends BaseController
                     $label      = 'SUDAH DI-APPROVE';
                 } else {
                     $badgeClass = 'bg-gradient-danger';
-                    $label      = 'SUDAH DI-REJECT';
+                    $label      = 'REJECT';
                 }
 
                 $aksiHtml = '<span class="badge ' . $badgeClass . ' px-3 py-2">

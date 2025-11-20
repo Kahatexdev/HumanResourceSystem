@@ -27,7 +27,7 @@ class CreateAttendanceLettersTable extends Migration
             'letter_type' => [
                 'type'       => 'VARCHAR',
                 'constraint' => 30,
-                'comment'    => 'IZIN, SAKIT, CUTI, DINAS_LUAR, DLL',
+                'comment'    => 'SI, MI, T, M, Lain-lain',
             ],
 
             // range tanggal ketidakhadiran

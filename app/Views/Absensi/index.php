@@ -105,7 +105,7 @@
                                 dari <?= number_format($TtlKaryawan ?? 0) ?> karyawan
                             </p>
                         </div>
-                        <div class="col-4 text-end">
+                        <div class="col-4 text-center">
                             <div class="icon-shape bg-gradient-info shadow-sm border-radius-md">
                                 <i class="fas fa-check-circle text-white text-lg"></i>
                             </div>
@@ -127,7 +127,7 @@
                             </h3>
                             <p class="text-xs text-muted mb-0">Hari ini</p>
                         </div>
-                        <div class="col-4 text-end">
+                        <div class="col-4 text-center">
                             <div class="icon-shape bg-gradient-warning shadow-sm border-radius-md">
                                 <i class="fas fa-clipboard text-white text-lg"></i>
                             </div>
@@ -149,7 +149,7 @@
                             </h3>
                             <p class="text-xs text-muted mb-0">Hari ini</p>
                         </div>
-                        <div class="col-4 text-end">
+                        <div class="col-4 text-center">
                             <div class="icon-shape bg-gradient-danger shadow-sm border-radius-md">
                                 <i class="fas fa-hospital-alt text-white text-lg"></i>
                             </div>
@@ -165,14 +165,14 @@
                 <div class="card-body position-relative">
                     <div class="row align-items-center">
                         <div class="col-8">
-                            <p class="text-sm mb-2 text-uppercase font-weight-bold text-muted">Alpa</p>
+                            <p class="text-sm mb-2 text-uppercase font-weight-bold text-muted">Mangkir</p>
                             <h3 class="font-weight-bolder mb-0">
-                                <?= number_format($AlpaHariIni ?? 0) ?>
+                                <?= number_format($MangkirHariIni ?? 0) ?>
                             </h3>
                             <p class="text-xs text-muted mb-0">Hari ini</p>
                         </div>
-                        <div class="col-4 text-end">
-                            <div class="icon-shape bg-gradient-success shadow-sm border-radius-md">
+                        <div class="col-4 text-center">
+                            <div class="icon-shape bg-gradient-dark shadow-sm border-radius-md">
                                 <i class="fas fa-exclamation-circle text-white text-lg"></i>
                             </div>
                         </div>
@@ -234,7 +234,7 @@
                                     <th>No</th>
                                     <th>Nama Karyawan</th>
                                     <th>NIK</th>
-                                    <th>Departemen</th>
+                                    <th>Bagian</th>
                                     <th>Jam Masuk</th>
                                     <th>Status</th>
                                 </tr>
@@ -245,22 +245,36 @@
                                     foreach ($AbsensiHariIni as $item): ?>
                                         <tr>
                                             <td class="text-sm"><?= $no++ ?></td>
-                                            <td class="text-sm"><?= esc($item['nama_karyawan']) ?></td>
+                                            <td class="text-sm"><?= esc($item['employee_name']) ?> - <?= esc($item['employee_code']) ?></td>
                                             <td class="text-sm"><?= esc($item['nik']) ?></td>
-                                            <td class="text-sm"><?= esc($item['departemen']) ?></td>
-                                            <td class="text-sm"><?= esc($item['jam_masuk'] ?? '-') ?></td>
+                                            <td class="text-sm"><?= esc($item['job_section_name']) ?></td>
+                                            <td class="text-sm"><?= esc($item['in_time'] ?? '-') ?></td>
                                             <td>
                                                 <?php
-                                                $status = $item['status'] ?? 'Belum Absen';
+                                                $status = $item['status_code'] ?? 'Belum Absen';
                                                 $badgeClass = 'badge-status ';
-                                                if ($status === 'Hadir') {
+                                                if ($status === 'PRESENT') {
                                                     $badgeClass .= 'badge-hadir';
-                                                } elseif ($status === 'Izin') {
-                                                    $badgeClass .= 'badge-izin';
-                                                } elseif ($status === 'Sakit') {
-                                                    $badgeClass .= 'badge-sakit';
                                                 } else {
-                                                    $badgeClass .= 'badge-alpha';
+                                                    $statusLetter = $item['status'] ?? '';  
+                                                    switch ($statusLetter) {
+                                                        case 'MI':
+                                                            $badgeClass .= 'badge-izin';
+                                                            $status = 'MI';
+                                                            break;
+                                                        case 'SI':
+                                                            $badgeClass .= 'badge-sakit';
+                                                            $status = 'SI';
+                                                            break;
+                                                        case 'M':
+                                                            $badgeClass .= 'badge-alpha';
+                                                            $status = 'M';
+                                                            break;
+                                                        default:
+                                                            $badgeClass .= 'badge-alpha';
+                                                            $status = 'TIDAK HADIR';
+                                                            break;
+                                                    }
                                                 }
                                                 ?>
                                                 <span class="<?= $badgeClass ?>"><?= esc($status) ?></span>
@@ -296,16 +310,16 @@
                             <thead class="thead-light">
                                 <tr>
                                     <th>Nama</th>
-                                    <th class="text-end">Alpa</th>
+                                    <th class="text-end">Mangkir</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <?php if (!empty($TopKetidakhadiran)): ?>
                                     <?php foreach ($TopKetidakhadiran as $item): ?>
                                         <tr>
-                                            <td class="text-sm"><?= esc($item['nama_karyawan']) ?></td>
+                                            <td class="text-sm"><?= esc($item['employee_name']) ?> - <?= esc($item['employee_code']) ?></td>
                                             <td class="text-sm text-end text-danger font-weight-bold">
-                                                <?= number_format($item['total_alpa'] ?? 0) ?>
+                                                <?= number_format($item['total_mangkir'] ?? 0) ?>
                                             </td>
                                         </tr>
                                     <?php endforeach; ?>
@@ -348,9 +362,9 @@
                             </h5>
                         </div>
                         <div class="col-6">
-                            <p class="text-muted text-sm mb-2">Total Alpa</p>
+                            <p class="text-muted text-sm mb-2">Total Mangkir</p>
                             <h5 class="font-weight-bolder text-danger mb-0">
-                                <?= number_format($TotalAlpaBulan ?? 0) ?>
+                                <?= number_format($TotalMangkirBulan ?? 0) ?>
                             </h5>
                         </div>
                     </div>
@@ -388,8 +402,8 @@
                     borderRadius: 5,
                 },
                 {
-                    label: 'Alpa',
-                    data: [<?= implode(',', $DataAlpaMinggu ?? []) ?>],
+                    label: 'Mangkir',
+                    data: [<?= implode(',', $DataMangkirMinggu ?? []) ?>],
                     backgroundColor: '#f5365c',
                     borderRadius: 5,
                 }
@@ -419,13 +433,13 @@
     new Chart(ctx2, {
         type: 'doughnut',
         data: {
-            labels: ['Hadir', 'Izin', 'Sakit', 'Alpa'],
+            labels: ['Hadir', 'Izin', 'Sakit', 'Mangkir'],
             datasets: [{
                 data: [
                     <?= $TotalHadirBulan ?? 0 ?>,
                     <?= $TotalIzinBulan ?? 0 ?>,
                     <?= $TotalSakitBulan ?? 0 ?>,
-                    <?= $TotalAlpaBulan ?? 0 ?>
+                    <?= $TotalMangkirBulan ?? 0 ?>
                 ],
                 backgroundColor: [
                     '#2dce89',
