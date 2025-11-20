@@ -23,11 +23,64 @@ class AttendanceResultService
     /**
      * Proses hasil untuk range tanggal
      */
+    // public function processRange(string $dateFrom, ?string $dateTo = null): int
+    // {
+    //     $dateTo = $dateTo ?? $dateFrom;
+
+    //     // Ambil attendance_days di range tanggal tsb
+    //     $days = $this->dayM
+    //         ->where('work_date >=', $dateFrom)
+    //         ->where('work_date <=', $dateTo)
+    //         ->findAll();
+
+    //     if (empty($days)) {
+    //         return 0;
+    //     }
+
+    //     // Ambil semua shift, simpan ke map by id_shift
+    //     $shifts = $this->shiftM->findAll();
+    //     $shiftMap = [];
+    //     foreach ($shifts as $s) {
+    //         $shiftMap[$s['id_shift']] = $s;
+    //     }
+
+    //     $processed = 0;
+
+    //     foreach ($days as $day) {
+    //         $result = $this->calculateResultForDay($day, $shiftMap);
+
+    //         if (!$result) {
+    //             // misal: data tidak lengkap → skip
+    //             continue;
+    //         }
+
+    //         // cek apakah sudah ada result untuk id_attendance ini
+    //         $existing = $this->resM
+    //             ->where('id_attendance', $day['id_attendance'])
+    //             ->first();
+
+    //         $payload = array_merge($result, [
+    //             'id_attendance' => $day['id_attendance'],
+    //             'processed_at'  => date('Y-m-d H:i:s'),
+    //         ]);
+
+    //         if ($existing) {
+    //             $this->resM->update($existing['id_result'], $payload);
+    //         } else {
+    //             $this->resM->insert($payload);
+    //         }
+
+    //         $processed++;
+    //     }
+
+    //     return $processed;
+    // }
+
     public function processRange(string $dateFrom, ?string $dateTo = null): int
     {
         $dateTo = $dateTo ?? $dateFrom;
 
-        // Ambil attendance_days di range tanggal tsb
+        // Ambil attendance_days di range tanggal tsb SEKALI
         $days = $this->dayM
             ->where('work_date >=', $dateFrom)
             ->where('work_date <=', $dateTo)
@@ -44,37 +97,49 @@ class AttendanceResultService
             $shiftMap[$s['id_shift']] = $s;
         }
 
-        $processed = 0;
+        // Preload existing results untuk id_attendance yang akan diproses
+        $attendanceIds = array_column($days, 'id_attendance');
+        $existingResults = [];
+        if (!empty($attendanceIds)) {
+            $rows = $this->resM->whereIn('id_attendance', $attendanceIds)->findAll();
+            foreach ($rows as $r) {
+                $existingResults[$r['id_attendance']] = $r;
+            }
+        }
+
+        $toInsert = [];
+        $toUpdate = [];
 
         foreach ($days as $day) {
             $result = $this->calculateResultForDay($day, $shiftMap);
-
-            if (!$result) {
-                // misal: data tidak lengkap → skip
-                continue;
-            }
-
-            // cek apakah sudah ada result untuk id_attendance ini
-            $existing = $this->resM
-                ->where('id_attendance', $day['id_attendance'])
-                ->first();
+            if (!$result) continue;
 
             $payload = array_merge($result, [
                 'id_attendance' => $day['id_attendance'],
                 'processed_at'  => date('Y-m-d H:i:s'),
             ]);
 
-            if ($existing) {
-                $this->resM->update($existing['id_result'], $payload);
+            if (isset($existingResults[$day['id_attendance']])) {
+                // include id_result if needed by updateBatch or use id_attendance as key
+                $payload['id_result'] = $existingResults[$day['id_attendance']]['id_result'];
+                $toUpdate[] = $payload;
             } else {
-                $this->resM->insert($payload);
+                $toInsert[] = $payload;
             }
-
-            $processed++;
         }
 
-        return $processed;
+        // Batch write
+        if (!empty($toInsert)) {
+            $this->resM->insertBatch($toInsert);
+        }
+        if (!empty($toUpdate)) {
+            // updateBatch: must include the primary key or use id_result as key; ensure payload has id_result
+            $this->resM->updateBatch($toUpdate, 'id_result');
+        }
+
+        return count($toInsert) + count($toUpdate);
     }
+
 
     /**
      * Hitung total kerja, break, telat, pulang cepat, lembur, status

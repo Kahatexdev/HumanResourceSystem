@@ -13,6 +13,9 @@ use App\Models\HistoryEmployeeModel;
 use App\Models\DayModel;
 use App\Models\FormerEmployeeModel;
 use App\Models\AbsensiModel;
+use App\Models\AttendanceResultModel;
+use App\Models\AttendanceDayModel;
+use App\Models\AttendanceLetterModel;
 
 class AbsensiController extends BaseController
 {
@@ -26,6 +29,10 @@ class AbsensiController extends BaseController
     protected $days;
     protected $formerEmployeeModel;
     protected $absensiModel;
+    protected $attendanceResultModel;
+    protected $attendanceDayModel;
+    protected $attendanceLogModel;
+    protected $attendanceLetterModel;
 
     public function __construct()
     {
@@ -38,50 +45,60 @@ class AbsensiController extends BaseController
         $this->days = new DayModel();
         $this->formerEmployeeModel = new FormerEmployeeModel();
         $this->absensiModel = new AbsensiModel();
+        $this->attendanceResultModel = new AttendanceResultModel();
+        $this->attendanceDayModel = new AttendanceDayModel();
+        $this->attendanceLetterModel = new AttendanceLetterModel();
+
         $this->role = session()->get('role');
     }
     public function index()
     {
-        $TtlKaryawan = $this->employeeModel->where('status', 'active')->countAll();
-        $PerpindahanBulanIni = $this->historyPindahKaryawanModel->where('MONTH(date_of_change)', date('m'))->countAllResults();
-        $dataKaryawan = $this->employeeModel->getActiveKaryawanByBagiaAndArea();
-        // dd($dataKaryawan);
-        // Group data berdasarkan area_utama
-        $groupedData = [];
-        foreach ($dataKaryawan as $row) {
-            $groupedData[$row['main_factory']][] = $row;
-        }
+        // harian
+        $HadirHariIni = $this->attendanceResultModel->getEmployeePresentTodayCount();
+        $TtlKaryawan = $this->employeeModel->where('status', 'Aktif')->countAllResults();
+        $IzinHariIni = $this->attendanceLetterModel->getIzinTodayCount();
+        $SakitHariIni = $this->attendanceLetterModel->getSakitTodayCount();
+        $MangkirHariIni = $this->attendanceLetterModel->getMangkirTodayCount();
 
-        // Sort berdasarkan angka setelah 'KK'
-        uksort($groupedData, function ($a, $b) {
-            return (int) filter_var($a, FILTER_SANITIZE_NUMBER_INT) <=> (int) filter_var($b, FILTER_SANITIZE_NUMBER_INT);
-        });
+        // minggu
+        $DataHadirMinggu = $this->attendanceResultModel->getEmployeePresentWeekByDay();
+        $DataIzinMinggu = $this->attendanceLetterModel->getIzinWeekByDay();
+        $DataSakitMinggu = $this->attendanceLetterModel->getSakitWeekByDay();
+        $DataMangkirMinggu = $this->attendanceLetterModel->getMangkirWeekByDay();
 
-        $totalKaryawan = 0;
-        foreach ($dataKaryawan as $row) {
-            $totalKaryawan += $row['jumlah_karyawan'];
-        }
+        // bulan
+        $TotalHadirBulan = $this->attendanceResultModel->getEmployeeStatusMonth('PRESENT');
+        $TotalIzinBulan = $this->attendanceLetterModel->getIzinMonthCount();
+        $TotalSakitBulan = $this->attendanceLetterModel->getSakitMonthCount();
+        $TotalMangkirBulan = $this->attendanceLetterModel->getMangkirMonthCount();
 
-        $dataPindah = $this->historyPindahKaryawanModel->getPindahGroupedByDate();
-        // dd($dataPindah);
-        $labelsKar = [];
-        $valuesKar = [];
-        foreach ($dataPindah as $row) {
-            $labelsKar[] = $row['tgl'];
-            $valuesKar[] = (int)$row['jumlah'];
-        }
+        // absen karyawan
+        $AbsensiHariIni = $this->attendanceResultModel->getAttendanceTodayAllEmployees();
 
+        // data top ketidakhadiran
+        $TopKetidakhadiran = $this->attendanceLetterModel->getTopKetidakhadiran();
+        // dd($TopKetidakhadiran);
         return view($this->role . '/index', [
             'role' => $this->role,
             'title' => 'Dashboard',
             'active1' => 'active',
             'active2' => '',
             'active3' => '',
+            'HadirHariIni' => $HadirHariIni,
             'TtlKaryawan' => $TtlKaryawan,
-            'PerpindahanBulanIni' => $PerpindahanBulanIni,
-            'groupedData' => $groupedData,
-            'labelsKar' => $labelsKar,
-            'valuesKar' => $valuesKar
+            'IzinHariIni'   => $IzinHariIni,
+            'SakitHariIni' => $SakitHariIni,
+            'MangkirHariIni' => $MangkirHariIni,
+            'DataHadirMinggu' => $DataHadirMinggu,
+            'DataIzinMinggu' => $DataIzinMinggu,
+            'DataSakitMinggu' => $DataSakitMinggu,
+            'DataMangkirMinggu' => $DataMangkirMinggu,
+            'TotalHadirBulan' => $TotalHadirBulan,
+            'TotalIzinBulan' => $TotalIzinBulan,
+            'TotalSakitBulan' => $TotalSakitBulan,
+            'TotalMangkirBulan' => $TotalMangkirBulan,
+            'AbsensiHariIni'    => $AbsensiHariIni,
+            'TopKetidakhadiran' => $TopKetidakhadiran
         ]);
     }
 
@@ -398,7 +415,24 @@ class AbsensiController extends BaseController
 
     public function dataAbsensi()
     {
-        $logAbsen = $this->absensiModel->findAll();
+        $bulanAbsen = $this->absensiModel->getLogAbsensi();
+
+        $data = [
+            'role'          => session()->get('role'),
+            'title'         => 'Log Absen',
+            'active1'       => '',
+            'active2'       => '',
+            'active3'       => 'active',
+            'month'         => $bulanAbsen
+        ];
+
+        return view(session()->get('role') . '/dataAbsensi', $data);
+    }
+
+
+    public function detailAbsensi($month, $year)
+    {
+        $logAbsen = $this->absensiModel->getDetailLogAbsensi($month, $year);
         // dd($logAbsen);
         $data = [
             'role' => session()->get('role'),
@@ -406,461 +440,346 @@ class AbsensiController extends BaseController
             'active1' => '',
             'active2' => '',
             'active3' => 'active',
-            'log'     => $logAbsen
+            'logAbsen'     => $logAbsen,
+            'month'        => $month,
+            'year'         => $year
         ];
-        return view(session()->get('role') . '/dataAbsensi', $data);
+        return view(session()->get('role') . '/detailAbsensi', $data);
     }
 
-    // public function upload()
-    // {
-    //     $file = $this->request->getFile('file');
+    public function getDetailAbsensiAjax($month, $year)
+    {
+        $request = service('request');
 
-    //     // 1. Validasi file upload
-    //     if (! $file || ! $file->isValid() || $file->hasMoved()) {
-    //         return redirect()->to(base_url($this->role . '/dataAbsensi'))
-    //             ->with('error', 'File tidak valid atau tidak ada file yang diunggah.');
-    //     }
+        $start  = $request->getPost('start');
+        $length = $request->getPost('length');
+        $search = $request->getPost('search')['value'];
 
-    //     // 2. Validasi MIME type (hanya Excel)
-    //     $mime = $file->getClientMimeType();
-    //     if (! in_array($mime, [
-    //         'application/vnd.ms-excel',
-    //         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-    //     ])) {
-    //         return redirect()->to(base_url($this->role . '/dataAbsensi'))
-    //             ->with('error', 'Tipe file tidak valid. Harus file Excel (.xls / .xlsx).');
-    //     }
+        $orderColIndex = $request->getPost('order')[0]['column'];
+        $orderDir      = $request->getPost('order')[0]['dir'];
+        $orderColumn   = $request->getPost('columns')[$orderColIndex]['data'];
 
-    //     // 3. Load spreadsheet
-    //     $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($file->getTempName());
-    //     $sheet       = $spreadsheet->getActiveSheet();
+        // Ambil data dari model
+        $result = $this->absensiModel->getDetailLogAbsensiServer(
+            $month,
+            $year,
+            $start,
+            $length,
+            $search,
+            $orderColumn,
+            $orderDir
+        );
 
-    //     // Asumsi baris pertama adalah header → mulai dari baris 1
-    //     $startRow = 1;
-    //     $lastRow  = $sheet->getHighestRow();
+        // Format output DataTables
+        $data = [];
+        foreach ($result['data'] as $r) {
+            $data[] = [
+                'terminal_id'  => $r['terminal_id'],
+                'nik'          => $r['nik'],
+                'employee_name' => $r['employee_name'],
+                'log_date'     => $r['log_date'],
+                'log_time'     => $r['log_time'],
+                'dept_card'    => $r['department'] . ' - ' . $r['card_no'],
+                'admin'        => $r['admin'],
+            ];
+        }
 
-    //     $batchData     = [];
-    //     $successCount  = 0;
-    //     $errorCount    = 0;
-    //     $errorMessages = [];
+        return $this->response->setJSON([
+            "draw"            => intval($request->getPost('draw')),
+            "recordsTotal"    => $result['total'],
+            "recordsFiltered" => $result['filtered'],
+            "data"            => $data
+        ]);
+    }
 
-    //     // 4. Loop tiap baris
-    //     for ($row = $startRow; $row <= $lastRow; $row++) {
-
-    //         // Ambil nilai dari tiap kolom (sesuai mapping file-mu)
-    //         $terminalId = trim((string) $sheet->getCell("B{$row}")->getValue());
-    //         $dateRaw    = trim((string) $sheet->getCell("C{$row}")->getFormattedValue());
-    //         $time       = trim((string) $sheet->getCell("D{$row}")->getFormattedValue());
-    //         $nik        = trim((string) $sheet->getCell("H{$row}")->getValue());
-    //         $cardNo     = trim((string) $sheet->getCell("I{$row}")->getValue());
-    //         $guestName  = trim((string) $sheet->getCell("J{$row}")->getValue());
-    //         $department = trim((string) $sheet->getCell("K{$row}")->getValue());
-    //         $verSource  = trim((string) $sheet->getCell("N{$row}")->getValue());
-
-    //         // Kalau baris kosong semua → skip
-    //         if ($terminalId === '' && $dateRaw === '' && $nik === '') {
-    //             continue;
-    //         }
-
-    //         $isValid = true;
-    //         $errMsg  = "Row {$row}: ";
-
-    //         // 4.a Validasi wajib isi
-    //         if ($terminalId === '') {
-    //             $isValid  = false;
-    //             $errMsg  .= "Terminal ID kosong. ";
-    //         }
-
-    //         if ($nik === '') {
-    //             $isValid  = false;
-    //             $errMsg  .= "NIK kosong. ";
-    //         }
-
-    //         // 4.b Validasi & normalisasi tanggal
-    //         $dateSql = null;
-    //         if ($dateRaw === '') {
-    //             $isValid  = false;
-    //             $errMsg  .= "Tanggal kosong. ";
-    //         } else {
-    //             // Coba beberapa format umum (silakan sesuaikan kalau formatmu fix)
-    //             $formats = ['Y-m-d', 'd-m-Y', 'd/m/Y', 'm/d/Y'];
-    //             $parsed  = null;
-
-    //             foreach ($formats as $fmt) {
-    //                 $dt = \DateTime::createFromFormat($fmt, $dateRaw);
-    //                 if ($dt && $dt->format($fmt) === $dateRaw) {
-    //                     $parsed = $dt;
-    //                     break;
-    //                 }
-    //             }
-
-    //             if ($parsed) {
-    //                 $dateSql = $parsed->format('Y-m-d');
-    //             } else {
-    //                 // Kalau dari mesin absensi berupa angka Excel date
-    //                 if (is_numeric($dateRaw)) {
-    //                     try {
-    //                         $dt = \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($dateRaw);
-    //                         $dateSql = $dt->format('Y-m-d');
-    //                     } catch (\Throwable $e) {
-    //                         $dateSql = null;
-    //                     }
-    //                 }
-
-    //                 if ($dateSql === null) {
-    //                     $isValid = false;
-    //                     $errMsg .= "Format tanggal tidak dikenali ({$dateRaw}). ";
-    //                 }
-    //             }
-    //         }
-
-    //         $source = 'IMPORT';
-    //         $admin  = session()->get('username');
-
-    //         // 5. Jika lolos validasi → siapkan untuk insert
-    //         if ($isValid) {
-    //             $batchData[] = [
-    //                 // ==== SESUAIKAN DENGAN NAMA KOLOM DI TABEL import kamu ====
-    //                 'terminal_id'         => $terminalId,
-    //                 'log_date'          => $dateSql,          // atau 'log_date'
-    //                 'log_time'          => $time ?: null,     // atau 'log_time'
-    //                 'nik'                 => $nik ?: null,
-    //                 'card_no'             => $cardNo,
-    //                 'employee_name'       => $guestName,
-    //                 'department'          => $department,
-    //                 'verification_source' => $verSource,
-    //                 'source'              => $source,
-    //                 'admin'               => $admin,
-    //                 'created_at'          => date('Y-m-d H:i:s'),
-    //                 'updated_at'          => date('Y-m-d H:i:s'),
-    //             ];
-
-    //             $successCount++;
-    //         } else {
-    //             $errorCount++;
-    //             $errorMessages[] = $errMsg;
-    //         }
-    //     }
-    //     // dd($batchData);
-    //     // 6. Simpan semua baris valid sekaligus
-    //     if (! empty($batchData)) {
-    //         // GANTI model dengan model tabel import absensimu
-    //         $this->absensiModel->insertBatch($batchData);
-    //     }
-
-    //     // 7. Bangun flash message & redirect
-    //     $role        = session()->get('role');
-    //     $redirectUrl = base_url($role . '/dataAbsensi');
-
-    //     if ($errorCount > 0) {
-    //         $msg  = "{$successCount} baris berhasil disimpan, ";
-    //         $msg .= "{$errorCount} baris gagal:<br>" . implode('<br>', $errorMessages);
-
-    //         return redirect()->to($redirectUrl)->with('error', $msg);
-    //     }
-
-    //     return redirect()->to($redirectUrl)
-    //         ->with('success', "{$successCount} baris berhasil disimpan.");
-    // }
 
     public function upload()
     {
-        $file = $this->request->getFile('file');
+        $isAjax = $this->request->isAJAX();
 
-        // 1. Validasi file upload
-        if (! $file || ! $file->isValid() || $file->hasMoved()) {
+        $sendError = function (string $message, int $code = 400) use ($isAjax) {
+            if ($isAjax) {
+                return $this->response
+                    ->setStatusCode($code)
+                    ->setJSON([
+                        'status'  => 'error',
+                        'message' => $message,
+                    ]);
+            }
+
             return redirect()->to(base_url($this->role . '/dataAbsensi'))
-                ->with('error', 'File tidak valid atau tidak ada file yang diunggah.');
+                ->with('error', $message);
+        };
+
+        $sendSuccess = function (string $message) use ($isAjax) {
+            if ($isAjax) {
+                return $this->response->setJSON([
+                    'status'  => 'success',
+                    'message' => $message,
+                ]);
+            }
+
+            return redirect()->to(base_url($this->role . '/dataAbsensi'))
+                ->with('success', $message);
+        };
+
+        if (! $this->request->is('post')) {
+            return $sendError('Metode request tidak diizinkan.', 405);
         }
 
-        // 2. Validasi MIME type (hanya Excel)
+        $file = $this->request->getFile('file');
+
+        // JANGAN pakai redirect langsung di bawah sini, pakai $sendError()
+        if (! $file || ! $file->isValid() || $file->hasMoved()) {
+            return $sendError('File tidak valid atau tidak ada file yang diunggah.');
+        }
+
         $mime = $file->getClientMimeType();
         if (! in_array($mime, [
             'application/vnd.ms-excel',
             'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-        ])) {
-            return redirect()->to(base_url($this->role . '/dataAbsensi'))
-                ->with('error', 'Tipe file tidak valid. Harus file Excel (.xls / .xlsx).');
+        ], true)) {
+            return $sendError('Tipe file tidak valid. Harus file Excel (.xls / .xlsx).');
         }
 
-        // 3. Load spreadsheet
-        $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($file->getTempName());
-        $sheet       = $spreadsheet->getActiveSheet();
+        if ($file->getSize() > 10 * 1024 * 1024) {
+            return $sendError('Ukuran file melebihi 10 MB.');
+        }
 
-        // Asumsi baris pertama adalah header → mulai dari baris 1
-        $startRow = 1;
-        $lastRow  = $sheet->getHighestRow();
+        try {
+            // 3. Load spreadsheet
+            $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($file->getTempName());
+            // $sheet       = $spreadsheet->getActiveSheet();
 
-        $batchData     = [];
-        $successCount  = 0;
-        $errorCount    = 0;
-        $errorMessages = [];
+            $startRow = 2;
+            // $lastRow  = $sheet->getHighestRow();
 
-        // untuk menyimpan range tanggal yang berhasil di-import
-        $minDate = null;
-        $maxDate = null;
+            $batchData     = [];
+            $successCount  = 0;
+            $errorCount    = 0;
+            $errorMessages = [];
+            $minDate       = null;
+            $maxDate       = null;
 
-        // 4. Loop tiap baris
-        for ($row = $startRow; $row <= $lastRow; $row++) {
+            // 4. Loop tiap SHEET
+            foreach ($spreadsheet->getWorksheetIterator() as $sheetIndex => $sheet) {
+                $sheetName = $sheet->getTitle();
+                $lastRow   = $sheet->getHighestRow();
 
-            // Ambil nilai dari tiap kolom (sesuai mapping file-mu)
-            $terminalId = trim((string) $sheet->getCell("B{$row}")->getValue());
-            $dateRaw    = trim((string) $sheet->getCell("C{$row}")->getFormattedValue());
-            $time       = trim((string) $sheet->getCell("D{$row}")->getFormattedValue());
-            $nik        = trim((string) $sheet->getCell("H{$row}")->getValue());
-            $cardNo     = trim((string) $sheet->getCell("I{$row}")->getValue());
-            $guestName  = trim((string) $sheet->getCell("J{$row}")->getValue());
-            $department = trim((string) $sheet->getCell("K{$row}")->getValue());
-            $verSource  = trim((string) $sheet->getCell("N{$row}")->getValue());
+                // Loop tiap BARIS di sheet ini
+                // 4. Loop tiap baris
+                for ($row = $startRow; $row <= $lastRow; $row++) {
+                    $terminalId = trim((string) $sheet->getCell("B{$row}")->getValue());
+                    $dateRaw    = trim((string) $sheet->getCell("C{$row}")->getFormattedValue());
+                    $time       = trim((string) $sheet->getCell("D{$row}")->getFormattedValue());
+                    $nik        = trim((string) $sheet->getCell("H{$row}")->getValue());
+                    $cardNo     = trim((string) $sheet->getCell("I{$row}")->getValue());
+                    $guestName  = trim((string) $sheet->getCell("J{$row}")->getValue());
+                    $department = trim((string) $sheet->getCell("K{$row}")->getValue());
+                    $verSource  = trim((string) $sheet->getCell("N{$row}")->getValue());
 
-            // Kalau baris kosong semua → skip
-            if ($terminalId === '' && $dateRaw === '' && $nik === '') {
-                continue;
-            }
-
-            $isValid = true;
-            $errMsg  = "Row {$row}: ";
-
-            // 4.a Validasi wajib isi
-            if ($terminalId === '') {
-                $isValid  = false;
-                $errMsg  .= "Terminal ID kosong. ";
-            }
-
-            if ($nik === '') {
-                $isValid  = false;
-                $errMsg  .= "NIK kosong. ";
-            }
-
-            // 4.b Validasi & normalisasi tanggal
-            $dateSql = null;
-            if ($dateRaw === '') {
-                $isValid  = false;
-                $errMsg  .= "Tanggal kosong. ";
-            } else {
-                // Coba beberapa format umum (silakan sesuaikan kalau formatmu fix)
-                $formats = ['Y-m-d', 'd-m-Y', 'd/m/Y', 'm/d/Y'];
-                $parsed  = null;
-
-                foreach ($formats as $fmt) {
-                    $dt = \DateTime::createFromFormat($fmt, $dateRaw);
-                    if ($dt && $dt->format($fmt) === $dateRaw) {
-                        $parsed = $dt;
-                        break;
+                    // Baris kosong → skip
+                    if ($row === 1 || ($terminalId === '' && $dateRaw === '' && $nik === '')) {
+                        continue;
                     }
-                }
 
-                if ($parsed) {
-                    $dateSql = $parsed->format('Y-m-d');
-                } else {
-                    // Kalau dari mesin absensi berupa angka Excel date
-                    if (is_numeric($dateRaw)) {
-                        try {
-                            $dt = \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($dateRaw);
-                            $dateSql = $dt->format('Y-m-d');
-                        } catch (\Throwable $e) {
-                            $dateSql = null;
+                    $isValid = true;
+                    $errMsg  = "Row {$row}: ";
+
+                    // Wajib isi
+                    if ($terminalId === '') {
+                        $isValid  = false;
+                        $errMsg  .= "Terminal ID kosong. ";
+                    }
+
+                    if ($nik === '') {
+                        $isValid  = false;
+                        $errMsg  .= "NIK kosong. ";
+                    }
+
+                    // Validasi tanggal
+                    $dateSql = null;
+                    if ($dateRaw === '') {
+                        $isValid  = false;
+                        $errMsg  .= "Tanggal kosong. ";
+                    } else {
+                        $formats = ['Y-m-d', 'd-m-Y', 'd/m/Y', 'm/d/Y'];
+                        $parsed  = null;
+
+                        foreach ($formats as $fmt) {
+                            $dt = \DateTime::createFromFormat($fmt, $dateRaw);
+                            if ($dt && $dt->format($fmt) === $dateRaw) {
+                                $parsed = $dt;
+                                break;
+                            }
+                        }
+
+                        if ($parsed) {
+                            $dateSql = $parsed->format('Y-m-d');
+                        } else {
+                            if (is_numeric($dateRaw)) {
+                                try {
+                                    $dt = \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($dateRaw);
+                                    $dateSql = $dt->format('Y-m-d');
+                                } catch (\Throwable $e) {
+                                    $dateSql = null;
+                                }
+                            }
+
+                            if ($dateSql === null) {
+                                $isValid = false;
+                                $errMsg .= "Format tanggal tidak dikenali ({$dateRaw}). ";
+                            }
                         }
                     }
 
-                    if ($dateSql === null) {
-                        $isValid = false;
-                        $errMsg .= "Format tanggal tidak dikenali ({$dateRaw}). ";
+                    $source = 'IMPORT';
+                    $admin  = session()->get('username');
+
+                    if ($isValid) {
+                        if ($dateSql) {
+                            if ($minDate === null || $dateSql < $minDate) {
+                                $minDate = $dateSql;
+                            }
+                            if ($maxDate === null || $dateSql > $maxDate) {
+                                $maxDate = $dateSql;
+                            }
+                        }
+
+                        $batchData[] = [
+                            'terminal_id'         => $terminalId,
+                            'log_date'            => $dateSql,
+                            'log_time'            => $time ?: null,
+                            'nik'                 => $nik ?: null,
+                            'card_no'             => $cardNo,
+                            'employee_name'       => $guestName,
+                            'department'          => $department,
+                            'verification_source' => $verSource,
+                            'source'              => $source,
+                            'admin'               => $admin,
+                            'created_at'          => date('Y-m-d H:i:s'),
+                            'updated_at'          => date('Y-m-d H:i:s'),
+                        ];
+
+                        $successCount++;
+                    } else {
+                        $errorCount++;
+                        $errorMessages[] = $errMsg;
                     }
                 }
             }
 
-            $source = 'IMPORT';
-            $admin  = session()->get('username');
+            $processedDays = 0;
 
-            // 5. Jika lolos validasi → siapkan untuk insert
-            if ($isValid) {
+            // 6. Simpan batch
+            if (! empty($batchData)) {
+                $dates   = array_column($batchData, 'log_date');
+                $minDate = min($dates);
+                $maxDate = max($dates);
 
-                // update range tanggal min/max yang berhasil di-import
-                if ($dateSql) {
-                    if ($minDate === null || $dateSql < $minDate) {
-                        $minDate = $dateSql;
-                    }
-                    if ($maxDate === null || $dateSql > $maxDate) {
-                        $maxDate = $dateSql;
-                    }
+                $existingRows = $this->absensiModel
+                    ->select('terminal_id, log_date, log_time, nik')
+                    ->where('log_date >=', $minDate)
+                    ->where('log_date <=', $maxDate)
+                    ->findAll();
+
+                $existingKeys = [];
+                foreach ($existingRows as $er) {
+                    $key = ($er['terminal_id'] ?? '') . '|' .
+                        ($er['log_date']    ?? '') . '|' .
+                        ($er['log_time']    ?? '') . '|' .
+                        ($er['nik']         ?? '');
+                    $existingKeys[$key] = true;
                 }
 
-                $batchData[] = [
-                    // ==== SESUAIKAN DENGAN NAMA KOLOM DI TABEL attendance_logs ====
-                    'terminal_id'         => $terminalId,
-                    'log_date'            => $dateSql,
-                    'log_time'            => $time ?: null,
-                    'nik'                 => $nik ?: null,
-                    'card_no'             => $cardNo,
-                    'employee_name'       => $guestName,
-                    'department'          => $department,
-                    'verification_source' => $verSource,
-                    'source'              => $source,
-                    'admin'               => $admin,
-                    'created_at'          => date('Y-m-d H:i:s'),
-                    'updated_at'          => date('Y-m-d H:i:s'),
-                ];
+                $seenInFile = [];
+                $finalBatch = [];
 
-                $successCount++;
-            } else {
-                $errorCount++;
-                $errorMessages[] = $errMsg;
-            }
-        }
-        // dd($batchData);
+                foreach ($batchData as $row) {
+                    $key = ($row['terminal_id'] ?? '') . '|' .
+                        ($row['log_date']    ?? '') . '|' .
+                        ($row['log_time']    ?? '') . '|' .
+                        ($row['nik']         ?? '');
 
-        // 6. Simpan semua baris valid sekaligus
-        $processedDays = 0; // jumlah record attendance_days yang diproses oleh service
+                    if (isset($seenInFile[$key]) || isset($existingKeys[$key])) {
+                        $errorCount++;
+                        $errorMessages[] = "Duplikat log: NIK {$row['nik']} tanggal {$row['log_date']} jam {$row['log_time']}";
+                        continue;
+                    }
 
-        if (! empty($batchData)) {
-
-            // --- Hitung ulang min/max date dari batchData (lebih aman) ---
-            $dates = array_column($batchData, 'log_date');
-            $minDate = min($dates);
-            $maxDate = max($dates);
-
-            // --- Ambil log yang sudah ada di DB di range tanggal tsb ---
-            $existingRows = $this->absensiModel
-                ->select('terminal_id, log_date, log_time, nik')
-                ->where('log_date >=', $minDate)
-                ->where('log_date <=', $maxDate)
-                ->findAll();
-
-            // Simpan sebagai set key unik
-            $existingKeys = [];
-            foreach ($existingRows as $er) {
-                $key = ($er['terminal_id'] ?? '') . '|' .
-                    ($er['log_date']    ?? '') . '|' .
-                    ($er['log_time']    ?? '') . '|' .
-                    ($er['nik']         ?? '');
-                $existingKeys[$key] = true;
-            }
-
-            // --- Filter duplikat (di file & di DB) ---
-            $seenInFile  = [];
-            $finalBatch  = [];
-            $dupCount    = 0;
-
-            foreach ($batchData as $row) {
-                $key = ($row['terminal_id'] ?? '') . '|' .
-                    ($row['log_date']    ?? '') . '|' .
-                    ($row['log_time']    ?? '') . '|' .
-                    ($row['nik']         ?? '');
-
-                // Duplikat di file atau sudah ada di DB
-                if (isset($seenInFile[$key]) || isset($existingKeys[$key])) {
-                    $dupCount++;
-                    $errorCount++;
-                    $errorMessages[] = "Duplikat log: NIK {$row['nik']} tanggal {$row['log_date']} jam {$row['log_time']}";
-                    continue;
+                    $seenInFile[$key] = true;
+                    $finalBatch[]     = $row;
                 }
 
-                $seenInFile[$key] = true;
-                $finalBatch[]     = $row;
+                $successCount = count($finalBatch);
+
+                if (! empty($finalBatch)) {
+                    $this->absensiModel->insertBatch($finalBatch);
+
+                    // Kalau mau grouping ke attendance_days, aktifkan ini:
+                    // if ($minDate !== null) {
+                    //     $svc = service('attendanceGrouping');
+                    //     $processedDays = $svc->groupLogsToDays($minDate, $maxDate);
+                    // }
+                }
             }
 
-            // Revisi jumlah sukses: yang benar-benar akan di-insert
-            $successCount = count($finalBatch);
+            // 7. Build message
+            if ($errorCount > 0) {
+                $msg  = "{$successCount} baris berhasil disimpan ke log, ";
+                $msg .= "{$errorCount} baris gagal:<br>" . implode('<br>', $errorMessages);
 
-            if (! empty($finalBatch)) {
-                // pastikan model ini adalah model untuk tabel attendance_logs
-                $this->absensiModel->insertBatch($finalBatch);
+                if ($processedDays > 0) {
+                    $msg .= "<br><br>{$processedDays} data hari kerja berhasil dipetakan ke attendance_days.";
+                }
 
-                // 6.b Setelah insert ke attendance_logs, panggil service grouping (kalau mau)
-                // if ($minDate !== null) {
-                //     $svc = service('attendanceGrouping'); // dari Config\Services
-                //     $processedDays = $svc->groupLogsToDays($minDate, $maxDate);
-                // }
+                return $sendError($msg);
             }
-        }
 
-        // 7. Bangun flash message & redirect
-        $role        = session()->get('role');
-        $redirectUrl = base_url($role . '/dataAbsensi');
-
-        if ($errorCount > 0) {
-            $msg  = "{$successCount} baris berhasil disimpan ke log, ";
-            $msg .= "{$errorCount} baris gagal:<br>" . implode('<br>', $errorMessages);
-
+            $msg = "{$successCount} baris berhasil disimpan ke log.";
             if ($processedDays > 0) {
-                $msg .= "<br><br>{$processedDays} data hari kerja berhasil dipetakan ke attendance_days.";
+                $msg .= " {$processedDays} data hari kerja berhasil dipetakan ke attendance_days.";
             }
 
-            return redirect()->to($redirectUrl)->with('error', $msg);
-        }
+            return $sendSuccess($msg);
+            // return $sendSuccess('Import absensi OK (dummy setelah try)');
+        } catch (\Throwable $e) {
+            log_message('error', 'Gagal import absensi: {err}', ['err' => $e->getMessage()]);
 
-        $msg = "{$successCount} baris berhasil disimpan ke log.";
-        if ($processedDays > 0) {
-            $msg .= " {$processedDays} data hari kerja berhasil dipetakan ke attendance_days.";
+            return $sendError('Terjadi kesalahan saat memproses file. Coba lagi atau hubungi IT.');
         }
-
-        return redirect()->to($redirectUrl)->with('success', $msg);
     }
 
-
-    public function promote()
+    public function promoteView()
     {
-        $role = session()->get('role');
-
-        $dateFrom = $this->request->getPost('date_from');
-        $dateTo   = $this->request->getPost('date_to') ?: $dateFrom;
-
-        // 1) Jalankan grouping
-        $processed = $this->groupSvc->groupLogsToDays($dateFrom, $dateTo);
-
-        // 2) Ambil data attendance_days yang sudah ada di range tanggal tsb
-        $days = $this->dayM
-            ->select('attendance_days.*, e.nik, e.full_name, s.shift_name')
-            ->join('employees e', 'e.id_employee = attendance_days.id_employee', 'left')
-            ->join('shift_defs s', 's.id_shift = attendance_days.id_shift', 'left')
-            ->where('work_date >=', $dateFrom)
-            ->where('work_date <=', $dateTo)
-            ->orderBy('work_date', 'ASC')
-            ->orderBy('e.nik', 'ASC')
-            ->findAll();
+        $dateFrom = $this->request->getGet('date_from');
+        $dateTo   = $this->request->getGet('date_to') ?: $dateFrom;
 
         $data = [
-            'role'      => $role,
-            'title'     => 'Promote Form',
-            'active1'   => '',
-            'active2'   => '',
-            'active3'   => 'active',
-            'date_from' => $dateFrom,
-            'date_to'   => $dateTo,
-            'processed' => $processed,
-            'days'      => $days,
+            'role'         => session()->get('role'),
+            'title'        => 'Kalkulasi Absen',
+            'active1'      => '',
+            'active2'      => '',
+            'active3'      => 'active',
+            'date_from'    => $dateFrom,
+            'date_to'      => $dateTo,
+            // card summary ambil dari flash hasil POST sebelumnya
+            'processed'    => session()->getFlashdata('processed'),
+            'resProcessed' => session()->getFlashdata('resProcessed'),
+            // table sekarang selalu server-side, jadi tidak perlu kirim data ke view
+            'days'         => [],
         ];
-
-        return view($role . '/Attendance/promote_form', $data);
-    }
-
-    /**
-     * Halaman form sederhana untuk pilih tanggal yang mau diproses
-     */
-    public function promoteForm()
-    {
-        $data = [
-            'role'      => session()->get('role'),
-            'title'     => 'Promote Form',
-            'active1'   => '',
-            'active2'   => '',
-            'active3'   => 'active',
-            // default kosong
-            'date_from' => null,
-            'date_to'   => null,
-            'processed' => null,
-            'days'      => [],
-        ];
+        // dd ($data);
         return view(session()->get('role') . '/Attendance/promote_form', $data);
     }
 
-    /**
-     * Proses grouping log -> attendance_days
-     */
     public function promoteSubmit()
     {
         $role = session()->get('role');
+        // if ($this->request->getMethod() !== 'post') {
+        //     return redirect()->to(base_url($role . '/attendance/promote'));
+        // }
+
         $dateFrom = $this->request->getPost('date_from');
         $dateTo   = $this->request->getPost('date_to') ?: $dateFrom;
 
@@ -869,51 +788,281 @@ class AbsensiController extends BaseController
         }
 
         // 1) Jalankan service grouping: logs → attendance_days
-        $groupSvc     = service('attendanceGrouping'); // pastikan sudah di Config\Services
-        $daysCount    = $groupSvc->groupLogsToDays($dateFrom, $dateTo);
-
+        $groupSvc  = new \App\Services\AttendanceGroupingService();
+        $daysCount = $groupSvc->groupLogsToDays($dateFrom, $dateTo);
         // 2) Hitung hasil kerja: attendance_days → attendance_results
         $resultSvc    = new \App\Services\AttendanceResultService();
         $resultsCount = $resultSvc->processRange($dateFrom, $dateTo);
+        // dd ($dateFrom, $dateTo, $daysCount, $resultsCount);
 
-        // Ambil data hasil grouping
-        // 3) Ambil data hasil grouping + result untuk ditampilkan
-        $dayM = new \App\Models\AttendanceDayModel();
-        $days = $dayM
+        // Tidak lagi ambil semua data di sini.
+        // View akan load data via DataTables server-side.
+
+        return redirect()
+            ->to(base_url($role . '/attendance/promote?date_from=' . $dateFrom . '&date_to=' . $dateTo))
+            ->with('success', 'Kalkulasi absensi selesai.')
+            ->with('processed', $daysCount)
+            ->with('resProcessed', $resultsCount);
+    }
+
+    public function promoteData()
+    {
+        $role = session()->get('role');
+        if (! $this->request->isAJAX()) {
+            throw PageNotFoundException::forPageNotFound();
+        }
+
+        $dateFrom = $this->request->getGet('date_from');
+        $dateTo   = $this->request->getGet('date_to') ?: $dateFrom;
+
+        // Kalau belum pilih tanggal, balikin kosong saja
+        if (empty($dateFrom)) {
+            return $this->response->setJSON([
+                'draw'            => (int) ($this->request->getGet('draw') ?? 1),
+                'recordsTotal'    => 0,
+                'recordsFiltered' => 0,
+                'data'            => [],
+            ]);
+        }
+        
+        $draw   = (int) ($this->request->getGet('draw') ?? 1);
+        $start  = (int) ($this->request->getGet('start') ?? 0);
+        $length = (int) ($this->request->getGet('length') ?? 10);
+
+        $searchValue = $this->request->getGet('search')['value'] ?? '';
+
+        $orderColumnIndex = (int) ($this->request->getGet('order')[0]['column'] ?? 1);
+        $orderDir         = $this->request->getGet('order')[0]['dir'] ?? 'asc';
+
+        // Mapping kolom sesuai urutan di DataTables
+        $columns = [
+            0  => 'attendance_days.id_attendance', // #
+            1  => 'attendance_days.work_date',
+            2  => 'e.nik',
+            3  => 'e.employee_name',
+            4  => 's.shift_name',
+            5  => 'attendance_days.in_time',
+            6  => 'attendance_days.break_out_time',
+            7  => 'attendance_days.break_in_time',
+            8  => 'attendance_days.out_time',
+            9  => 'r.total_work_min',
+            10 => 'r.total_break_min',
+            11 => 'r.late_min',
+            12 => 'r.early_leave_min',
+            13 => 'r.overtime_min',
+            14 => 'r.status_code',
+        ];
+
+        $orderColumn = $columns[$orderColumnIndex] ?? 'attendance_days.work_date';
+
+        $dayM = new AttendanceDayModel();
+        $db   = $dayM->db; // atau db_connect()
+
+        // Base query
+        $builder = $db->table('attendance_days')
             ->select('
-            attendance_days.*,
-            e.nik,
-            e.employee_name,
-            s.shift_name,
-            r.total_work_min,
-            r.total_break_min,
-            r.late_min,
-            r.early_leave_min,
-            r.overtime_min,
-            r.status_code
-        ')
+                attendance_days.id_attendance,
+                attendance_days.work_date,
+                attendance_days.in_time,
+                attendance_days.break_out_time,
+                attendance_days.break_in_time,
+                attendance_days.out_time,
+                e.nik,
+                e.employee_name,
+                s.shift_name,
+                s.id_shift,
+                r.total_work_min,
+                r.total_break_min,
+                r.late_min,
+                r.early_leave_min,
+                r.overtime_min,
+                r.status_code
+            ')
             ->join('employees e', 'e.id_employee = attendance_days.id_employee', 'left')
             ->join('shift_defs s', 's.id_shift = attendance_days.id_shift', 'left')
             ->join('attendance_results r', 'r.id_attendance = attendance_days.id_attendance', 'left')
-            ->where('work_date >=', $dateFrom)
-            ->where('work_date <=', $dateTo)
-            ->orderBy('work_date', 'ASC')
-            ->orderBy('e.nik', 'ASC')
-            ->findAll();
+            ->where('attendance_days.work_date >=', $dateFrom)
+            ->where('attendance_days.work_date <=', $dateTo);
 
+        // Total tanpa filter search
+        $builderTotal = clone $builder;
+        $recordsTotal = $builderTotal->countAllResults();
+
+        // Filtering search (nik, nama, tanggal)
+        if ($searchValue !== '') {
+            $builder->groupStart()
+                ->like('e.nik', $searchValue)
+                ->orLike('e.employee_name', $searchValue)
+                ->orLike('attendance_days.work_date', $searchValue)
+                ->groupEnd();
+        }
+
+        // Total setelah filter search
+        $builderFiltered   = clone $builder;
+        $recordsFiltered   = $builderFiltered->countAllResults();
+
+        // Order, limit, offset
+        $builder->orderBy($orderColumn, $orderDir)
+            ->limit($length, $start);
+
+        $query = $builder->get();
+        $rows  = $query->getResultArray();
+
+        $data  = [];
+        $no    = $start + 1;
+
+        foreach ($rows as $row) {
+            $status     = $row['status_code'] ?? '-';
+            $badgeClass = 'bg-gradient-secondary';
+            if ($status === 'PRESENT') {
+                $badgeClass = 'bg-gradient-info';
+            } elseif ($status === 'LATE') {
+                $badgeClass = 'bg-gradient-danger';
+            } elseif ($status === 'L') {
+                $badgeClass = 'bg-gradient-warning';
+            }
+
+            $statusHtml = '<span class="badge ' . $badgeClass . ' px-3">'
+                . esc($status)
+                . '</span>';
+
+            $shiftLabel = esc($row['shift_name'] ?? ($row['id_shift'] ?? '-'));
+            $shiftHtml  = '<span class="badge bg-gradient-secondary">'
+                . $shiftLabel
+                . '</span>';
+
+            // Sesuaikan HTML sama view-mu (icon, time-badge, etc)
+            $data[] = [
+                // #
+                '<span class="text-xs text-secondary">' . $no++ . '</span>',
+
+                // Tanggal
+                '<span class="d-flex align-items-center">
+                    <i class="fas fa-calendar-alt text-muted me-2"></i>'
+                    . esc($row['work_date']) .
+                    '</span>',
+
+                // NIK
+                esc($row['nik'] ?? '-'),
+
+                // Nama
+                esc($row['employee_name'] ?? '-'),
+
+                // Shift
+                $shiftHtml,
+
+                // Masuk
+                '<span class="time-badge">' . esc($row['in_time'] ?? '-') . '</span>',
+
+                // Istirahat
+                '<span class="time-badge">' . esc($row['break_out_time'] ?? '-') . '</span>',
+
+                // Kembali
+                '<span class="time-badge">' . esc($row['break_in_time'] ?? '-') . '</span>',
+
+                // Pulang
+                '<span class="time-badge">' . esc($row['out_time'] ?? '-') . '</span>',
+
+                // Kerja
+                '<span class="metric-positive text-xs">'
+                    . esc($row['total_work_min'] ?? 0) . ' <small>m</small>'
+                    . '</span>',
+
+                // Break
+                '<span class="metric-neutral text-xs">'
+                    . esc($row['total_break_min'] ?? 0) . ' <small>m</small>'
+                    . '</span>',
+
+                // Telat
+                '<span class="metric-negative text-xs">'
+                    . (($row['late_min'] ?? 0) > 0 ? '<i class="fas fa-arrow-up me-1"></i>' : '')
+                    . esc($row['late_min'] ?? 0) . ' <small>m</small>'
+                    . '</span>',
+
+                // Pulang cepat
+                '<span class="metric-negative text-xs">'
+                    . (($row['early_leave_min'] ?? 0) > 0 ? '<i class="fas fa-arrow-up me-1"></i>' : '')
+                    . esc($row['early_leave_min'] ?? 0) . ' <small>m</small>'
+                    . '</span>',
+
+                // Lembur
+                '<span class="metric-positive text-xs">'
+                    . (($row['overtime_min'] ?? 0) > 0 ? '<i class="fas fa-plus-circle me-1"></i>' : '')
+                    . esc($row['overtime_min'] ?? 0) . ' <small>m</small>'
+                    . '</span>',
+
+                // Status
+                $statusHtml,
+            ];
+        }
+
+        return $this->response->setJSON([
+            'draw'            => $draw,
+            'recordsTotal'    => $recordsTotal,
+            'recordsFiltered' => $recordsFiltered,
+            'data'            => $data,
+        ]);
+    }
+
+    public function reportDataAbsensi()
+    {
+        $dateFrom = $this->request->getGet('tglAwal');
+        $dateTo   = $this->request->getGet('tglAkhir');
+
+        $results = [];
+
+        if ($dateFrom && $dateTo) {
+            $results = $this->attendanceDayModel->getAttendanceResults($dateFrom, $dateTo);
+        }
+        // dd($results);
         $data = [
-            'role'        => $role,
-            'title'       => 'Promote Form',
+            'role'        => session()->get('role'),
+            'title'       => 'Report Data Absensi',
             'active1'     => '',
             'active2'     => '',
             'active3'     => 'active',
-            'date_from'   => $dateFrom,
-            'date_to'     => $dateTo,
-            'processed'   => $daysCount,
-            'resProcessed' => $resultsCount,
-            'days'        => $days,
+            'results'     => $results,
+            'tglAwal'     => $dateFrom,
+            'tglAkhir'    => $dateTo
         ];
 
-        return view($role . '/Attendance/promote_form', $data);
+        return view(session()->get('role') . '/reportDataAbsensi', $data);
+    }
+
+    public function tambahDataAbsensi()
+    {
+        $data = [
+            'role'      => session()->get('role'),
+            'title'     => 'Tambah Data Absensi',
+            'active1'   => '',
+            'active2'   => '',
+            'active3'   => 'active',
+        ];
+        return view(session()->get('role') . '/tambahDataAbsensi', $data);
+    }
+
+    public function getKaryawanByTglAbsen()
+    {
+        $tglAbsen = $this->request->getGet('date');
+
+        $sudahdiolah = $this->attendanceDayModel->getKaryawanByTglAbsen($tglAbsen);
+        $logs = $this->absensiModel->getkaryawan($tglAbsen);
+
+        // Ambil semua nik dari sudah diolah
+        $nikSudah = array_column($sudahdiolah, 'nik');
+        // dd($sudahdiolah, $logs);
+        $karyawan = [];
+
+        foreach ($logs as $data) {
+            $nikLog = $data['nik'];
+
+            // Jika nik belum ada di sudah diolah → masukkan ke karyawan
+            if (!in_array($nikLog, $nikSudah)) {
+                $karyawan[] = $data; // atau $karyawan[] = $nikLog;
+            }
+        }
+
+        // dd($karyawan);
+        return $this->response->setJSON($karyawan);
     }
 }

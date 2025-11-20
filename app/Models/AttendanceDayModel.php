@@ -57,4 +57,40 @@ class AttendanceDayModel extends Model
     protected $afterFind      = [];
     protected $beforeDelete   = [];
     protected $afterDelete    = [];
+
+    public function getAttendanceResults($dateFrom, $dateTo)
+    {
+        return $this->select('
+            attendance_days.*,
+            e.nik,
+            e.employee_name,
+            s.shift_name,
+            r.total_work_min,
+            r.total_break_min,
+            r.late_min,
+            r.early_leave_min,
+            r.overtime_min,
+            r.status_code
+        ')
+            ->join('employees e', 'e.id_employee = attendance_days.id_employee', 'left')
+            ->join('shift_defs s', 's.id_shift = attendance_days.id_shift', 'left')
+            ->join('attendance_results r', 'r.id_attendance = attendance_days.id_attendance', 'left')
+            ->where('work_date >=', $dateFrom)
+            ->where('work_date <=', $dateTo)
+            ->orderBy('work_date', 'ASC')
+            ->orderBy('e.nik', 'ASC')
+            ->findAll();
+    }
+
+    public function getKaryawanByTglAbsen($tglAbsen)
+    {
+        return $this->select('
+            e.nik,
+            e.employee_name
+        ')
+            ->join('employees e', 'e.id_employee = attendance_days.id_employee', 'left')
+            ->where('attendance_days.work_date', $tglAbsen)
+            ->groupBy('attendance_days.id_employee')
+            ->findAll();
+    }
 }

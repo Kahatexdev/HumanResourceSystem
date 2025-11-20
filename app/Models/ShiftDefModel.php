@@ -16,6 +16,7 @@ class ShiftDefModel extends Model
         'shift_name',
         'start_time',
         'end_time',
+        'break_time',
         'grace_min',
         'created_at',
         'updated_at',

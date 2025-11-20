@@ -18,7 +18,6 @@ class Shiftdef extends Migration
             'updated_at'     => ['type' => 'DATETIME', 'null' => true],
         ]);
         $this->forge->addKey('id_shift', true);
-        $this->forge->addUniqueKey('shift_name');
         $this->forge->createTable('shift_defs', true);
     }
     public function down()

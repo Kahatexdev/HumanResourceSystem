@@ -1,0 +1,244 @@
+<?php
+
+namespace App\Database\Seeds;
+
+use CodeIgniter\Database\Seeder;
+
+class MasterJamKerja extends Seeder
+{
+    public function run()
+    {
+        $data = [
+            // SHIFT ABC
+            [
+                'shift_name' => 'A',
+                'start_time'     => '06:45:00',
+                'end_time'    => '14:45:00',
+                'break_time' => 30,
+                'grace_min' => 15,
+                'created_at'    => date('Y-m-d H:i:s'),
+            ],
+            [
+                'shift_name' => 'A',
+                'start_time'     => '06:45:00',
+                'end_time'    => '14:45:00',
+                'break_time' => 20,
+                'grace_min' => 15,
+                'created_at'    => date('Y-m-d H:i:s'),
+            ],
+            [
+                'shift_name' => 'A',
+                'start_time'     => '14:45:00',
+                'end_time'    => '22:45:00',
+                'break_time' => 30,
+                'grace_min' => 15,
+                'created_at'    => date('Y-m-d H:i:s'),
+            ],
+            [
+                'shift_name' => 'A',
+                'start_time'     => '22:45:00',
+                'end_time'    => '06:45:00',
+                'break_time' => 30,
+                'grace_min' => 15,
+                'created_at'    => date('Y-m-d H:i:s'),
+            ],
+            [
+                'shift_name' => 'B',
+                'start_time'     => '06:45:00',
+                'end_time'    => '14:45:00',
+                'break_time' => 30,
+                'grace_min' => 15,
+                'created_at'    => date('Y-m-d H:i:s'),
+            ],
+            [
+                'shift_name' => 'B',
+                'start_time'     => '14:45:00',
+                'end_time'    => '22:45:00',
+                'break_time' => 30,
+                'grace_min' => 15,
+                'created_at'    => date('Y-m-d H:i:s'),
+            ],
+            [
+                'shift_name' => 'B',
+                'start_time'     => '22:45:00',
+                'end_time'    => '06:45:00',
+                'break_time' => 30,
+                'grace_min' => 15,
+                'created_at'    => date('Y-m-d H:i:s'),
+            ],
+            [
+                'shift_name' => 'C',
+                'start_time'     => '06:45:00',
+                'end_time'    => '14:45:00',
+                'break_time' => 30,
+                'grace_min' => 15,
+                'created_at'    => date('Y-m-d H:i:s'),
+            ],
+            [
+                'shift_name' => 'C',
+                'start_time'     => '14:45:00',
+                'end_time'    => '22:45:00',
+                'break_time' => 30,
+                'grace_min' => 15,
+                'created_at'    => date('Y-m-d H:i:s'),
+            ],
+            [
+                'shift_name' => 'C',
+                'start_time'     => '22:45:00',
+                'end_time'    => '06:45:00',
+                'break_time' => 30,
+                'grace_min' => 15,
+                'created_at'    => date('Y-m-d H:i:s'),
+            ],
+            [
+                'shift_name' => 'C',
+                'start_time'     => '22:45:00',
+                'end_time'    => '06:45:00',
+                'break_time' => 30,
+                'grace_min' => 15,
+                'created_at'    => date('Y-m-d H:i:s'),
+            ],
+            // NON SHIFT
+            [
+                'shift_name' => 'NS',
+                'start_time'     => '06:45:00',
+                'end_time'    => '14:15:00',
+                'break_time' => 20,
+                'grace_min' => 0,
+                'created_at'    => date('Y-m-d H:i:s'),
+            ],
+            [
+                'shift_name' => 'NS',
+                'start_time'     => '06:45:00',
+                'end_time'    => '14:45:00',
+                'break_time' => 20,
+                'grace_min' => 0,
+                'created_at'    => date('Y-m-d H:i:s'),
+            ],
+            [
+                'shift_name' => 'NS',
+                'start_time'     => '07:00:00',
+                'end_time'    => '15:00:00',
+                'break_time' => 30,
+                'grace_min' => 0,
+                'created_at'    => date('Y-m-d H:i:s'),
+            ],
+            [
+                'shift_name' => 'NS',
+                'start_time'     => '06:45:00',
+                'end_time'    => '14:15:00',
+                'break_time' => 30,
+                'grace_min' => 0,
+                'created_at'    => date('Y-m-d H:i:s'),
+            ],
+            [
+                'shift_name' => 'NS',
+                'start_time'     => '08:00:00',
+                'end_time'    => '15:30:00',
+                'break_time' => 30,
+                'grace_min' => 0,
+                'created_at'    => date('Y-m-d H:i:s'),
+            ],
+            [
+                'shift_name' => 'NS',
+                'start_time'     => '08:00:00',
+                'end_time'    => '17:00:00',
+                'break_time' => 30,
+                'grace_min' => 0,
+                'created_at'    => date('Y-m-d H:i:s'),
+            ],
+            [
+                'shift_name' => 'NS',
+                'start_time'     => '08:30:00',
+                'end_time'    => '16:30:00',
+                'break_time' => 30,
+                'grace_min' => 0,
+                'created_at'    => date('Y-m-d H:i:s'),
+            ],
+            [
+                'shift_name' => 'NS',
+                'start_time'     => '06:45:00',
+                'end_time'    => '14:45:00',
+                'break_time' => 60,
+                'grace_min' => 0,
+                'created_at'    => date('Y-m-d H:i:s'),
+            ],
+            [
+                'shift_name' => 'NS',
+                'start_time'     => '07:00:00',
+                'end_time'    => '15:00:00',
+                'break_time' => 60,
+                'grace_min' => 0,
+                'created_at'    => date('Y-m-d H:i:s'),
+            ],
+            [
+                'shift_name' => 'NS',
+                'start_time'     => '07:00:00',
+                'end_time'    => '16:00:00',
+                'break_time' => 60,
+                'grace_min' => 0,
+                'created_at'    => date('Y-m-d H:i:s'),
+            ],
+            [
+                'shift_name' => 'NS',
+                'start_time'     => '07:00:00',
+                'end_time'    => '17:00:00',
+                'break_time' => 60,
+                'grace_min' => 0,
+                'created_at'    => date('Y-m-d H:i:s'),
+            ],
+            [
+                'shift_name' => 'NS',
+                'start_time'     => '08:00:00',
+                'end_time'    => '15:00:00',
+                'break_time' => 60,
+                'grace_min' => 0,
+                'created_at'    => date('Y-m-d H:i:s'),
+            ],
+            [
+                'shift_name' => 'NS',
+                'start_time'     => '08:00:00',
+                'end_time'    => '16:00:00',
+                'break_time' => 30,
+                'grace_min' => 0,
+                'created_at'    => date('Y-m-d H:i:s'),
+            ],
+            [
+                'shift_name' => 'NS',
+                'start_time'     => '08:00:00',
+                'end_time'    => '16:00:00',
+                'break_time' => 60,
+                'grace_min' => 0,
+                'created_at'    => date('Y-m-d H:i:s'),
+            ],
+            [
+                'shift_name' => 'NS',
+                'start_time'     => '08:00:00',
+                'end_time'    => '17:00:00',
+                'break_time' => 60,
+                'grace_min' => 0,
+                'created_at'    => date('Y-m-d H:i:s'),
+            ],
+            [
+                'shift_name' => 'NS',
+                'start_time'     => '08:30:00',
+                'end_time'    => '17:30:00',
+                'break_time' => 60,
+                'grace_min' => 0,
+                'created_at'    => date('Y-m-d H:i:s'),
+            ],
+            [
+                'shift_name' => 'NS',
+                'start_time'     => '09:00:00',
+                'end_time'    => '17:00:00',
+                'break_time' => 60,
+                'grace_min' => 0,
+                'created_at'    => date('Y-m-d H:i:s'),
+            ],
+
+        ];
+
+        // Using Query Builder
+        $this->db->table('shift_defs')->insertBatch($data);
+    }
+}

@@ -345,16 +345,21 @@ $routes->group('/TrainingSchool', ['filter' => 'TrainingSchool'], function ($rou
 $routes->group('/Absensi', ['filter' => 'Absensi'], function ($routes) {
     $routes->get('', 'AbsensiController::index');
     $routes->get('dataAbsensi', 'AbsensiController::dataAbsensi');
+    $routes->get('detailAbsensi/(:any)/(:any)', 'AbsensiController::detailAbsensi/$1/$2');
+    $routes->post('getDetailAbsensiAjax/(:any)/(:any)', 'AbsensiController::getDetailAbsensiAjax/$1/$2');
     $routes->get('dataKaryawan', 'AbsensiController::listArea');
     $routes->get('dataKaryawan/(:any)', 'AbsensiController::detailKaryawanPerArea/$1');
+    $routes->get('reportDataAbsensi', 'AbsensiController::reportDataAbsensi');
+    $routes->get('tambahDataAbsensi', 'AbsensiController::tambahDataAbsensi');
+    $routes->get('getKaryawanByTglAbsen', 'AbsensiController::getKaryawanByTglAbsen');
     $routes->get('downloadTemplateKaryawan', 'EmployeeController::downloadTemplate');
     $routes->post('karyawanStoreImport', 'EmployeeController::upload');
     $routes->post('AbsensiImport', 'AbsensiController::upload');
     $routes->get('exportKaryawan/(:any)', 'EmployeeController::exportPerArea/$1');
 
-    $routes->get('attendance/promote', 'AbsensiController::promoteForm');
+    $routes->get('attendance/promote', 'AbsensiController::promoteView');
     $routes->post('attendance/promote', 'AbsensiController::promoteSubmit');
-
+    $routes->get('attendance/promote-data', 'AbsensiController::promoteData');
 
     $routes->get('karyawanCreate', 'EmployeeController::create');
     $routes->post('karyawanStore', 'EmployeeController::store');
@@ -382,6 +387,27 @@ $routes->group('/Absensi', ['filter' => 'Absensi'], function ($routes) {
     $routes->get('finalAssesment/(:any)/(:any)', 'PerformanceAssessmentsController::finalAssesment/$1/$2');
     $routes->post('exportFinalAssessment', 'PerformanceAssessmentsController::exportFinalAssessment');
     $routes->get('exportKaryawan/', 'EmployeeController::exportAll');
+
+
+    // master shift
+    $routes->get('shiftDef/', 'ShiftController::shiftDef');
+    $routes->post('storeShiftDef/', 'ShiftController::shiftMasterStore');
+    $routes->post('updateShiftDef/(:num)', 'ShiftController::shiftMasterUpdate/$1');
+
+    // shift
+    $routes->get('shiftAssignments/', 'ShiftController::index');
+    $routes->get('getEmployeeNames/', 'ShiftController::getEmployeeNames');
+    $routes->post('storeShiftAssignment/', 'ShiftController::storeShiftAssignment');
+    $routes->post('updateShiftAssignment', 'ShiftController::updateShiftAssignment');
+    $routes->post('deleteShiftAssignment', 'ShiftController::deleteShiftAssignment');
+    $routes->get('downloadTemplateJamKerja', 'ShiftController::downloadTemplate');
+    $routes->post('storeUploadTemplate', 'ShiftController::storeUploadTemplate');
+
+    // surat absen
+    $routes->get('suratAbsen', 'AttendanceLetterController::index');
+    $routes->get('lettersData', 'AttendanceLetterController::lettersData');
+    $routes->post('letterStore', 'AttendanceLetterController::letterStore');
+    $routes->post('letterUpdateStatus', 'AttendanceLetterController::letterUpdateStatus');
 });
 
 $routes->group('api', function ($routes) {

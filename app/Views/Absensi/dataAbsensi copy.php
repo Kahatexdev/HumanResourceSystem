@@ -110,13 +110,6 @@
             </div>
         </div>
     </div>
-    <?php if (isset($daysCount, $resultsCount)): ?>
-        <small class="text-muted">
-            Diproses dari <?= esc($startDate) ?> s/d <?= esc($endDate) ?> –
-            Days: <?= esc($daysCount) ?>, Results: <?= esc($resultsCount) ?>
-        </small>
-    <?php endif; ?>
-
     <div class="row">
         <div class="col-xl-12 col-sm-12 mb-xl-0 mb-2 mt-2">
             <div class="card">
@@ -147,93 +140,104 @@
     <div class="row mt-1">
         <div class="col-xl-12 col-sm-12 mb-xl-0 mb-4 mt-2">
             <div class="card">
-                <div class="card-body d-flex justify-content-between align-items-center">
-                    <h4 class="card-title mb-0">
-                        Data Log Absensi Per Bulan
+                <div class="card-body">
+                    <h4 class="card-title">
+                        Tabel Data Logs Absen
                     </h4>
+                    <div class="table-responsive">
+                        <table id="dataLogTable" class="table table-striped table-hover table-bordered w-100">
+                            <thead>
+                                <th>TerminalId</th>
+                                <th>NIK</th>
+                                <th>CardNo</th>
+                                <th>EmployeeName</th>
+                                <th>Department</th>
+                                <th>logDate</th>
+                                <th>logTime</th>
+                                <th>Admin</th>
+                                <th>Aksi</th>
+                            </thead>
+                            <tbody>
+                                <?php if (!empty($log)) : ?>
+                                    <?php foreach ($log as $data) : ?>
+                                        <tr>
+                                            <td><?= $data['terminal_id'] ?></td>
+                                            <td><?= $data['nik'] ?></td>
+                                            <td><?= $data['card_no'] ?></td>
+                                            <td><?= $data['employee_name'] ?></td>
+                                            <td><?= $data['department'] ?></td>
 
-                    <div class="icon icon-shape bg-gradient-info shadow text-center border-radius-md">
-                        <i class="fas fa-calendar-alt text-lg opacity-10" aria-hidden="true"></i>
+                                            <td><?= $data['log_date'] ?></td>
+
+                                            <td><?= $data['log_time'] ?></td>
+                                            <td><?= $data['admin'] ?></td>
+                                            <td>
+                                                <button
+                                                    class="btn btn-sm btn-info btn-edit-employee">
+                                                    Edit
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach ?>
+                                <?php else : ?>
+                                    <tr>
+                                        <td colspan="14" class="text-center">No Karyawan found</td>
+                                    </tr>
+                                <?php endif; ?>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+    <script>
+        $(document).ready(function() {
+            // Initialize DataTable with export options
+            $('#dataLogTable').DataTable({});
 
-    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-3 mt-2">
-        <?php foreach ($month as $mb) : ?>
-            <?php
-            $m = (int) ($mb['month'] ?? 0);
-            $y = (int) ($mb['year'] ?? 0);
-            $label = date('F', mktime(0, 0, 0, $m, 10)) . ' ' . $y;
-            ?>
-            <div class="col">
-                <a href="<?= base_url(esc($role, 'url') . '/detailAbsensi/' . $m . '/' . $y); ?>"
-                    class="text-decoration-none text-reset"
-                    aria-label="Lihat detail absensi bulan <?= esc($label); ?>">
+            // Flash message SweetAlerts
+            <?php if (session()->getFlashdata('success')) : ?>
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Success!',
+                    html: '<?= session()->getFlashdata('success') ?>',
+                });
+            <?php endif; ?>
 
-                    <div class="card h-100 border-0 shadow-sm">
-                        <div class="card-body d-flex flex-column">
-                            <div class="d-flex justify-content-between align-items-start mb-1">
-                                <h3 class="h6 mb-0 fw-bold">
-                                    <?= esc($label); ?>
-                                </h3>
-                                <span class="icon icon-shape bg-gradient-info shadow text-center border-radius-md">
-                                    <i class="fas fa-calendar-alt text-lg opacity-10" aria-hidden="true"></i>
-                                </span>
-                            </div>
-                        </div>
-                    </div>
+            <?php if (session()->getFlashdata('error')) : ?>
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error!',
+                    html: '<?= session()->getFlashdata('error') ?>',
+                });
+            <?php endif; ?>
+        });
+    </script>
 
-                </a>
-            </div>
-        <?php endforeach; ?>
-    </div>
-</div>
-<script>
-    $(document).ready(function() {
-        // Flash message SweetAlerts
-        <?php if (session()->getFlashdata('success')) : ?>
-            Swal.fire({
-                icon: 'success',
-                title: 'Success!',
-                html: '<?= session()->getFlashdata('success') ?>',
-            });
-        <?php endif; ?>
+    <script>
+        const fileInput = document.getElementById('file-upload');
+        const uploadArea = document.getElementById('upload-area');
 
-        <?php if (session()->getFlashdata('error')) : ?>
-            Swal.fire({
-                icon: 'error',
-                title: 'Error!',
-                html: '<?= session()->getFlashdata('error') ?>',
-            });
-        <?php endif; ?>
-    });
-</script>
+        fileInput.addEventListener('change', (event) => {
+            const fileName = event.target.files[0] ? event.target.files[0].name : "No file selected";
+            uploadArea.querySelector('p').textContent = `Selected File: ${fileName}`;
+        });
 
-<script>
-    const fileInput = document.getElementById('file-upload');
-    const uploadArea = document.getElementById('upload-area');
+        uploadArea.addEventListener('dragover', (event) => {
+            event.preventDefault();
+            uploadArea.style.backgroundColor = "#e6f5ff";
+        });
 
-    fileInput.addEventListener('change', (event) => {
-        const fileName = event.target.files[0] ? event.target.files[0].name : "No file selected";
-        uploadArea.querySelector('p').textContent = `Selected File: ${fileName}`;
-    });
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.style.backgroundColor = "#ffffff";
+        });
 
-    uploadArea.addEventListener('dragover', (event) => {
-        event.preventDefault();
-        uploadArea.style.backgroundColor = "#e6f5ff";
-    });
-
-    uploadArea.addEventListener('dragleave', () => {
-        uploadArea.style.backgroundColor = "#ffffff";
-    });
-
-    uploadArea.addEventListener('drop', (event) => {
-        event.preventDefault();
-        fileInput.files = event.dataTransfer.files;
-        const fileName = event.dataTransfer.files[0] ? event.dataTransfer.files[0].name : "No file selected";
-        uploadArea.querySelector('p').textContent = `Selected File: ${fileName}`;
-    });
-</script>
-<?php $this->endSection(); ?>
+        uploadArea.addEventListener('drop', (event) => {
+            event.preventDefault();
+            fileInput.files = event.dataTransfer.files;
+            const fileName = event.dataTransfer.files[0] ? event.dataTransfer.files[0].name : "No file selected";
+            uploadArea.querySelector('p').textContent = `Selected File: ${fileName}`;
+        });
+    </script>
+    <?php $this->endSection(); ?>

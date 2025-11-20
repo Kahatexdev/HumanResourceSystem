@@ -58,4 +58,80 @@ class AbsensiModel extends Model
     protected $beforeDelete   = [];
     protected $afterDelete    = [];
 
+
+    public function getLogAbsensi()
+    {
+        return $this->select('MONTH(attendance_logs.log_date) AS month,
+                YEAR(attendance_logs.log_date) AS year')
+            ->orderBy('log_date', 'ASC')
+            ->orderBy('log_time', 'ASC')
+            ->groupBy('MONTH(attendance_logs.log_date), YEAR(attendance_logs.log_date)')
+            ->get()
+            ->getResultArray();
+    }
+
+    public function getDetailLogAbsensi($month, $year)
+    {
+        return $this->select('attendance_logs.*')
+            ->where('MONTH(attendance_logs.log_date)', $month)
+            ->where('YEAR(attendance_logs.log_date)', $year)
+            ->orderBy('log_date', 'ASC')
+            ->orderBy('log_time', 'ASC')
+            ->get()
+            ->getResultArray();
+    }
+
+    public function getkaryawan($tglAbsen)
+    {
+        return $this->select('
+            attendance_logs.nik,
+            attendance_logs.employee_name
+        ')
+            ->where('attendance_logs.log_date', $tglAbsen)
+            // ->where('attendance_logs.nik', '39I3733')
+            ->groupBy('attendance_logs.nik')
+            ->findAll();
+    }
+
+    public function getDetailLogAbsensiServer(
+        $month,
+        $year,
+        $start,
+        $length,
+        $search,
+        $orderColumn,
+        $orderDir
+    ) {
+        // total rows
+        $builder = $this->builder();
+        $builder->where('MONTH(log_date)', $month);
+        $builder->where('YEAR(log_date)', $year);
+        $total = $builder->countAllResults(false);
+
+        // filter search
+        if (!empty($search)) {
+            $builder->groupStart()
+                ->like('nik', $search)
+                ->orLike('employee_name', $search)
+                ->orLike('department', $search)
+                ->groupEnd();
+        }
+
+        $filtered = $builder->countAllResults(false);
+
+        // order
+        $builder->orderBy($orderColumn, $orderDir);
+
+        // limit
+        $builder->limit($length, $start);
+
+        $query = $builder->get();
+        $data  = $query->getResultArray();
+
+        return [
+            'data'     => $data,
+            'total'    => $total,
+            'filtered' => $filtered,
+        ];
+    }
 }
