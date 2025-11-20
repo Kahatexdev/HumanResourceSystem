@@ -16,6 +16,7 @@ use App\Models\AbsensiModel;
 use App\Models\AttendanceResultModel;
 use App\Models\AttendanceDayModel;
 use App\Models\ShiftAssignmentsModel;
+use App\Models\AttendanceLetterModel;
 
 class AbsensiController extends BaseController
 {
@@ -33,6 +34,7 @@ class AbsensiController extends BaseController
     protected $attendanceDayModel;
     protected $attendanceLogModel;
     protected $shiftAssignmentsModel;
+    protected $attendanceLetterModel;
 
     public function __construct()
     {
@@ -48,22 +50,58 @@ class AbsensiController extends BaseController
         $this->attendanceResultModel = new AttendanceResultModel();
         $this->attendanceDayModel = new AttendanceDayModel();
         $this->shiftAssignmentsModel = new ShiftAssignmentsModel();
+        $this->attendanceLetterModel = new AttendanceLetterModel();
 
         $this->role = session()->get('role');
     }
     public function index()
     {
-        $TtlKaryawan = $this->employeeModel->where('status', 'active')->countAll();
-        $PerpindahanBulanIni = $this->historyPindahKaryawanModel->where('MONTH(date_of_change)', date('m'))->countAllResults();
+        // harian
+        $HadirHariIni = $this->attendanceResultModel->getEmployeePresentTodayCount();
+        $TtlKaryawan = $this->employeeModel->where('status', 'Aktif')->countAllResults();
+        $IzinHariIni = $this->attendanceLetterModel->getIzinTodayCount();
+        $SakitHariIni = $this->attendanceLetterModel->getSakitTodayCount();
+        $MangkirHariIni = $this->attendanceLetterModel->getMangkirTodayCount();
 
+        // minggu
+        $DataHadirMinggu = $this->attendanceResultModel->getEmployeePresentWeekByDay();
+        $DataIzinMinggu = $this->attendanceLetterModel->getIzinWeekByDay();
+        $DataSakitMinggu = $this->attendanceLetterModel->getSakitWeekByDay();
+        $DataMangkirMinggu = $this->attendanceLetterModel->getMangkirWeekByDay();
+
+        // bulan
+        $TotalHadirBulan = $this->attendanceResultModel->getEmployeeStatusMonth('PRESENT');
+        $TotalIzinBulan = $this->attendanceLetterModel->getIzinMonthCount();
+        $TotalSakitBulan = $this->attendanceLetterModel->getSakitMonthCount();
+        $TotalMangkirBulan = $this->attendanceLetterModel->getMangkirMonthCount();
+
+        // absen karyawan
+        $AbsensiHariIni = $this->attendanceResultModel->getAttendanceTodayAllEmployees();
+
+        // data top ketidakhadiran
+        $TopKetidakhadiran = $this->attendanceLetterModel->getTopKetidakhadiran();
+        // dd($TopKetidakhadiran);
         return view($this->role . '/index', [
             'role' => $this->role,
             'title' => 'Dashboard',
             'active1' => 'active',
             'active2' => '',
             'active3' => '',
+            'HadirHariIni' => $HadirHariIni,
             'TtlKaryawan' => $TtlKaryawan,
-            'PerpindahanBulanIni' => $PerpindahanBulanIni
+            'IzinHariIni'   => $IzinHariIni,
+            'SakitHariIni' => $SakitHariIni,
+            'MangkirHariIni' => $MangkirHariIni,
+            'DataHadirMinggu' => $DataHadirMinggu,
+            'DataIzinMinggu' => $DataIzinMinggu,
+            'DataSakitMinggu' => $DataSakitMinggu,
+            'DataMangkirMinggu' => $DataMangkirMinggu,
+            'TotalHadirBulan' => $TotalHadirBulan,
+            'TotalIzinBulan' => $TotalIzinBulan,
+            'TotalSakitBulan' => $TotalSakitBulan,
+            'TotalMangkirBulan' => $TotalMangkirBulan,
+            'AbsensiHariIni'    => $AbsensiHariIni,
+            'TopKetidakhadiran' => $TopKetidakhadiran
         ]);
     }
 
@@ -380,55 +418,15 @@ class AbsensiController extends BaseController
 
     public function dataAbsensi()
     {
-        // 1) Range tanggal yang mau diproses
-        $endDate   = date('Y-m-d'); // hari ini
-        $startDate = date('Y-m-d', strtotime('-2 days')); // 2 hari ke belakang
-
-        // 2) Data bulan absensi untuk ditampilkan di view
         $bulanAbsen = $this->absensiModel->getLogAbsensi();
-        // log_message('debug', 'Before groupLogsToDays, mem: ' . memory_get_usage());
-        // Siapkan default nilai kalau service gagal
-        $daysCount    = 0;
-        $resultsCount = 0;
 
-        // 3) Grouping log -> attendance_days
-        // try {
-        //     $groupSvc  = new \App\Services\AttendanceGroupingService();
-        //     log_message('debug', 'Before groupLogsToDays, mem: ' . memory_get_usage());
-        //     $daysCount = $groupSvc->groupLogsToDays($startDate, $endDate);
-        //     log_message('debug', 'After groupLogsToDays, mem: ' . memory_get_usage());
-        // } catch (\Throwable $e) {
-        //     // log_message(
-        //     //     'error',
-        //     //     '[dataAbsensi] Error groupLogsToDays: {msg}',
-        //     //     ['msg' => $e->getMessage()]
-        //     // );
-        // }
-
-        // // 4) Hitung hasil kerja -> attendance_results
-        // try {
-        //     $resultSvc    = new \App\Services\AttendanceResultService();
-        //     $resultsCount = $resultSvc->processRange($startDate, $endDate);
-        // } catch (\Throwable $e) {
-        //     // log_message(
-        //     //     'error',
-        //     //     '[dataAbsensi] Error processRange: {msg}',
-        //     //     ['msg' => $e->getMessage()]
-        //     // );
-        // }
-
-        // 5) Data untuk view
         $data = [
             'role'          => session()->get('role'),
-            'title'         => 'Data Absensi',
+            'title'         => 'Log Absen',
             'active1'       => '',
             'active2'       => '',
             'active3'       => 'active',
-            'month'         => $bulanAbsen,
-            'startDate'     => $startDate,
-            'endDate'       => $endDate,
-            // 'daysCount'     => $daysCount,
-            // 'resultsCount'  => $resultsCount,
+            'month'         => $bulanAbsen
         ];
 
         return view(session()->get('role') . '/dataAbsensi', $data);
@@ -762,7 +760,7 @@ class AbsensiController extends BaseController
 
         $data = [
             'role'         => session()->get('role'),
-            'title'        => 'Promote Form',
+            'title'        => 'Kalkulasi Absen',
             'active1'      => '',
             'active2'      => '',
             'active3'      => 'active',
