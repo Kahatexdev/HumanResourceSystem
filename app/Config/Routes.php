@@ -352,6 +352,8 @@ $routes->group('/Absensi', ['filter' => 'Absensi'], function ($routes) {
     $routes->get('reportDataAbsensi', 'AbsensiController::reportDataAbsensi');
     $routes->get('tambahDataAbsensi', 'AbsensiController::tambahDataAbsensi');
     $routes->get('getKaryawanByTglAbsen', 'AbsensiController::getKaryawanByTglAbsen');
+    $routes->get('getLogAbsensiByNIKAndDate', 'AbsensiController::getLogAbsensiByNIKAndDate');
+    $routes->post('tambahDataAbsensiStore', 'AbsensiController::tambahDataAbsensiStore');
     $routes->get('downloadTemplateKaryawan', 'EmployeeController::downloadTemplate');
     $routes->post('karyawanStoreImport', 'EmployeeController::upload');
     $routes->post('AbsensiImport', 'AbsensiController::upload');

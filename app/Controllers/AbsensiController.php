@@ -15,6 +15,7 @@ use App\Models\FormerEmployeeModel;
 use App\Models\AbsensiModel;
 use App\Models\AttendanceResultModel;
 use App\Models\AttendanceDayModel;
+use App\Models\ShiftAssignmentsModel;
 use App\Models\AttendanceLetterModel;
 
 class AbsensiController extends BaseController
@@ -32,7 +33,9 @@ class AbsensiController extends BaseController
     protected $attendanceResultModel;
     protected $attendanceDayModel;
     protected $attendanceLogModel;
+    protected $shiftAssignmentsModel;
     protected $attendanceLetterModel;
+    protected $idUser;
 
     public function __construct()
     {
@@ -47,7 +50,9 @@ class AbsensiController extends BaseController
         $this->absensiModel = new AbsensiModel();
         $this->attendanceResultModel = new AttendanceResultModel();
         $this->attendanceDayModel = new AttendanceDayModel();
+        $this->shiftAssignmentsModel = new ShiftAssignmentsModel();
         $this->attendanceLetterModel = new AttendanceLetterModel();
+        $this->idUser = session()->get('id_user');
 
         $this->role = session()->get('role');
     }
@@ -824,7 +829,7 @@ class AbsensiController extends BaseController
                 'data'            => [],
             ]);
         }
-        
+
         $draw   = (int) ($this->request->getGet('draw') ?? 1);
         $start  = (int) ($this->request->getGet('start') ?? 0);
         $length = (int) ($this->request->getGet('length') ?? 10);
@@ -1045,24 +1050,132 @@ class AbsensiController extends BaseController
     {
         $tglAbsen = $this->request->getGet('date');
 
+        // Karyawan yang sudah diproses di attendance_day (punya id_employee)
         $sudahdiolah = $this->attendanceDayModel->getKaryawanByTglAbsen($tglAbsen);
+
+        // Log absensi dari mesin
         $logs = $this->absensiModel->getkaryawan($tglAbsen);
 
-        // Ambil semua nik dari sudah diolah
-        $nikSudah = array_column($sudahdiolah, 'nik');
-        // dd($sudahdiolah, $logs);
+        // Ambil semua id_employee dari sudah diolah
+        $idSudah = array_column($sudahdiolah, 'id_employee');
+
         $karyawan = [];
 
         foreach ($logs as $data) {
-            $nikLog = $data['nik'];
 
-            // Jika nik belum ada di sudah diolah → masukkan ke karyawan
-            if (!in_array($nikLog, $nikSudah)) {
-                $karyawan[] = $data; // atau $karyawan[] = $nikLog;
+            $idEmpLog = $data['id_employee'];   // id_employee dari logs
+
+            // Jika id_employee belum ada di data sudah diolah → masukkan ke karyawan
+            if (!in_array($idEmpLog, $idSudah)) {
+                $karyawan[] = $data;
             }
         }
 
-        // dd($karyawan);
         return $this->response->setJSON($karyawan);
+    }
+
+
+    public function getLogAbsensiByNIKAndDate()
+    {
+        $nik = $this->request->getGet('nik');
+        $date = $this->request->getGet('date');
+
+        $logs = $this->absensiModel->getLogAbsensiByNIKAndDate($nik, $date);
+
+        return $this->response->setJSON($logs);
+    }
+
+    public function tambahDataAbsensiStore()
+    {
+        $data = $this->request->getPost();
+        $idEmployee = [];
+
+        foreach ($data['employee'] as $i => $nik) {
+            $nama = $data['employee_name'][$i];
+
+            $getEmployee = $this->employeeModel
+                ->select('id_employee, employee_name, nik')
+                ->where('nik', $nik)
+                ->orWhere('employee_name', $nama)
+                ->first();
+
+            $idEmployee[] = $getEmployee;
+        }
+
+        $workDate = [];
+        foreach ($data['in_time'] as $key) {
+            $workDate[] = date('Y-m-d', strtotime($key));
+        }
+
+        $idShiftFinal = [];
+        $dataError = [];
+
+        foreach ($idEmployee as $index => $empId) {
+            // Ambil semua shift employee ini
+            $getAllShift = $this->shiftAssignmentsModel->getShiftByEmployee($empId['id_employee']);
+            $namaKaryawan = $empId['employee_name'];
+
+            // Jika tidak ada shift assignment
+            if (!$getAllShift || count($getAllShift) == 0) {
+                $nik = $data['employee'][$index];
+                $dataError[] = "$namaKaryawan, NIK = $nik belum memiliki shift assignment!";
+                continue;
+            }
+
+            // Ambil jam start & id shift
+            $shiftStart = array_column($getAllShift, 'start_time');
+            $shiftId    = array_column($getAllShift, 'id_shift');
+
+            // --- Ambil jam dari in_time ---
+            $inTime = $data['in_time'][$index];
+            $jamMasuk = date('H:i', strtotime($inTime));
+
+            // --- Tentukan shift yang cocok ---
+            $foundShift = null;
+
+            foreach ($shiftStart as $i => $start) {
+
+                if (!$start) continue;
+                // convert start_time ke H:i
+                $shiftJam = date('H:i', strtotime($start));
+
+                // ambil selisih menit absolut
+                $diff = abs(strtotime($jamMasuk) - strtotime($shiftJam));
+
+                // shift paling mendekati
+                if ($foundShift === null || $diff < $foundShift['diff']) {
+                    $foundShift = [
+                        'id_shift' => $shiftId[$i],
+                        'diff' => $diff
+                    ];
+                }
+            }
+
+            $idShiftFinal[] = $foundShift['id_shift'];
+        }
+
+        if (!empty($dataError)) {
+            return redirect()->back()->with('error', implode("\n", $dataError));
+        }
+
+        foreach ($idEmployee as $i => $empId) {
+            $this->attendanceDayModel->insert([
+                'id_employee'    => $empId['id_employee'],
+                'work_date'      => $workDate[$i],
+                'id_shift'       => $idShiftFinal[$i],
+                'in_time'        => $data['in_time'][$i],
+                'break_out_time' => $data['break_out_time'][$i],
+                'break_in_time'  => $data['break_in_time'][$i],
+                'out_time'       => $data['out_time'][$i],
+                'status_final'   => 'LOCKED',
+                'verified_by'    => $this->idUser,
+                'verified_at'    => date('Y-m-d H:i:s'),
+                'note'           => null,
+                'created_at'     => date('Y-m-d H:i:s'),
+                'updated_at'     => date('Y-m-d H:i:s'),
+            ]);
+        }
+
+        return redirect()->back()->with('success', 'Data absensi berhasil ditambahkan!');
     }
 }

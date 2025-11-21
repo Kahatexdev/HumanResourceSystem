@@ -85,10 +85,11 @@ class AbsensiModel extends Model
     {
         return $this->select('
             attendance_logs.nik,
-            attendance_logs.employee_name
+            attendance_logs.employee_name,
+            employees.id_employee
         ')
+            ->join('employees', 'employees.nik = attendance_logs.nik', 'left')
             ->where('attendance_logs.log_date', $tglAbsen)
-            // ->where('attendance_logs.nik', '39I3733')
             ->groupBy('attendance_logs.nik')
             ->findAll();
     }
@@ -133,5 +134,18 @@ class AbsensiModel extends Model
             'total'    => $total,
             'filtered' => $filtered,
         ];
+    }
+
+    public function getLogAbsensiByNIKAndDate($nik, $date)
+    {
+        $yesterday = date('Y-m-d', strtotime($date . ' -1 day'));
+
+        return $this->select('attendance_logs.nik, attendance_logs.employee_name, attendance_logs.log_date, attendance_logs.log_time')
+            ->where('attendance_logs.nik', $nik)
+            ->where('attendance_logs.log_date >=', $yesterday)
+            ->where('attendance_logs.log_date <=', $date)
+            ->orderBy('attendance_logs.log_date', 'ASC')
+            ->orderBy('attendance_logs.log_time', 'ASC')
+            ->findAll();
     }
 }

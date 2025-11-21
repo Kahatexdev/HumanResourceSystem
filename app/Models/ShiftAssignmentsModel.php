@@ -81,4 +81,20 @@ class ShiftAssignmentsModel extends Model
             ->orderBy('shift_defs.shift_name', 'ASC')
             ->findAll();
     }
+
+    public function getShiftByEmployee($idEmployee)
+    {
+        return $this->select('
+                 shift_assignments.id_employee,
+                shift_assignments.id_shift,
+                shift_defs.shift_name,
+                shift_defs.start_time,
+                shift_defs.end_time,
+                shift_defs.break_time,
+                shift_defs.grace_min
+            ')
+            ->join('shift_defs', 'shift_defs.id_shift = shift_assignments.id_shift', 'left')
+            ->where('shift_assignments.id_employee', $idEmployee)
+            ->findAll();
+    }
 }
