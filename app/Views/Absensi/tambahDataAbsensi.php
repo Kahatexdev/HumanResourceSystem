@@ -372,6 +372,7 @@
                                 <i class="fas fa-user text-primary me-2"></i>Pilih Karyawan
                             </label>
                             <select name="employee[]" class="form-select select2 employee_select" required>
+                                <input type="hidden" name="employee_name[]" class="employee_name">
                                 <option value="">-- Pilih Karyawan --</option>
                             </select>
                         </div>
@@ -456,10 +457,29 @@
 <!-- Select2 JS -->
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
-<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+<?php if (session()->getFlashdata('error')) : ?>
+    <script>
+        Swal.fire({
+            icon: 'error',
+            title: 'Oops...',
+            html: `<?= nl2br(session()->getFlashdata('error')); ?>`,
+        });
+    </script>
+<?php endif; ?>
+
+<?php if (session()->getFlashdata('success')) : ?>
+    <script>
+        Swal.fire({
+            icon: 'success',
+            title: 'Berhasil',
+            text: '<?= session()->getFlashdata('success'); ?>',
+        });
+    </script>
+<?php endif; ?>
+
+
 
 <script>
     let optionsHtml = '<option></option>';
@@ -566,10 +586,10 @@
                 }
 
                 optionsHtml = '<option></option>';
-
                 data.forEach(function(k) {
                     const val = (k.nik !== undefined && k.nik !== null) ? k.nik.toString() : '';
-                    optionsHtml += `<option value="${val}">${k.employee_name} (${val})</option>`;
+                    const nama_karyawan = (k.employee_name !== undefined && k.employee_name !== null) ? k.employee_name : 'Nama Tidak Diketahui';
+                    optionsHtml += `<option value="${val}" data-nama="${nama_karyawan}">${nama_karyawan} (${val})</option>`;
                 });
 
                 $('.employee_select').each(function() {
@@ -606,6 +626,9 @@
         let nik = $(this).val();
         let date = $('#attendance_date').val();
         let card = $(this).closest('.attendance-card');
+        const nama = $(this).find(':selected').data('nama') || '';
+
+        $(this).closest('.card-body').find('.employee_name').val(nama);
 
         if (!nik || !date) {
             return;
@@ -644,8 +667,8 @@
                     <div class="log-item">
                         <div class="log-dot ${color}"></div>
                         <div class="log-content">
+                        <div class="log-date">${log.log_date}</div>
                             <div class="log-time">${log.log_time}</div>
-                            <div class="log-date">${log.log_date}</div>
                             <div class="log-label">${log.label ?? ''}</div>
                         </div>
                     </div>
@@ -664,37 +687,7 @@
                 });
             });
     });
-
-
-    // $(document).on('click', '.logs', function() {
-
-    //     let card = $(this).closest('.attendance-card');
-    //     let logs = card.data('logs'); // ambil logs yang tersimpan
-
-    //     if (!logs || logs.length === 0) {
-    //         Swal.fire({
-    //             icon: 'warning',
-    //             title: 'Belum Ada Logs',
-    //             text: 'Pilih karyawan terlebih dahulu.'
-    //         });
-    //         return;
-    //     }
-
-    //     // Buat list HTML-nya
-    //     let htmlList = `<ul style="text-align:left;">`;
-    //     logs.forEach(log => {
-    //         htmlList += `<li><strong>${log.log_date}</strong> — ${log.log_time}</li>`;
-    //     });
-    //     htmlList += `</ul>`;
-
-    //     // Tampilkan modal
-    //     Swal.fire({
-    //         title: 'Daftar Log Absensi',
-    //         html: htmlList,
-    //         width: 500
-    //     });
-
-    // });
 </script>
+
 
 <?php $this->endSection(); ?>

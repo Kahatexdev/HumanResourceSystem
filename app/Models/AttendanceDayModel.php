@@ -86,7 +86,8 @@ class AttendanceDayModel extends Model
     {
         return $this->select('
             e.nik,
-            e.employee_name
+            e.employee_name,
+            e.id_employee
         ')
             ->join('employees e', 'e.id_employee = attendance_days.id_employee', 'left')
             ->where('attendance_days.work_date', $tglAbsen)

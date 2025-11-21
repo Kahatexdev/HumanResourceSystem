@@ -60,7 +60,7 @@
         </nav>
         <div class="collapse navbar-collapse mt-sm-0 mt-2 me-md-0 me-sm-4" id="navbar">
             <?php if (session()->get('role') == 'Absensi') : ?>
-                <?php if (($title ?? '') == 'Data Absensi') : ?>
+                <?php if (($title ?? '') == 'Log Absen') : ?>
                     <div class="ms-md-auto pe-md-3 d-flex align-items-center nav-absensi-dropdown">
                         <div class="dropdown">
                             <button

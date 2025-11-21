@@ -85,10 +85,11 @@ class AbsensiModel extends Model
     {
         return $this->select('
             attendance_logs.nik,
-            attendance_logs.employee_name
+            attendance_logs.employee_name,
+            employees.id_employee
         ')
+            ->join('employees', 'employees.nik = attendance_logs.nik', 'left')
             ->where('attendance_logs.log_date', $tglAbsen)
-            // ->where('attendance_logs.nik', '39I3733')
             ->groupBy('attendance_logs.nik')
             ->findAll();
     }
