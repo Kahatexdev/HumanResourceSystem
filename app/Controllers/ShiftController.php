@@ -397,8 +397,6 @@ class ShiftController extends BaseController
         }
     }
 
-
-
     public function downloadTemplate()
     {
         // 1) Buat spreadsheet & sheet
@@ -830,6 +828,217 @@ class ShiftController extends BaseController
         // $parts[] = trim("{$name} {$nik} {$card}");
         return empty($parts) ? null : implode(' | ', $parts);
     }
+
+    public function excelJamKerja()
+    {
+        $dataJamKerja = $this->shiftAssignM->getDataShift();
+        // Pastikan getDataShift sudah JOIN ke employment_status dan select:
+        // es.status_name AS employment_status_name
+        // dan sudah ORDER BY employment_status_name, employee_code, shift_name, start_time, dst.
+
+        // 1) Group data per employment_status_name
+        $grouped = [];
+        foreach ($dataJamKerja as $row) {
+            $status = $row['employment_status_name'] ?? 'TIDAK DIKETAHUI';
+            $grouped[$status][] = $row;
+        }
+
+        // 2) Buat spreadsheet dan isi per sheet
+        $spreadsheet = new Spreadsheet();
+        $sheetIndex  = 0;
+
+        foreach ($grouped as $statusName => $rows) {
+            if ($sheetIndex === 0) {
+                $sheet = $spreadsheet->getActiveSheet();
+            } else {
+                $sheet = $spreadsheet->createSheet($sheetIndex);
+            }
+
+            // Nama sheet maksimal 31 karakter
+            $sheetTitle = mb_substr($statusName, 0, 31);
+            if ($sheetTitle === '') {
+                $sheetTitle = 'Status ' . ($sheetIndex + 1);
+            }
+            $sheet->setTitle($sheetTitle);
+
+            // Isi konten sheet utk status ini
+            $this->fillJamKerjaSheetByStatus($sheet, $statusName, $rows);
+
+            $sheetIndex++;
+        }
+
+        // 3) Output Excel
+        $fileName = 'Data_Jam_Kerja(' . date('Y-m-d') . ').xlsx';
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment; filename="' . $fileName . '"');
+        header('Cache-Control: max-age=0');
+
+        $writer = new Xlsx($spreadsheet);
+        $writer->save('php://output');
+        exit;
+    }
+
+    /**
+     * Mengisi 1 sheet untuk 1 employment status.
+     *
+     * @param \PhpOffice\PhpSpreadsheet\Worksheet\Worksheet $sheet
+     * @param string $statusName
+     * @param array $rows
+     */
+    private function fillJamKerjaSheetByStatus($sheet, string $statusName, array $rows): void
+    {
+        // ========== 1. HEADER BESAR ATAS ==========
+
+        // Judul besar: ikut status
+        $sheet->mergeCells('A1:I1');
+        $sheet->setCellValue(
+            'A1',
+            'JAM KERJA ' . strtoupper($statusName)
+        );
+
+        // Sub judul BAGIAN (bisa kamu ganti/dinamis)
+        $sheet->mergeCells('A2:I3');
+        $sheet->setCellValue('A2', 'BAGIAN KAOS KAKI');
+
+        $titleStyle = $sheet->getStyle('A1:I1');
+        $titleStyle->getFont()->setBold(true)->setSize(14);
+        $titleStyle->getAlignment()
+            ->setHorizontal(Alignment::HORIZONTAL_CENTER)
+            ->setVertical(Alignment::VERTICAL_CENTER);
+
+        $subTitleStyle = $sheet->getStyle('A2:I3');
+        $subTitleStyle->getFont()->setBold(true)->setSize(12);
+        $subTitleStyle->getAlignment()
+            ->setHorizontal(Alignment::HORIZONTAL_CENTER)
+            ->setVertical(Alignment::VERTICAL_CENTER);
+
+        // ========== 2. HEADER TABEL 2 BARIS ==========
+
+        $sheet->mergeCells('A4:A5'); // KODE KARTU
+        $sheet->mergeCells('B4:B5'); // NAMA
+        $sheet->mergeCells('C4:C5'); // JOBDESK
+        $sheet->mergeCells('D4:I4'); // JAM KERJA (group)
+
+        $sheet->setCellValue('A4', 'KODE KARTU');
+        $sheet->setCellValue('B4', 'NAMA');
+        $sheet->setCellValue('C4', 'JOBDESK');
+        $sheet->setCellValue('D4', 'JAM KERJA');
+
+        $sheet->setCellValue('D5', 'SHIFT');
+        $sheet->setCellValue('E5', 'MASUK');
+        $sheet->setCellValue('F5', 'PULANG');
+        $sheet->setCellValue('G5', 'ISTIRAHAT');
+        $sheet->setCellValue('H5', 'LIBUR');
+        $sheet->setCellValue('I5', 'LIBUR+');
+
+        $headerStyle = $sheet->getStyle('A4:I5');
+        $headerStyle->getFont()->setBold(true)->setSize(11)->getColor()->setRGB('FFFFFF');
+        $headerStyle->getAlignment()
+            ->setHorizontal(Alignment::HORIZONTAL_CENTER)
+            ->setVertical(Alignment::VERTICAL_CENTER);
+        $headerStyle->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('4F81BD');
+        $sheet->getRowDimension(4)->setRowHeight(20);
+        $sheet->getRowDimension(5)->setRowHeight(20);
+
+        // ========== 3. TULIS DATA ==========
+
+        $rowNum     = 6;       // data mulai baris 6
+        $groupKey   = null;
+        $groupStart = 6;
+
+        foreach ($rows as $row) {
+            // Key group (untuk merge baris yang sama)
+            $currentKey = implode('|', [
+                $row['employee_code'],
+                $row['employee_name'],
+                $row['job_section_name'],
+                $row['shift_name'],
+                $row['break_time'],
+                $row['holiday_name'],
+                $row['additional_holiday_name'],
+            ]);
+
+            if ($groupKey !== null && $currentKey !== $groupKey) {
+                // group sebelumnya selesai → merge
+                $this->mergeGroupJamKerja($sheet, $groupStart, $rowNum - 1);
+                $groupStart = $rowNum;
+            }
+
+            if ($groupKey === null) {
+                $groupStart = $rowNum;
+            }
+
+            $groupKey = $currentKey;
+
+            // Isi data per baris
+            $sheet->setCellValue('A' . $rowNum, $row['employee_code']);
+            $sheet->setCellValue('B' . $rowNum, $row['employee_name']);
+            $sheet->setCellValue('C' . $rowNum, $row['job_section_name']);
+            $sheet->setCellValue('D' . $rowNum, $row['shift_name']);
+            $sheet->setCellValue('E' . $rowNum, $row['start_time']);
+            $sheet->setCellValue('F' . $rowNum, $row['end_time']);
+            $sheet->setCellValue('G' . $rowNum, $row['break_time']);
+            $sheet->setCellValue('H' . $rowNum, $row['holiday_name']);
+            $sheet->setCellValue('I' . $rowNum, $row['additional_holiday_name']);
+
+            $rowNum++;
+        }
+
+        $lastDataRow = $rowNum - 1;
+
+        if ($groupKey !== null && $groupStart <= $lastDataRow) {
+            $this->mergeGroupJamKerja($sheet, $groupStart, $lastDataRow);
+        }
+
+        // ========== 4. STYLING PER SHEET ==========
+
+        foreach (range('A', 'I') as $col) {
+            $sheet->getColumnDimension($col)->setAutoSize(true);
+        }
+
+        if ($lastDataRow >= 5) {
+            $tableStyle = $sheet->getStyle("A4:I{$lastDataRow}");
+            $tableStyle->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+        }
+
+        $sheet->getStyle("A6:A{$lastDataRow}")
+            ->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle("E6:E{$lastDataRow}")
+            ->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle("F6:H{$lastDataRow}")
+            ->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle("I6:I{$lastDataRow}")
+            ->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+        $sheet->getStyle("B6:D{$lastDataRow}")
+            ->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)
+            ->setWrapText(true);
+
+        $sheet->freezePane('A6');
+        if ($lastDataRow >= 5) {
+            $sheet->setAutoFilter("A5:I{$lastDataRow}");
+        }
+    }
+
+    /**
+     * Merge kolom yang sama untuk range baris tertentu (group karyawan/shift yang sama).
+     */
+    private function mergeGroupJamKerja($sheet, int $startRow, int $endRow): void
+    {
+        if ($startRow >= $endRow) {
+            return;
+        }
+
+        // Kolom di-merge: KODE, NAMA, JOBDESK, SHIFT, ISTIRAHAT, LIBUR, LIBUR+
+        $mergeCols = ['A', 'B', 'C', 'D', 'G', 'H', 'I'];
+
+        foreach ($mergeCols as $col) {
+            $range = "{$col}{$startRow}:{$col}{$endRow}";
+            $sheet->mergeCells($range);
+            $sheet->getStyle($range)->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
+        }
+    }
+
 
     public function shiftDef()
     {

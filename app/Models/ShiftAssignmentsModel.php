@@ -61,6 +61,9 @@ class ShiftAssignmentsModel extends Model
                 employees.employee_code,
                 employees.employee_name,
                 job_sections.job_section_name,
+                employment_statuses.employment_status_name,
+                days.day_name AS holiday_name,
+                ads.day_name AS additional_holiday_name,
                 shift_defs.shift_name,
                 shift_defs.start_time,
                 shift_defs.end_time,
@@ -68,8 +71,12 @@ class ShiftAssignmentsModel extends Model
                 shift_defs.grace_min
             ')
             ->join('employees', 'employees.id_employee = shift_assignments.id_employee')
+            ->join('days', 'days.id_day = employees.holiday', 'left')
+            ->join('days as ads', 'ads.id_day = employees.additional_holiday', 'left')
             ->join('job_sections', 'job_sections.id_job_section = employees.id_job_section', 'left')
             ->join('shift_defs', 'shift_defs.id_shift = shift_assignments.id_shift', 'left')
+            ->join('employment_statuses', 'employment_statuses.id_employment_status  = employees.id_employment_status ', 'left')
+            ->orderBy('employment_statuses.employment_status_name', 'ASC')
             ->orderBy('employees.employee_name', 'ASC')
             ->orderBy('shift_defs.shift_name', 'ASC')
             ->findAll();

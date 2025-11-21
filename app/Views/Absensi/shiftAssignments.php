@@ -77,7 +77,7 @@ $csrfHash  = csrf_hash();
                         </div>
                         <div>
                             <div class="d-flex justify-content-between align-items-center">
-                                <a href="#" class="btn bg-gradient-primary me-2">
+                                <a href="<?= base_url($role . '/excelJamKerja') ?>" target="_blank" class="btn bg-gradient-primary me-2">
                                     <i class="fas fa-file-excel text-lg opacity-10" aria-hidden="true"></i>
                                     Export Excel
                                 </a>

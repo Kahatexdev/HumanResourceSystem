@@ -402,6 +402,7 @@ $routes->group('/Absensi', ['filter' => 'Absensi'], function ($routes) {
     $routes->post('deleteShiftAssignment', 'ShiftController::deleteShiftAssignment');
     $routes->get('downloadTemplateJamKerja', 'ShiftController::downloadTemplate');
     $routes->post('storeUploadTemplate', 'ShiftController::storeUploadTemplate');
+    $routes->get('excelJamKerja', 'ShiftController::excelJamKerja');
 
     // surat absen
     $routes->get('suratAbsen', 'AttendanceLetterController::index');
