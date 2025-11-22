@@ -459,7 +459,7 @@ class AttendanceGroupingService
             $inDT  = $mapped['in_time']  ? new DateTime($mapped['in_time'])  : null;
             $outDT = $mapped['out_time'] ? new DateTime($mapped['out_time']) : null;
 
-            $idShift = $this->detectShiftId($inDT, $outDT, $shifts);
+            $idShift = $this->detectShiftId($assignMap[$idEmployee] ?? [], $inDT, $outDT, $shiftMap);
             if ($idShift === null) {
                 continue;
             }
@@ -595,30 +595,61 @@ class AttendanceGroupingService
      * - Pilih shift dengan selisih terkecil
      * - Kalau selisih > maxShiftDiffMinutes => dianggap tidak cocok (NULL)
      */
-    protected function detectShiftId(?DateTime $inTime, ?DateTime $outTime, array $shifts): ?int
+    protected function detectShiftId(array $assignMap, ?DateTime $inTime, ?DateTime $outTime, array $shiftMap): ?int
     {
-        if (!$inTime && !$outTime) {
+        // if (!$inTime && !$outTime) {
+        //     return null;
+        // }
+
+        // $inMinutes = $inTime
+        //     ? ((int)$inTime->format('H')) * 60 + (int)$inTime->format('i')
+        //     : null;
+
+        // $bestShiftId    = null;
+        // $bestDiff       = PHP_INT_MAX;
+
+        // foreach ($shifts as $shift) {
+        //     // konversi start_time ke menit dari 00:00
+        //     [$h, $m, $s] = explode(':', $shift['start_time']);
+        //     $startMinutes = (int)$h * 60 + (int)$m;
+
+        //     if ($inMinutes !== null) {
+        //         $diff = abs($inMinutes - $startMinutes);
+        //     } else {
+        //         // kalau tidak ada in_time, bisa pakai logika lain (misal pakai out_time)
+        //         $diff = 0;
+        //     }
+
+        //     if ($diff < $bestDiff) {
+        //         $bestDiff    = $diff;
+        //         $bestShiftId = (int)$shift['id_shift'];
+        //     }
+        // }
+
+        // if ($bestDiff > $this->maxShiftDiffMinutes) {
+        //     // terlalu jauh dari jam shift, bisa dianggap tidak ada shift
+        //     return null;
+        // }
+
+        // return $bestShiftId;
+
+        if (!$inTime) {
             return null;
         }
 
-        $inMinutes = $inTime
-            ? ((int)$inTime->format('H')) * 60 + (int)$inTime->format('i')
-            : null;
-
+        $inMinutes = ((int)$inTime->format('H')) * 60 + (int)$inTime->format('i');
         $bestShiftId    = null;
         $bestDiff       = PHP_INT_MAX;
 
-        foreach ($shifts as $shift) {
-            // konversi start_time ke menit dari 00:00
+        foreach ($assignMap as $idShift) {
+            if (!isset($shiftMap[$idShift])) {
+                continue;
+            }
+            $shift = $shiftMap[$idShift];
             [$h, $m, $s] = explode(':', $shift['start_time']);
             $startMinutes = (int)$h * 60 + (int)$m;
 
-            if ($inMinutes !== null) {
-                $diff = abs($inMinutes - $startMinutes);
-            } else {
-                // kalau tidak ada in_time, bisa pakai logika lain (misal pakai out_time)
-                $diff = 0;
-            }
+            $diff = abs($inMinutes - $startMinutes);
 
             if ($diff < $bestDiff) {
                 $bestDiff    = $diff;
@@ -627,7 +658,6 @@ class AttendanceGroupingService
         }
 
         if ($bestDiff > $this->maxShiftDiffMinutes) {
-            // terlalu jauh dari jam shift, bisa dianggap tidak ada shift
             return null;
         }
 
