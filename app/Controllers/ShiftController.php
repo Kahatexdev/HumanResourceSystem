@@ -641,14 +641,41 @@ class ShiftController extends BaseController
                     ->where('break_time', $parsedBrk ?? 0)
                     ->first();
 
-                // if (!$shiftMaster) {
-                //     $noteWarn[] = "Jam kerja tidak sesuai master shift.";
-                //     // log_message('warning', '[{rid}] R{row}: exact shift match NOT FOUND, trying by name only', [
-                //     //     'rid' => $requestId,
-                //     //     'row' => $r
-                //     // ]);
-                //     // $shiftMaster = $this->shiftDeftM->where('id_shift', $shiftCode)->first();
-                // }
+                if (!$shiftMaster) {
+                    // 1. Cek ulang ke DB dengan kombinasi field yang dianggap unik
+                    $shiftMaster = $this->shiftDeftM
+                        ->where('shift_name', $shiftCode)
+                        ->where('start_time', $parsedIn)
+                        ->where('end_time', $parsedOut)
+                        ->where('break_time', $parsedBrk ?? 0)
+                        ->first();
+
+                    // 2. Kalau masih benar-benar belum ada, baru insert
+                    if (!$shiftMaster) {
+                        $newShiftId = $this->shiftDeftM->insert([
+                            'shift_name' => $shiftCode,
+                            'start_time' => $parsedIn,
+                            'end_time'   => $parsedOut,
+                            'break_time' => $parsedBrk ?? 0,
+                            'grace_min'  => 0,
+                            'created_at' => date('Y-m-d H:i:s'),
+                        ], true);
+
+                        if ($newShiftId) {
+                            $shiftMaster = $this->shiftDeftM->find($newShiftId);
+                            // log_message('info', '[{rid}] R{row}: Created new shift_def id={id} for code={code}', [
+                            //     'rid'  => $requestId,
+                            //     'row'  => $r,
+                            //     'id'   => $newShiftId,
+                            //     'code' => $shiftCode,
+                            // ]);
+                        } else {
+                            $msg = "R{$r}: Gagal membuat master shift baru untuk kode '{$shiftCode}'.";
+                            $rowErr[] = $msg;
+                            // log_message('error', '[{rid}] {msg}', ['rid' => $requestId, 'msg' => $msg]);
+                        }
+                    }
+                }
 
                 if (!$shiftMaster) {
                     $msg = "R{$r}: Master shift '{$shiftCode}' tidak ditemukan.";
