@@ -94,4 +94,9 @@ class AttendanceDayModel extends Model
             ->groupBy('attendance_days.id_employee')
             ->findAll();
     }
+
+    public function getAttendanceDayById($id)
+    {
+        return $this->where('id_attendance', $id)->first();
+    }
 }

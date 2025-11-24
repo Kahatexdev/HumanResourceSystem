@@ -326,18 +326,23 @@
     </div>
     <form action="<?= base_url($role . '/tambahDataAbsensiStore') ?>" method="post">
         <div class="row">
-            <div class="col-xl-12 col-sm-12 mb-4"> ed
+            <div class="col-xl-12 col-sm-12 mb-4">
                 <div class="card shadow-sm border-0">
                     <div class="card-body position-relative">
                         <div class="row">
+                            <label for="attendance_date" class="form-label">Tanggal Absensi</label>
                             <div class="col-md-6">
-                                <label for="attendance_date" class="form-label">Tanggal Absensi tes</label>
                                 <input type="date" class="form-control" id="attendance_date" name="attendance_date" required>
                             </div>
-                            <div class="col-md-6">
-                                <button type="button" class="btn btn-info" id="btnCariKaryawan"><i class="fas fa-search"></i></button>
+
+                            <div class="col-md-6 d-flex align-items-center">
+                                <button type="button" class="btn btn-info" id="btnCariKaryawan">
+                                    <i class="fas fa-search"></i>
+                                </button>
                             </div>
+
                         </div>
+
                     </div>
                 </div>
             </div>
@@ -451,10 +456,7 @@
     </form>
 </div>
 
-<!-- Select2 CSS -->
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-
-<!-- Select2 JS -->
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -478,8 +480,6 @@
         });
     </script>
 <?php endif; ?>
-
-
 
 <script>
     let optionsHtml = '<option></option>';

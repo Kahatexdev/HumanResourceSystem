@@ -17,6 +17,8 @@ use App\Models\AttendanceResultModel;
 use App\Models\AttendanceDayModel;
 use App\Models\ShiftAssignmentsModel;
 use App\Models\AttendanceLetterModel;
+use App\Models\ShiftDefModel;
+use DateTime;
 
 class AbsensiController extends BaseController
 {
@@ -35,6 +37,7 @@ class AbsensiController extends BaseController
     protected $attendanceLogModel;
     protected $shiftAssignmentsModel;
     protected $attendanceLetterModel;
+    protected $shiftDefsModel;
     protected $idUser;
 
     public function __construct()
@@ -52,8 +55,9 @@ class AbsensiController extends BaseController
         $this->attendanceDayModel = new AttendanceDayModel();
         $this->shiftAssignmentsModel = new ShiftAssignmentsModel();
         $this->attendanceLetterModel = new AttendanceLetterModel();
-        $this->idUser = session()->get('id_user');
+        $this->shiftDefsModel = new ShiftDefModel();
 
+        $this->idUser = session()->get('id_user');
         $this->role = session()->get('role');
     }
     public function index()
@@ -1019,7 +1023,7 @@ class AbsensiController extends BaseController
         if ($dateFrom && $dateTo) {
             $results = $this->attendanceDayModel->getAttendanceResults($dateFrom, $dateTo);
         }
-        // dd($results);
+
         $data = [
             'role'        => session()->get('role'),
             'title'       => 'Report Data Absensi',
@@ -1050,22 +1054,15 @@ class AbsensiController extends BaseController
     {
         $tglAbsen = $this->request->getGet('date');
 
-        // Karyawan yang sudah diproses di attendance_day (punya id_employee)
         $sudahdiolah = $this->attendanceDayModel->getKaryawanByTglAbsen($tglAbsen);
-
-        // Log absensi dari mesin
         $logs = $this->absensiModel->getkaryawan($tglAbsen);
 
-        // Ambil semua id_employee dari sudah diolah
         $idSudah = array_column($sudahdiolah, 'id_employee');
 
         $karyawan = [];
 
         foreach ($logs as $data) {
-
-            $idEmpLog = $data['id_employee'];   // id_employee dari logs
-
-            // Jika id_employee belum ada di data sudah diolah → masukkan ke karyawan
+            $idEmpLog = $data['id_employee'];
             if (!in_array($idEmpLog, $idSudah)) {
                 $karyawan[] = $data;
             }
@@ -1111,38 +1108,30 @@ class AbsensiController extends BaseController
         $dataError = [];
 
         foreach ($idEmployee as $index => $empId) {
-            // Ambil semua shift employee ini
+
             $getAllShift = $this->shiftAssignmentsModel->getShiftByEmployee($empId['id_employee']);
             $namaKaryawan = $empId['employee_name'];
 
-            // Jika tidak ada shift assignment
             if (!$getAllShift || count($getAllShift) == 0) {
                 $nik = $data['employee'][$index];
                 $dataError[] = "$namaKaryawan, NIK = $nik belum memiliki shift assignment!";
                 continue;
             }
 
-            // Ambil jam start & id shift
             $shiftStart = array_column($getAllShift, 'start_time');
             $shiftId    = array_column($getAllShift, 'id_shift');
 
-            // --- Ambil jam dari in_time ---
             $inTime = $data['in_time'][$index];
             $jamMasuk = date('H:i', strtotime($inTime));
 
-            // --- Tentukan shift yang cocok ---
             $foundShift = null;
 
             foreach ($shiftStart as $i => $start) {
 
                 if (!$start) continue;
-                // convert start_time ke H:i
                 $shiftJam = date('H:i', strtotime($start));
-
-                // ambil selisih menit absolut
                 $diff = abs(strtotime($jamMasuk) - strtotime($shiftJam));
 
-                // shift paling mendekati
                 if ($foundShift === null || $diff < $foundShift['diff']) {
                     $foundShift = [
                         'id_shift' => $shiftId[$i],
@@ -1173,6 +1162,81 @@ class AbsensiController extends BaseController
                 'note'           => null,
                 'created_at'     => date('Y-m-d H:i:s'),
                 'updated_at'     => date('Y-m-d H:i:s'),
+            ]);
+            $idAttendance[] = $this->attendanceDayModel->getInsertID();
+        }
+
+        function timeToSeconds($time)
+        {
+            list($h, $m, $s) = explode(':', $time);
+            return ($h * 3600) + ($m * 60) + $s;
+        }
+
+        foreach ($idAttendance as $id) {
+
+            $dataAttendanceDay = $this->attendanceDayModel->getAttendanceDayById($id);
+
+            $inTimeNew        = new DateTime($dataAttendanceDay['in_time']);
+            $breakOutTimeNew  = new DateTime($dataAttendanceDay['break_out_time']);
+            $breakInTimeNew   = new DateTime($dataAttendanceDay['break_in_time']);
+            $outTimeNew       = new DateTime($dataAttendanceDay['out_time']);
+
+            $jamMasukAktual      = $inTimeNew->getTimestamp();
+            $jamKeluarIstirahat  = $breakOutTimeNew->getTimestamp();
+            $jamMasukIstirahat   = $breakInTimeNew->getTimestamp();
+            $jamPulangAktual     = $outTimeNew->getTimestamp();
+
+            $totIstirahat = $jamMasukIstirahat - $jamKeluarIstirahat;
+            $totKerja     = ($jamPulangAktual - $jamMasukAktual) - $totIstirahat;
+
+            $totIstirahatMenit = $totIstirahat / 60;
+            $totKerjaMenit     = $totKerja / 60;
+
+            // Ambil jam masuk shift
+            $cekJamMasuk   = $this->shiftDefsModel->getShiftById($dataAttendanceDay['id_shift']);
+
+            $masterJamMasukShift  = $cekJamMasuk['start_time'];
+            $masterJamKeluarShift = $cekJamMasuk['end_time'];
+
+            $inTimeOnly  = $inTimeNew->format('H:i:s');
+            $outTimeOnly = $outTimeNew->format('H:i:s');
+
+            // Konversi semua ke detik
+            $secInActual   = timeToSeconds($inTimeOnly);
+            $secOutActual  = timeToSeconds($outTimeOnly);
+            $secShiftStart = timeToSeconds($masterJamMasukShift);
+            $secShiftEnd   = timeToSeconds($masterJamKeluarShift);
+
+            // Hitung telat masuk (menit)
+            $diffMasuk = $secInActual - $secShiftStart; // Positif = telat
+            if ($diffMasuk > 0) {
+                $lateMin = (int) round($diffMasuk / 60);
+            } else {
+                $lateMin = 0;
+            }
+
+            $diffPulang = $secOutActual - $secShiftEnd;
+
+            if ($diffPulang < 0) {
+                $earlyLeaveMin = (int) round(abs($diffPulang) / 60); // Pulang lebih awal
+                $overtimeMin = 0;
+            } elseif ($diffPulang > 0) {
+                $overtimeMin = (int) round($diffPulang / 60); // Lembur
+                $earlyLeaveMin = 0;
+            } else {
+                $earlyLeaveMin = 0;
+                $overtimeMin = 0;
+            }
+
+            $this->attendanceResultModel->insert([
+                'id_attendance'    => $id,
+                'total_work_min'   => $totKerjaMenit,
+                'total_break_min'  => $totIstirahatMenit,
+                'late_min'         => $lateMin,
+                'early_leave_min'  => $earlyLeaveMin,
+                'overtime_min'     => $overtimeMin,
+                'status_code'      => 'PRESENT',
+                'processed_at'     => date('Y-m-d H:i:s')
             ]);
         }
 

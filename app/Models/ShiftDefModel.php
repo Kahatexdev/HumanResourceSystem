@@ -51,4 +51,10 @@ class ShiftDefModel extends Model
     protected $afterFind      = [];
     protected $beforeDelete   = [];
     protected $afterDelete    = [];
+
+    public function getShiftById($id)
+    {
+        return $this->select('*')
+            ->where('id_shift', $id)->first();
+    }
 }
