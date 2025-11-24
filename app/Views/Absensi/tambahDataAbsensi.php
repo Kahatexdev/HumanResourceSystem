@@ -326,7 +326,7 @@
     </div>
     <form action="<?= base_url($role . '/tambahDataAbsensiStore') ?>" method="post">
         <div class="row">
-            <div class="col-xl-12 col-sm-12 mb-4">
+            <div class="col-xl-12 col-sm-12 mb-4"> ed
                 <div class="card shadow-sm border-0">
                     <div class="card-body position-relative">
                         <div class="row">
