@@ -331,7 +331,7 @@
                     <div class="card-body position-relative">
                         <div class="row">
                             <div class="col-md-6">
-                                <label for="attendance_date" class="form-label">Tanggal Absensi</label>
+                                <label for="attendance_date" class="form-label">Tanggal Absensi tes</label>
                                 <input type="date" class="form-control" id="attendance_date" name="attendance_date" required>
                             </div>
                             <div class="col-md-6">
