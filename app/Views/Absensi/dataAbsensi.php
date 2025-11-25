@@ -23,7 +23,7 @@
                                     class="btn bg-gradient-success me-2">
                                     <!-- icon download -->
                                     <i class="fas fa-download text-lg opacity-10" aria-hidden="true"></i>
-                                    Template Excel
+                                    Template Excell
                                 </a>
                                 <!-- <a
                                     class="btn bg-gradient-info add-btn" data-bs-toggle="modal" data-bs-target="#addKaryawan">
