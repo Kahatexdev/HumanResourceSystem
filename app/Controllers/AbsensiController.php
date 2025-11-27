@@ -1071,7 +1071,6 @@ class AbsensiController extends BaseController
         return $this->response->setJSON($karyawan);
     }
 
-
     public function getLogAbsensiByNIKAndDate()
     {
         $nik = $this->request->getGet('nik');
@@ -1241,5 +1240,39 @@ class AbsensiController extends BaseController
         }
 
         return redirect()->back()->with('success', 'Data absensi berhasil ditambahkan!');
+    }
+
+    public function ketidaksesuaianAbsensi($workDateStart = null, $workDateEnd = null)
+    {
+        if ($workDateStart !== null && $workDateEnd === null) {
+            $workDateEnd = $workDateStart;
+        }
+
+        $data = [
+            'role'      => session()->get('role'),
+            'title'     => 'Ketidaksesuaian Absensi',
+            'active1'   => '',
+            'active2'   => '',
+            'active3'   => 'active',
+            'startDate' => $workDateStart,
+            'endDate'   => $workDateEnd
+        ];
+        return view(session()->get('role') . '/ketidaksesuaianAbsensi', $data);
+    }
+
+    public function getKetidaksesuaianData()
+    {
+        $startDate = $this->request->getGet('startDate');
+        $endDate   = $this->request->getGet('endDate');
+
+        if ($startDate && !$endDate) {
+            $endDate = $startDate;
+        }
+
+        $data = $this->attendanceDayModel->getDataTidakSesuaiByDate($startDate, $endDate);
+
+        return $this->response->setJSON([
+            'data' => $data
+        ]);
     }
 }
