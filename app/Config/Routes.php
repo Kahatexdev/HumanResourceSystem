@@ -363,6 +363,7 @@ $routes->group('/Absensi', ['filter' => 'Absensi'], function ($routes) {
     $routes->get('ketidaksesuaianAbsensi', 'AbsensiController::ketidaksesuaianAbsensi');
     $routes->get('ketidaksesuaianAbsensi/getData', 'AbsensiController::getKetidaksesuaianData');
     $routes->get('ketidaksesuaianAbsensi/(:segment)', 'AbsensiController::ketidaksesuaianAbsensi/$1');
+    $routes->post('updateAbsen/(:num)', 'AbsensiController::updateAbsen/$1');
 
     $routes->get('attendance/promote', 'AbsensiController::promoteView');
     $routes->post('attendance/promote', 'AbsensiController::promoteSubmit');

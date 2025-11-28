@@ -82,10 +82,11 @@
                                     <th class="text-center text-uppercase">Pulang</th>
                                     <th class="text-center text-uppercase">Kerja</th>
                                     <th class="text-center text-uppercase">Break</th>
-                                    <th class="text-center text-uppercase">Telat Istirahat</th>
+                                    <th class="text-center text-uppercase">Telat Masuk</th>
                                     <th class="text-center text-uppercase">P.Cepat</th>
                                     <th class="text-center text-uppercase">P.Telat</th>
                                     <th class="text-center text-uppercase">Status</th>
+                                    <th class="text-center text-uppercase">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -98,7 +99,90 @@
         </div>
     </div>
 </div>
+<!-- Modal Edit Absensi -->
+<div class="modal fade" id="modalEditAbsensi" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Data Absensi</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form action="" method="POST">
+                    <input type="hidden" id="edit_id_attendance" name="id_attendance">
+                    <div class="row">
+                        <div class="col-md-6 mb-2">
+                            <label>Tanggal</label>
+                            <input type="date" id="edit_work_date" class="form-control" readonly>
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <label>NIK</label>
+                            <input type="text" id="edit_nik" class="form-control" readonly>
+                        </div>
+                        <div class="col-md-12 mb-2">
+                            <label>Nama Karyawan</label>
+                            <input type="text" id="edit_employee_name" class="form-control" readonly>
+                        </div>
+                        <div class="col-md-4 mb-2">
+                            <label>Jam Kerja Masuk</label>
+                            <input type="time" id="edit_start_time" class="form-control" disabled>
+                        </div>
+                        <div class="col-md-4 mb-2">
+                            <label>Jam Kerja Pulang</label>
+                            <input type="time" id="edit_end_time" class="form-control" disabled>
+                        </div>
+                        <div class="col-md-4 mb-2">
+                            <label>Total Istirahat (menit)</label>
+                            <input type="number" id="edit_break_time" class="form-control" disabled>
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <label>Masuk</label>
+                            <input type="datetime-local" id="edit_in_time" class="form-control" name="in_time">
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <label>Keluar Istirahat</label>
+                            <input type="datetime-local" id="edit_break_out_time" class="form-control" name="break_out_time">
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <label>Kembali Istirahat</label>
+                            <input type="datetime-local" id="edit_break_in_time" class="form-control" name="break_in_time">
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <label>Pulang</label>
+                            <input type="datetime-local" id="edit_out_time" class="form-control" name="out_time">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                <button type="button" class="btn btn-primary" id="btnSaveEdit">Update</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    <?php if (session()->getFlashdata('success')) : ?>
+        Swal.fire({
+            icon: 'success',
+            title: 'Berhasil!',
+            text: '<?= session()->getFlashdata('success'); ?>',
+            showConfirmButton: false,
+            timer: 2000
+        });
+    <?php endif; ?>
+
+    <?php if (session()->getFlashdata('error')) : ?>
+        Swal.fire({
+            icon: 'error',
+            title: 'Gagal!',
+            text: '<?= session()->getFlashdata('error'); ?>',
+            showConfirmButton: true,
+        });
+    <?php endif; ?>
+</script>
 <script>
     let table = $('#tableAbsensi').DataTable({
         processing: true,
@@ -176,8 +260,84 @@
             {
                 data: "status_code",
                 className: "text-center"
+            },
+            {
+                data: null,
+                className: "text-center",
+                render: (data, type, row) => `
+                    <button class="btn btn-warning btn-edit" data-id="${row.id_attendance}">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                `
             }
         ]
+    });
+
+    $('#tableAbsensi tbody').on('click', '.btn-edit', function() {
+        let rowData = table.row($(this).parents('tr')).data();
+
+        $('#edit_id_attendance').val(rowData.id_attendance);
+        $('#edit_work_date').val(rowData.work_date);
+        $('#edit_nik').val(rowData.nik);
+        $('#edit_employee_name').val(rowData.employee_name);
+        $('#edit_start_time').val(rowData.start_time);
+        $('#edit_end_time').val(rowData.end_time);
+        $('#edit_break_time').val(rowData.break_time);
+        $('#edit_in_time').val(rowData.in_time);
+        $('#edit_break_out_time').val(rowData.break_out_time);
+        $('#edit_break_in_time').val(rowData.break_in_time);
+        $('#edit_out_time').val(rowData.out_time);
+
+        let updateUrl = "<?= base_url($role . '/updateAbsen') ?>/" + rowData.id_attendance;
+        $("#modalEditAbsensi form").attr("action", updateUrl);
+
+        $('#modalEditAbsensi').modal('show');
+    });
+
+    $('#btnSaveEdit').on('click', function() {
+        let form = $("#modalEditAbsensi form");
+        form.trigger("submit");
+    });
+
+    $("#modalEditAbsensi form").on("submit", function(e) {
+        e.preventDefault();
+
+        const id = $('#edit_id_attendance').val(); // hidden input
+        const formData = new FormData(this);
+
+        fetch(`<?= base_url($role . '/updateAbsen'); ?>/${id}`, {
+                method: 'POST',
+                body: formData,
+            })
+            .then(res => res.json())
+            .then(res => {
+                if (res.status === 'success') {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Berhasil!',
+                        text: res.message,
+                        showConfirmButton: false,
+                        timer: 1800
+                    });
+
+                    $('#modalEditAbsensi').modal('hide');
+
+                    $('#dataTable').DataTable().ajax.reload(null, false); // Refresh row only
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Gagal!',
+                        text: res.message,
+                    });
+                }
+            })
+            .catch(err => {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error!',
+                    text: 'Terjadi kesalahan saat update.',
+                });
+            });
     });
 
     // Prefill dari controller (PHP)

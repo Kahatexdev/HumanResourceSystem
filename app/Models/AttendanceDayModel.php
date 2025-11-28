@@ -100,20 +100,41 @@ class AttendanceDayModel extends Model
         return $this->where('id_attendance', $id)->first();
     }
 
-    public function countDataTidakSesuai()
+    public function countDataTidakSesuai(?string $startDate = null, ?string $endDate = null): array
     {
-        return $this->select('ad.work_date, COUNT(DISTINCT ad.id_attendance) AS total_anomali')
-            ->from('attendance_days ad')
+        $builder = $this->db->table('attendance_days ad');
+
+        $builder->select('ad.work_date, COUNT(ad.id_attendance) AS total_anomali')
             ->join('attendance_results ar', 'ar.id_attendance = ad.id_attendance', 'left')
-            ->join('shift_defs sd', 'sd.id_shift = ad.id_shift', 'left')
-            ->groupStart()
-            ->where('ad.in_time > CONCAT(ad.work_date, " ", DATE_ADD(sd.start_time, INTERVAL sd.grace_min MINUTE))')
-            ->orWhere('ar.total_break_min > sd.break_time')
-            ->orWhere('ar.total_work_min < (TIMESTAMPDIFF(MINUTE, sd.start_time, sd.end_time) - sd.break_time)')
-            ->groupEnd()
-            ->groupBy('ad.work_date')
-            ->orderBy('ad.work_date', 'ASC')
-            ->findAll();
+            ->join('shift_defs sd', 'sd.id_shift = ad.id_shift', 'left');
+
+        // optional filter tanggal (supaya query nggak scan seluruh sejarah data)
+        if ($startDate !== null) {
+            $builder->where('ad.work_date >=', $startDate);
+        }
+        if ($endDate !== null) {
+            $builder->where('ad.work_date <=', $endDate);
+        }
+
+        // kondisi anomali
+        $builder->groupStart()
+            // terlambat dateng lewat grace_min
+            ->where(
+                // 'ad.in_time > DATE_ADD(CONCAT(ad.work_date, " ", sd.start_time), INTERVAL sd.grace_min MINUTE)' //kondisi pake toleransi dari tabel
+                'TIME_TO_SEC(TIME(ad.in_time)) > TIME_TO_SEC(DATE_ADD(sd.start_time, INTERVAL 5 MINUTE))'
+            )  // kondisi toleransi lebih dari 5 menit karena kalau telat beberapa detik itu dianggap telat. Misal 08:30:29 - 08:30:00 = 29 detik dianggap telat
+            // break lebih lama dari master
+            ->orWhere('ar.total_break_min > (sd.break_time + 5)')
+            // total kerja kurang dari seharusnya
+            // ->orWhere(
+            //     'ar.total_work_min < (TIMESTAMPDIFF(MINUTE, sd.start_time, sd.end_time) - sd.break_time)'
+            // )
+            ->groupEnd();
+
+        $builder->groupBy('ad.work_date')
+            ->orderBy('ad.work_date', 'ASC');
+
+        return $builder->get()->getResultArray();
     }
 
     public function getDataTidakSesuaiByDate($workDateStart = null, $workDateEnd = null)
@@ -157,9 +178,11 @@ class AttendanceDayModel extends Model
 
         // Kondisi anomali
         $builder->groupStart()
-            ->where('ad.in_time > CONCAT(ad.work_date, " ", DATE_ADD(sd.start_time, INTERVAL sd.grace_min MINUTE))')
-            ->orWhere('ar.total_break_min > sd.break_time')
-            ->orWhere('ar.total_work_min < (TIMESTAMPDIFF(MINUTE, sd.start_time, sd.end_time) - sd.break_time)')
+            // ->where('ad.in_time > CONCAT(ad.work_date, " ", DATE_ADD(sd.start_time, INTERVAL sd.grace_min MINUTE))')
+            // ->orWhere('ar.total_break_min > sd.break_time')
+            // ->orWhere('ar.total_work_min < (TIMESTAMPDIFF(MINUTE, sd.start_time, sd.end_time) - sd.break_time)')
+            ->where('TIME_TO_SEC(TIME(ad.in_time)) > TIME_TO_SEC(DATE_ADD(sd.start_time, INTERVAL 5 MINUTE))') // kondisi toleransi lebih dari 5 menit karena kalau telat beberapa detik itu dianggap telat. Misal 08:30:29 - 08:30:00 = 29 detik dianggap telat
+            ->orWhere('ar.total_break_min > (sd.break_time + 5)')
             ->groupEnd();
 
         $builder->groupBy('ad.id_attendance');
