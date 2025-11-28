@@ -187,6 +187,21 @@
     <script async defer src="https://buttons.github.io/buttons.js"></script>
     <!-- Control Center for Soft Dashboard: parallax effects, scripts for the example pages etc -->
     <script src="<?= base_url('assets/js/soft-ui-dashboard.min.js') ?>"></script>
+
+    <script>
+        document.getElementById("toggleShowAll")?.addEventListener("click", function(e) {
+            e.preventDefault(); // Cegah reload
+            e.stopPropagation(); // Cegah dropdown menutup
+
+            const hiddenItems = document.querySelectorAll(".extra-item");
+            const isHidden = hiddenItems[0].classList.contains("d-none");
+
+            hiddenItems.forEach(item => item.classList.toggle("d-none"));
+
+            this.textContent = isHidden ? "Show Less" : "Show All";
+        });
+    </script>
+
 </body>
 
 </html>

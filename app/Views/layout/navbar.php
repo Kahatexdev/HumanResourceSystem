@@ -82,6 +82,12 @@
                                 <li>
                                     <hr class="dropdown-divider">
                                 </li>
+                                <li>
+                                    <a class="dropdown-item"
+                                        href="<?= base_url($role . '/ketidaksesuaianAbsensi') ?>">
+                                        <i class="fas fa-file-alt"></i> Report Ketidaksesuaian Absensi
+                                    </a>
+                                </li>
                             </ul>
                         </div>
                     </div>
@@ -106,23 +112,95 @@
                 </div>
             <?php endif; ?>
 
-            <ul class="navbar-nav justify-content-end">
-                <li class="nav-item d-flex align-items-center">
-                    <a href="" data-bs-toggle="modal" data-bs-target="#LogoutModal"
-                        class="nav-link text-body font-weight-bold px-0">
-                        <img src="<?= base_url('assets/img/user.png') ?>" alt="User Icon" width="20">
-                        <span class="d-sm-inline d-none"><?= session()->get('username') ?></span>
-                    </a>
-                </li>
-                <li class="nav-item d-xl-none ps-3 d-flex align-items-center">
-                    <a href="javascript:;" class="nav-link text-body p-0" id="iconNavbarSidenav">
-                        <div class="sidenav-toggler-inner">
-                            <i class="sidenav-toggler-line"></i>
-                            <i class="sidenav-toggler-line"></i>
-                            <i class="sidenav-toggler-line"></i>
-                        </div>
-                    </a>
-                </li>
+            <li class="nav-item dropdown pe-2 d-flex align-items-center position-relative">
+
+                <!-- Icon Bell + Badge -->
+                <a href="javascript:;" class="nav-link text-body p-0 position-relative" id="dropdownNotif" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fa fa-bell cursor-pointer" style="font-size: 1.25rem; color: #64748b;"></i>
+
+                    <?php if (!empty($dataTidakSesuai)) : ?>
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill" style="
+                    background-color: #ef4444;
+                    font-size: 0.65rem;
+                    padding: 0.25rem 0.4rem;
+                    margin-left: -8px;
+                    margin-top: 2px;
+                ">
+                            <?= count($dataTidakSesuai) ?>
+                        </span>
+                    <?php endif; ?>
+                </a>
+
+                <ul class="dropdown-menu dropdown-menu-end px-2 py-3 me-sm-n4 shadow" style="min-width: 320px; max-height: 400px; overflow-y: auto;" aria-labelledby="dropdownNotif">
+
+                    <?php
+                    $limit = 3;
+                    $itemCount = 0;
+                    ?>
+
+                    <?php if (!empty($dataTidakSesuai)) : ?>
+                        <?php foreach ($dataTidakSesuai as $row) : ?>
+                            <li class="mb-2 anomali-item <?= ($itemCount >= $limit ? 'd-none extra-item' : '') ?>">
+                                <a class="dropdown-item border-radius-md" href="<?= base_url($role . '/ketidaksesuaianAbsensi/' . $row['work_date']) ?>"
+                                    style="background-color: #f8fafc;">
+                                    <div class="d-flex py-2">
+                                        <div class="my-auto">
+                                            <div class="d-flex align-items-center justify-content-center" style="
+                        width: 40px;height: 40px;background-color: #d1494b;border-radius: 8px;margin-right: 12px;">
+                                                <i class="fas fa-calendar-alt" style="font-size: 1.1rem;color:#fff;"></i>
+                                            </div>
+                                        </div>
+                                        <div class="d-flex flex-column justify-content-center">
+                                            <h6 class="text-sm mb-1" style="color:#1e293b;">
+                                                <?= date('d F Y', strtotime($row['work_date'])) ?>
+                                            </h6>
+                                            <p class="text-xs mb-0" style="color:#64748b;">
+                                                <i class="fas fa-exclamation-circle me-1" style="color:#f59e0b;"></i>
+                                                <span style="color:#d1494b;font-weight: 500;">
+                                                    <?= $row['total_anomali']; ?> Karyawan
+                                                </span> tidak sesuai
+                                            </p>
+                                        </div>
+                                    </div>
+                                </a>
+                            </li>
+                            <?php $itemCount++; ?>
+                        <?php endforeach; ?>
+
+                        <!-- Tombol Show All / Show Less -->
+                        <?php if (count($dataTidakSesuai) > $limit) : ?>
+                            <li class="text-center">
+                                <a href="javascript:;" id="toggleShowAll" class="text-primary text-sm fw-bold">
+                                    Show All
+                                </a>
+                            </li>
+                        <?php endif; ?>
+
+                    <?php else : ?>
+                        <li class="text-center p-4">
+                            <i class="fas fa-check-circle mb-2" style="font-size: 2.5rem; color: #10b981;"></i>
+                            <p class="text-sm mb-0" style="color: #64748b;">Tidak ada data</p>
+                        </li>
+                    <?php endif; ?>
+
+                </ul>
+            </li>
+            <li class="nav-item d-flex align-items-center">
+                <a href="" data-bs-toggle="modal" data-bs-target="#LogoutModal"
+                    class="nav-link text-body font-weight-bold px-0">
+                    <img src="<?= base_url('assets/img/user.png') ?>" alt="User Icon" width="20">
+                    <span class="d-sm-inline d-none"><?= session()->get('username') ?></span>
+                </a>
+            </li>
+            <li class="nav-item d-xl-none ps-3 d-flex align-items-center">
+                <a href="javascript:;" class="nav-link text-body p-0" id="iconNavbarSidenav">
+                    <div class="sidenav-toggler-inner">
+                        <i class="sidenav-toggler-line"></i>
+                        <i class="sidenav-toggler-line"></i>
+                        <i class="sidenav-toggler-line"></i>
+                    </div>
+                </a>
+            </li>
             </ul>
         </div>
     </div>

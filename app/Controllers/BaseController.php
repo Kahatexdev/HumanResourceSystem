@@ -46,6 +46,9 @@ abstract class BaseController extends Controller
     /**
      * @return void
      */
+    protected $attendanceDayModel;
+    protected $dataTidakSesuaiService;
+
     public function initController(RequestInterface $request, ResponseInterface $response, LoggerInterface $logger)
     {
         // Do Not Edit This Line
@@ -54,5 +57,33 @@ abstract class BaseController extends Controller
         // Preload any models, libraries, etc, here.
 
         // E.g.: $this->session = service('session');
+
+        // Load Model Anomali
+        // $this->attendanceDayModel = new \App\Models\AttendanceDayModel();
+
+        // // Ambil data anomali per tanggal
+        // $this->dataTidakSesuaiService = service('dataTidakSesuaiService');
     }
+
+    // protected function renderView($view, $data = [])
+    // {
+    //     $data['anomali'] = $this->anomali; // inject data ke semua view
+
+    //     return view($view, $data);
+    // }
+
+    // protected function renderView($view, $data = [])
+    // {
+    //     $globalData = $this->loadGlobalData();
+    //     $data = array_merge($globalData, $data);
+
+    //     return view($view, $data);
+    // }
+
+    // protected function loadGlobalData()
+    // {
+    //     return [
+    //         'dataTidakSesuai' => $this->dataTidakSesuaiService->getCountPerTanggal(),
+    //     ];
+    // }
 }

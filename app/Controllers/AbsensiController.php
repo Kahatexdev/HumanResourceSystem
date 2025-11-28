@@ -1071,7 +1071,6 @@ class AbsensiController extends BaseController
         return $this->response->setJSON($karyawan);
     }
 
-
     public function getLogAbsensiByNIKAndDate()
     {
         $nik = $this->request->getGet('nik');
@@ -1241,5 +1240,117 @@ class AbsensiController extends BaseController
         }
 
         return redirect()->back()->with('success', 'Data absensi berhasil ditambahkan!');
+    }
+
+    public function ketidaksesuaianAbsensi($workDateStart = null, $workDateEnd = null)
+    {
+        if ($workDateStart !== null && $workDateEnd === null) {
+            $workDateEnd = $workDateStart;
+        }
+
+        $data = [
+            'role'      => session()->get('role'),
+            'title'     => 'Ketidaksesuaian Absensi',
+            'active1'   => '',
+            'active2'   => '',
+            'active3'   => 'active',
+            'startDate' => $workDateStart,
+            'endDate'   => $workDateEnd
+        ];
+        return view(session()->get('role') . '/ketidaksesuaianAbsensi', $data);
+    }
+
+    public function getKetidaksesuaianData()
+    {
+        $startDate = $this->request->getGet('startDate');
+        $endDate   = $this->request->getGet('endDate');
+
+        if ($startDate && !$endDate) {
+            $endDate = $startDate;
+        }
+
+        $data = $this->attendanceDayModel->getDataTidakSesuaiByDate($startDate, $endDate);
+
+        return $this->response->setJSON([
+            'data' => $data
+        ]);
+    }
+
+    public function updateAbsen($id)
+    {
+        $dataAbsen = $this->attendanceDayModel->find($id);
+
+        $inTime = date('Y-m-d H:i:s', strtotime($this->request->getPost('in_time')));
+        $breakOutTime = date('Y-m-d H:i:s', strtotime($this->request->getPost('break_out_time')));
+        $breakInTime = date('Y-m-d H:i:s', strtotime($this->request->getPost('break_in_time')));
+        $outTime = date('Y-m-d H:i:s', strtotime($this->request->getPost('out_time')));
+
+        $data = [
+            'in_time'        => $inTime,
+            'break_out_time' => $breakOutTime,
+            'break_in_time'  => $breakInTime,
+            'out_time'       => $outTime,
+        ];
+
+        $update = $this->attendanceDayModel->update($id, $data);
+
+        // Ambil Attendance Result nya
+        $idResult = $this->attendanceResultModel
+            ->select('id_result')
+            ->where('id_attendance', $id)
+            ->first();
+
+        // Master shift
+        $idShift = $dataAbsen['id_shift'];
+        $masterShift = $this->shiftDefsModel->getShiftById($idShift);
+
+        $masterJamMasuk = strtotime($dataAbsen['work_date'] . " " . $masterShift['start_time']);
+        $masterJamPulang = strtotime($dataAbsen['work_date'] . " " . $masterShift['end_time']);
+        $masterTotIst = (int) $masterShift['break_time']; // menit berdasarkan master shift
+
+        // Convert ke timestamp
+        $tsMasuk = strtotime($inTime);
+        $tsKeluar = strtotime($outTime);
+        $tsBreakOut = strtotime($breakOutTime);
+        $tsBreakIn = strtotime($breakInTime);
+
+        // Hitung durasi
+        $totIstirahat = (int) round(($tsBreakIn - $tsBreakOut) / 60);
+        $totKerja = (int) round(($tsKeluar - $tsMasuk) / 60) - $totIstirahat;
+
+        // Hitung keterlambatan
+        $diffMasuk = $tsMasuk - $masterJamMasuk;
+        $lateMin = $diffMasuk > 0 ? (int) round($diffMasuk / 60) : 0;
+
+        // Hitung pulang awal atau lembur
+        $diffPulang = $tsKeluar - $masterJamPulang;
+
+        if ($diffPulang < 0) {
+            $earlyLeaveMin = (int) round(abs($diffPulang) / 60);
+            $overtimeMin = 0;
+        } elseif ($diffPulang > 0) {
+            $overtimeMin = (int) round($diffPulang / 60);
+            $earlyLeaveMin = 0;
+        } else {
+            $overtimeMin = 0;
+            $earlyLeaveMin = 0;
+        }
+
+        // Update hasil perhitungan ke table result
+        $this->attendanceResultModel->update($idResult['id_result'], [
+            'id_attendance'    => $id,
+            'total_work_min'   => $totKerja,
+            'total_break_min'  => $totIstirahat,
+            'late_min'         => $lateMin,
+            'early_leave_min'  => $earlyLeaveMin,
+            'overtime_min'     => $overtimeMin,
+            'status_code'      => 'PRESENT',
+            'processed_at'     => date('Y-m-d H:i:s'),
+        ]);
+
+        return $this->response->setJSON([
+            'status'  => $update ? 'success' : 'error',
+            'message' => $update ? 'Berhasil update absensi' : 'Gagal update absensi'
+        ]);
     }
 }

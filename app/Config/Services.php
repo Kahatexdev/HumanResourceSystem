@@ -39,4 +39,12 @@ class Services extends BaseService
 
         return new AttendanceGroupingService();
     }
+
+    public static function dataTidakSesuaiService($getShared = true)
+    {
+        if ($getShared) {
+            return static::getSharedInstance('dataTidakSesuaiService');
+        }
+        return new \App\Services\DataTidakSesuaiService();
+    }
 }
